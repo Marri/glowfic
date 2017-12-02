@@ -13,7 +13,7 @@ a {
   text-decoration: none;
   color: $font_color_link;
   &:visited { color: $font_color_link_visited; }
-  &:hover { color: $font_color_link_hover; }
+  &:hover { color: $font_color_link_hover; text-decoration: none; }
 }
 
 /* Inputs */
@@ -104,7 +104,6 @@ button, .button {
   padding: 4px 12px;
   border-radius: 5px;
   font-weight: normal;
-  height: 20px;
 
   img { vertical-align: text-top; }
 }
@@ -119,3 +118,6 @@ button, .button {
 /* Inline lists */
 .inline-list { display: inline; padding-left: 0; }
 .inline-list li { display: inline; list-style-type: none; margin-right: 4px; }
+
+/* Bootstrap refactoring */
+.dropdown-menu { margin-top: 0px; }

@@ -639,7 +639,7 @@ RSpec.describe PostsController do
         get :show, params: { id: post.id }
         expect(response.status).to eq(200)
         expect(response.body).to include(post.subject)
-        expect(response.body).to include('header-right')
+        expect(response.body).to include('header-form')
       end
 
       it "renders HAML for logged in user" do
@@ -658,7 +658,7 @@ RSpec.describe PostsController do
         get :show, params: { id: post.id, view: 'flat' }
         expect(response.status).to eq(200)
         expect(response.body).to include(post.subject)
-        expect(response.body).not_to include('header-right')
+        expect(response.body).not_to include('header-form')
       end
 
       it "displays quick switch properly" do

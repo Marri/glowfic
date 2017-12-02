@@ -7,6 +7,8 @@ $(document).ready(function() {
     minimumResultsForSearch: 10,
   });
 
+  $('.dropdown-toggle').dropdown();
+
   // Set localStorage if login status has changed
   // storage values are usually strings, cast to be sure
   var loggedInKey = 'loggedIn';
