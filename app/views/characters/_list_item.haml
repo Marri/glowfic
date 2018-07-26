@@ -3,24 +3,24 @@
   - template_id, template_name = character[-2..]
 - klass = cycle('even', 'odd')
 %tr
-  %td.padding-5{class: klass}
+  %td.character-list-name{class: klass}
     = link_to char_name, character_path(char_id)
   - if show_template
-    %td.padding-5{class: klass}
+    %td.character-list-template{class: klass}
       - if template_id.present?
         = link_to template_name, template_path(template_id)
-  %td.padding-5{class: klass}= cluster
-  %td.padding-5{class: klass, style: 'width:15%'}= nickname
-  %td.padding-5{class: klass, style: 'width:15%'}= breakable_text(screenname)
-  %td.padding-5{class: klass, style: 'width:20%'}= pb
-  %td.padding-5{class: klass, style: 'width:15%'}
+  %td.character-list-cluster{class: klass}= cluster
+  %td.character-list-nickname{class: klass}= nickname
+  %td.character-list-screenname{class: klass}= breakable_text(screenname)
+  %td.character-list-facecast{class: klass}= pb
+  %td.character-list-author{class: klass}
     - if show_user
       = user_mem_link(user_id, username, user_deleted)
     - else
       - setting_links = settings.fetch(char_id, []).map { |setting| link_to(setting[1], tag_path(setting[0])) }
       = safe_join(setting_links, ', ')
 
-  %td.width-70.right-align{class: klass}
+  %td.character-list-buttons{class: klass}
     - unless hide_buttons
       - if Character.editable_by?(current_user, user_id)
         = link_to edit_character_path(char_id) do

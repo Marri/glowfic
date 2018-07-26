@@ -32,29 +32,29 @@
     %td.single-description.written-content{colspan: col_count}= sanitize_written_content(name.description)
 - if characters.empty?
   %tr
-    %td.centered.padding-5{class: cycle('even', 'odd'), colspan: col_count} — No characters yet —
+    %td.character-list-none{class: cycle('even', 'odd'), colspan: col_count} — No characters yet —
 - else
   %tr
     - klass = cycle('even', 'odd')
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Name
     - if local_assigns[:show_template]
-      %td.padding-5{class: klass}
+      %td.character-list-heading{class: klass}
         %b Template
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Cluster
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Nickname
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Screenname
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Facecast
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       - if local_assigns[:show_user]
         %b User
       - else
         %b Setting
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
   - pluck = characters_list(characters.ordered, local_assigns[:show_template])
   - params = { show_template: local_assigns[:show_template], show_user: local_assigns[:show_user], hide_buttons: local_assigns[:hide_buttons] }
   - params[:settings] = settings_info(characters) unless local_assigns[:show_user]
