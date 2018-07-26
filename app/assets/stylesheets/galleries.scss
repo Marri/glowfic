@@ -152,3 +152,8 @@
   td, th { padding: 5px 10px; }
   .form-table-ender { font-weight: normal; }
 }
+
+/* the new gallery table needs to be stretched if there are icons present */
+.gallery-new-with-icons {
+  width: 100%;
+}
