@@ -159,6 +159,9 @@ a.disabled-arrow {
   margin-right: 4px;
 }
 
+/* Italics on the next button of the daily report if the next day is today */
+.report-next-today { font-style: italic; }
+
 /* Bootstrap tweaks */
 .view-button img, #swap-alias, #swap-character, #header img { vertical-align: baseline; }
 
