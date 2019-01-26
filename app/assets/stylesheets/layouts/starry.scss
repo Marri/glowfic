@@ -43,23 +43,8 @@ $bg_color_linkbox_subber: #66608B;
 
 @import 'starry_default_selectors';
 
-// posts
-#post-menu-box { color: $font_color_post_menu; }
-
 .time-loaded { color: $font_color_timeloaded; }
 
-// icons
 #character-icon-selector { color: $font_color_character_icon; }
 
-// tag items
-.tag-item { color: $font_color_tag_item; }
-
-// ??
 #character-selector { font-weight: normal; }
-
-#footer {
-  background-color: $bg_color_header_middle;
-  color: $font_color_header_link;
-  a { color: $font_color_header_link; }
-  a:hover { color: $font_color_header_link_hover; }
-}
