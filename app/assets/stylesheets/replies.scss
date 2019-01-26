@@ -2,7 +2,6 @@
 
 /* Box displaying current icon */
 #icon-overlay {
-  background-color: $bg_color_icon_overlay;
   height: 100px;
   width: 100px;
   position: absolute;
@@ -15,13 +14,9 @@
 
 #current-icon-holder { position: relative; }
 
-#current-icon-dropdown {
-  color: $font_color_icon_selector;
-
-  select {
-    width: 100px;
-    margin-bottom: 10px;
-  }
+#current-icon-dropdown select {
+  width: 100px;
+  margin-bottom: 10px;
 }
 
 /* Character selector */
@@ -39,7 +34,6 @@
   left: 150px;
   padding: 5px 20px 10px 20px;
   z-index: 2;
-  background-color: $bg_color_selectionpopup;
   min-width: 200px;
   display: none;
   text-align: left;
@@ -61,7 +55,6 @@
   padding: 10px;
   margin: 0;
   z-index: 4;
-  background-color: $bg_color_icon_selector;
 
   img { cursor: pointer; }
 
@@ -106,21 +99,15 @@ div.post-subheader { width: 100%; }
 
 .post-subheader {
   padding: 10px;
-  background-color: $bg_color_post_description;
-  color: $font_color_post_description;
 }
 
 .post-navheader {
   padding: 10px;
   overflow: hidden;
-  background-color: $bg_color_navheader;
-
-  .view-button { background-color: $bg_color_navbutton; }
 }
 
 .post-expander {
   min-height: 5px;
-  background-color: $bg_color_expander;
   padding: 0;
 
   .info {
@@ -134,26 +121,12 @@ div.post-subheader { width: 100%; }
 .post-ender {
   min-height: 5px;
   padding: 5px;
-  background-color: $bg_color_ender_post;
-  color: $font_color_ender_post;
   font-size: $font_size_main;
   font-weight: bold;
   text-align: center;
 }
 
 /* Written content */
-/* - Blockquotes */
-/* -- Color on even/odd background */
-.even, .post-post, .post-reply:nth-child(even) {
-  blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, $opacity_blockquote); }
-}
-
-.odd, .post-reply:nth-child(odd) {
-  blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, $opacity_blockquote); }
-}
-
-.single-description blockquote { background-color: rgba($bg_color_descriptions_blockquote, 0.3); }
-
 .post-content, .written-content, .message-content {
   blockquote {
     margin: 0.5em 1.5em;
@@ -197,8 +170,6 @@ div.post-subheader { width: 100%; }
   overflow-wrap: break-word;
 }
 
-.post-icon, #current-icon-dropdown { background-color: $bg_color_post_icon; }
-
 .post-icon {
   padding: 0;
   height: 120px;
@@ -216,15 +187,11 @@ div.post-subheader { width: 100%; }
 }
 
 .post-character {
-  background-color: $bg_color_post_character;
-  color: $font_color_post_info;
   padding: 4px;
   position: relative;
 }
 
 .post-screenname {
-  background-color: $bg_color_post_screenname;
-  color: $font_color_post_screenname;
   padding: 4px;
   overflow-wrap: break-word;
   word-wrap: break-word;
@@ -232,8 +199,6 @@ div.post-subheader { width: 100%; }
 
 .post-author {
   padding: 5px;
-  background-color: $bg_color_post_author;
-  color: $font_color_post_info;
   position: relative;
 }
 
@@ -342,7 +307,7 @@ div.post-subheader { width: 100%; }
 
   /* - Tables in post-content */
   th, td {
-    border: 1px solid $border_color_reply_table;
+    border: 1px solid;
     padding: 5px;
   }
 }
@@ -358,8 +323,6 @@ div.post-subheader { width: 100%; }
 .char-access-fake {
   padding: 5px 0;
   font-size: 80%;
-  background-color: $font_color_char_switcher;
-  background-color: rgba($font_color_char_switcher_alpha, 0.3);
 }
 
 /* - Narrow window display */
@@ -384,8 +347,6 @@ div.post-subheader { width: 100%; }
 
   #post-form-wrapper { margin-left: 0; }
   #character-selector { left: 0; }
-  .post-character { background-color: $bg_color_post_character_narrow; }
-  .post-author { background-color: $bg_color_post_author_narrow; }
 
   .post-content blockquote {
     margin-left: 1.5em;
@@ -402,7 +363,6 @@ div.post-subheader { width: 100%; }
   .current {
     font-weight: bold;
     font-style: normal;
-    background-color: $bg_color_paginate_current_page;
   }
 
   a, .current, .disabled {
@@ -410,16 +370,7 @@ div.post-subheader { width: 100%; }
     padding: 5px 10px;
   }
 
-  .disabled {
-    color: $font_color_paginate_link_disabled;
-    text-align: left;
-  }
-
-  a {
-    color: $font_color_paginate_link;
-    &:hover { background-color: $bg_color_paginate_link_hover; }
-    &:visited { color: $font_color_paginate_link_visited; }
-  }
+  .disabled { text-align: left; }
 
   .summary {
     padding-left: 10px;
@@ -428,8 +379,6 @@ div.post-subheader { width: 100%; }
 }
 
 .paginator {
-  color: $font_color_paginate;
-
   .left-align {
     float: left;
     padding: 10px;
@@ -439,7 +388,6 @@ div.post-subheader { width: 100%; }
     padding: 2px;
     padding-right: 10px;
     float: right;
-    a { color: $font_color_paginate; }
   }
 
   .normal-pagination { display: block; }
@@ -482,17 +430,12 @@ div.post-subheader { width: 100%; }
   top: 0;
   right: 0;
   z-index: 99;
-  color: $font_color_post_menu;
-  background-color: $bg_color_post_menu;
-  border-top: 1px solid $border_color_post_menu;
+  border-top: 1px solid;
 
   div {
     padding: 10px 20px;
-    border-bottom: 1px solid $border_color_post_menu;
+    border-bottom: 1px solid;
   }
-
-  a { color: $font_color_menu_link; }
-  a:hover div { background-color: $bg_color_menu_link_hover; }
 
   img {
     margin-right: 3px;
@@ -539,7 +482,7 @@ div.post-subheader { width: 100%; }
   font-size: 70%;
 }
 
-.reply-highlighted { border: 1px $border_color_unread_reply solid; }
+.reply-highlighted { border: 1px solid; }
 
 /* History page */
 .history-header { width: 170px; }

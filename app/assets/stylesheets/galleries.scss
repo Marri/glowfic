@@ -9,7 +9,7 @@
 /* The + / - symbol to minimize a gallery */
 .gallery-minmax, .add-gallery-icon { cursor: pointer; }
 .gallery-title { height: 5px; } /* So that when a gallery is minimized there is spacing */
-.selected-icon { border: 10px $border_color_icon_selected solid; }
+.selected-icon { border: 10px solid; }
 .form-table .icon { vertical-align: middle; }
 
 /* Basic gallery and gallery icon formatting */
@@ -51,9 +51,7 @@
 .gallery-icon-editor {
   @extend %shared-editor;
   margin: 18px 18px 0 0;
-  border: solid $border_color_icon_editor;
   border-width: 15px 1.5px 5px 1.5px;
-  background-color: $bg_color_icon_editor;
   padding: 5px 5px 5px 0;
   input[type='text'], input[type='file'] { width: 225px; }
   .icon-edit-table { width: unset; }
@@ -80,11 +78,8 @@
   height: 1.5em;
   width: 1.5em;
   padding: 0.2em;
-  background-color: $bg_color_mini_delete;
-  border: 1px $border_color_mini_delete solid;
-  color: $font_color_mini_delete;
+  border: 1px solid;
   line-height: 1em;
-  a, a:visited, a:hover { color: $font_color_mini_delete; }
 }
 
 .select-button input {
@@ -117,12 +112,7 @@
   height: 16px;
 }
 
-.icons-box { background-color: $bg_color_icon; }
-
-.icon-credit {
-  background-color: $bg_color_icon_credit;
-  text-align: center;
-}
+.icon-credit { text-align: center; }
 
 /* The preview icon boxes on replace icon and replace character */
 .replace-icon {

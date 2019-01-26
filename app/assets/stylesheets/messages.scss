@@ -32,10 +32,7 @@
 .message-collapse, .message-menu { cursor: pointer; }
 .message-expand, .message-menu { min-height: 40px; }
 
-.message-expand {
-  z-index: 0;
-  background-color: rgba($bg_color_message_expander, 0.1);
-}
+.message-expand { z-index: 0; }
 
 .message-menu {
   z-index: 1;

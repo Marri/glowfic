@@ -1,0 +1,248 @@
+@import 'variables';
+
+// - global
+body {
+  background-color: $bg_color_page;
+  color: $font_color_page;
+}
+
+a { color: $font_color_link; }
+a:visited { color: $font_color_link_visited; }
+a:hover { color: $font_color_link_hover; }
+
+input, textarea, button {
+  border-color: $border_color_input;
+  background-color: $bg_color_input;
+  color: $font_color_input;
+}
+
+button, .button {
+  border-color: $border_color_button;
+  background-color: $bg_color_button;
+  background: linear-gradient($bg_color_button_20 20%, $bg_color_button_50 50%, $bg_color_button_52 52%, $bg_color_button_100 100%);
+}
+
+.spacer-alt { background-color: $bg_color_spacer_alt; }
+
+.even, .post-post, .post-reply:nth-child(even), #post-editor {
+  background-color: $bg_color_even;
+  blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, $opacity_blockquote); }
+}
+
+.odd, .post-reply:nth-child(odd), .post-post + #post-editor, .post-post + a + #post-editor {
+  background-color: $bg_color_odd;
+  blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, $opacity_blockquote); }
+}
+
+.link-box {
+  color: $font_color_linkbox;
+  &.action-new { background-color: $bg_color_linkbox_new; }
+  &.action-edit { background-color: $bg_color_linkbox_edit;}
+  &.action-favorite { background-color: $bg_color_linkbox_favorite; }
+  &.action-delete { background-color: $bg_color_linkbox_delete; }
+  &.action-dismiss { background-color: $bg_color_linkbox_dismiss; }
+}
+
+span.badge {
+  border-color: $border_color_badge;
+  background-color: $bg_color_badge;
+  text-shadow: 0 0 2px $shadow_color_badge, 0 0 2px $shadow_color_badge;
+  color: $font_color_badge;
+}
+
+// - layout
+#header {
+  background-color: $bg_color_header_bottom;
+  color: $font_color_header_link;
+  a { color: $font_color_header_link; }
+  a:hover { color: $font_color_header_link_hover; }
+}
+
+#logo { background-color: $bg_color_header_top; }
+#user-info { background-color: $bg_color_header_middle; }
+
+#nav-top {
+  background-color: $bg_color_header_middle;
+  button, .button { color: $font_color_button; }
+}
+
+.flash {
+  &.error { background-color: $bg_color_flash_error; }
+  &.success { background-color: $bg_color_flash_success; }
+  &.breadcrumbs { background-color: $bg_color_flash_breadcrumbs; }
+}
+
+.table-title, .content-header, .info-box-header, .editor-title, .search-params-header, .search-results-header, .gallery-table-title {
+  background-color: $bg_color_head;
+  color: $font_color_head;
+}
+
+.content-header span {
+  a { color: $font_color_head_link; }
+  a:hover { color: $font_color_head_link_hover; }
+}
+
+.sub {
+  background-color: $bg_color_sub;
+  color: $font_color_sub;
+}
+
+.subber {
+  background-color: $bg_color_subber;
+  color: $font_color_subber;
+}
+
+.form-table-ender {
+  background-color: $bg_color_ender;
+  color: $font_color_ender;
+}
+
+.select2-container { color: $font_color_select2_container; }
+
+.view-button {
+  background-color: $bg_color_viewbutton;
+  color: $font_color_viewbutton;
+  &.selected { background-color: $bg_color_viewbutton_selected; }
+  a { color: $font_color_viewbutton; }
+}
+
+.tag-item {
+  background-color: $bg_color_tag_item;
+  color: $font_color_tag_item;
+  .even & { background-color: $bg_color_tag_item_even; }
+  .odd & { background-color: $bg_color_tag_item_odd; }
+  tr.gallery-tags & { color: $font_color_tag_item_gallery; }
+}
+
+.tag-item-link:hover { color: unset; }
+
+.section-warning {
+  background-color: $bg_color_section_warning;
+  background-color: rgba($bg_color_section_warning_alpha, 0.4);
+}
+
+.search-box {
+  background-color: $bg_color_search_box;
+  color: $font_color_search_box;
+}
+
+#footer {
+  background-color: $bg_color_header_middle;
+  color: $font_color_header_link;
+  a { color: $font_color_header_link; }
+  a:hover { color: $font_color_header_link_hover; }
+}
+
+// - characters and templates
+.single-description {
+  background-color: $bg_color_descriptions;
+  a { color: $font_color_descriptions_link; }
+  a:visited { color: $font_color_descriptions_link_visited; }
+  blockquote { background-color: rgba($bg_color_descriptions_blockquote, 0.3); }
+}
+
+.character-no-icon { border-color: $border_color_character_iconless; }
+
+//- galleries and icons
+.gallery-icon-editor {
+  border-color: $border_color_icon_editor;
+  background-color: $bg_color_icon_editor;
+}
+
+.selected-icon { border-color: $border_color_icon_selected; }
+
+.delete-button {
+  border-color: $border_color_mini_delete;
+  background-color: $bg_color_mini_delete;
+  color: $font_color_mini_delete;
+  a, a:visited, a:hover { color: $font_color_mini_delete; }
+}
+
+.icons-box, .replace-icon { background-color: $bg_color_icon; }
+
+.icon-credit { background-color: $bg_color_icon_credit; }
+
+// - messages
+.message-expand { background-color: rgba($bg_color_message_expander, 0.1); }
+
+// - posts and replies
+#icon-overlay { background-color: $bg_color_icon_overlay; }
+
+#current-icon-dropdown { color: $font_color_icon_selector; }
+
+.selector-popup { background-color: $bg_color_selectionpopup; }
+
+#reply-icon-selector { background-color: $bg_color_icon_selector; }
+
+.post-subheader {
+  background-color: $bg_color_post_description;
+  color: $font_color_post_description;
+}
+
+.post-navheader {
+  background-color: $bg_color_navheader;
+  .view-button { background-color: $bg_color_navbutton; }
+}
+
+.post-expander { background-color: $bg_color_expander; }
+
+.post-ender {
+  background-color: $bg_color_ender_post;
+  color: $font_color_ender_post;
+}
+
+.post-icon, #current-icon-dropdown { background-color: $bg_color_post_icon; }
+
+.post-character {
+  background-color: $bg_color_post_character;
+  color: $font_color_post_info;
+}
+
+.post-screenname {
+  background-color: $bg_color_post_screenname;
+  color: $font_color_post_screenname;
+}
+
+.post-author {
+  background-color: $bg_color_post_author;
+  color: $font_color_post_info;
+}
+
+.post-content th, .post-content td {
+  border-color: $border_color_reply_table;
+}
+
+.char-access-fake {
+  background-color: $font_color_char_switcher;
+  background-color: rgba($font_color_char_switcher_alpha, 0.3);
+}
+
+@media (max-width: 600px) {
+  .post-character { background-color: $bg_color_post_character_narrow; }
+  .post-author { background-color: $bg_color_post_author_narrow; }
+}
+
+.pagination {
+  .current { background-color: $bg_color_paginate_current_page; }
+  .disabled { color: $font_color_paginate_link_disabled; }
+
+  a { color: $font_color_paginate_link; }
+  a:hover { background-color: $bg_color_paginate_link_hover; }
+  a:visited { color: $font_color_paginate_link_visited; }
+}
+
+.paginator {
+  color: $font_color_paginate;
+  .right-align a { color: $font_color_paginate; }
+}
+
+#post-menu-box {
+  border-top-color: $border_color_post_menu;
+  background-color: $bg_color_post_menu;
+  color: $font_color_post_menu;
+  div { border-bottom-color: $border_color_post_menu; }
+  a { color: $font_color_menu_link; }
+  a:hover div { background-color: $bg_color_menu_link_hover; }
+}
+
+.reply-highlighted { border-color: $border_color_unread_reply; }
