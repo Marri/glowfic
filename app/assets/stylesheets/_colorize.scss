@@ -20,6 +20,7 @@ button, .button {
   border-color: $border_color_button;
   background-color: $bg_color_button;
   background: linear-gradient($bg_color_button_20 20%, $bg_color_button_50 50%, $bg_color_button_52 52%, $bg_color_button_100 100%);
+  color: $font_color_button;
 }
 
 .spacer-alt { background-color: $bg_color_spacer_alt; }
