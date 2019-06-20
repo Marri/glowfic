@@ -61,4 +61,20 @@ $bg_color_linkbox_favorite: $colors_comet;
 $bg_color_linkbox_delete: $colors_rock;
 $bg_color_linkbox_dismiss: $colors_rock;
 
-@import 'river_selectors'
+@import 'colorize';
+
+#content .odd, #content .even, .post-post, .post-reply, #post-editor {
+  // sass-lint:disable-block no-important
+  background-color: $bg_color_even !important;
+  border-top: solid 1px $bg_color_content_border;
+  blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2) !important; }
+}
+
+.post-edit-box img {
+  width: 1em;
+  height: 1em;
+}
+
+.post-footer { color: $font_color_reply_footer; }
+
+.post-character a, .post-character a:visited { color: $font_color_post_info; }
