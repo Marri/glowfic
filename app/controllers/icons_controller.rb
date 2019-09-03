@@ -85,40 +85,26 @@ class IconsController < UploadingController
 
   def replace
     @page_title = "Replace Icon: " + @icon.keyword
-    all_icons = if @icon.has_gallery?
-      @icon.galleries.map(&:icons).flatten.uniq.compact - [@icon]
-    else
-      current_user.galleryless_icons - [@icon]
-    end
-    @alts = all_icons.sort_by{|i| i.keyword.downcase }
-    use_javascript('icons')
-    gon.gallery = Hash[all_icons.map { |i| [i.id, {url: i.url, keyword: i.keyword}] }]
-    gon.gallery[''] = {url: view_context.image_path('icons/no-icon.png'), keyword: 'No Icon'}
+    replacer = Icon::Replacer.new(@icon)
+    replacer.setup(user: current_user, no_icon_url: view_context.image_path('icons/no-icon.png'))
 
-    post_ids = Reply.where(icon_id: @icon.id).select(:post_id).distinct.pluck(:post_id)
-    all_posts = Post.where(icon_id: @icon.id) + Post.where(id: post_ids)
-    @posts = all_posts.uniq
+    @alts = replacer.alts
+    use_javascript('icons')
+
+    gon.gallery = replacer.gallery
+    @posts = replacer.posts
   end
 
   def do_replace
-    unless params[:icon_dropdown].blank? || (new_icon = Icon.find_by_id(params[:icon_dropdown]))
-      flash[:error] = "Icon could not be found."
-      redirect_to replace_icon_path(@icon) and return
+    replacer = Icon::Replacer.new(@icon)
+    replacer.replace(params, user: current_user)
+    if replacer.errors.present?
+      flash[:error] = replacer.errors.full_messages.first
+      redirect_to replace_icon_path(@icon)
+    else
+      flash[:success] = "All uses of this icon will be replaced."
+      redirect_to icon_path(@icon)
     end
-
-    if new_icon && new_icon.user_id != current_user.id
-      flash[:error] = "That is not your icon."
-      redirect_to replace_icon_path(@icon) and return
-    end
-
-    wheres = {icon_id: @icon.id}
-    wheres[:post_id] = params[:post_ids] if params[:post_ids].present?
-    UpdateModelJob.perform_later(Reply.to_s, wheres, {icon_id: new_icon.try(:id)})
-    wheres[:id] = wheres.delete(:post_id) if params[:post_ids].present?
-    UpdateModelJob.perform_later(Post.to_s, wheres, {icon_id: new_icon.try(:id)})
-
-    flash[:success] = "All uses of this icon will be replaced."
-    redirect_to icon_path(@icon)
   end
 
   def destroy

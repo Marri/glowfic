@@ -907,7 +907,7 @@ RSpec.describe CharactersController do
       login_as(character.user)
       post :do_replace, params: { id: character.id, icon_dropdown: other_char.id }
       expect(response).to redirect_to(replace_character_path(character))
-      expect(flash[:error]).to eq('That is not your character.')
+      expect(flash[:error]).to eq('Character is not yours.')
     end
 
     it "requires valid new alias if parameter provided" do

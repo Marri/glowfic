@@ -580,7 +580,7 @@ RSpec.describe IconsController do
       login_as(icon.user)
       post :do_replace, params: { id: icon.id, icon_dropdown: other_icon.id }
       expect(response).to redirect_to(replace_icon_path(icon))
-      expect(flash[:error]).to eq('That is not your icon.')
+      expect(flash[:error]).to eq('Icon is not yours.')
     end
 
     it "succeeds with valid other icon" do
