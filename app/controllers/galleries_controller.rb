@@ -1,11 +1,10 @@
 # frozen_string_literal: true
-class GalleriesController < UploadingController
+class GalleriesController < ApplicationController
   include Taggable
 
   before_action :login_required, except: [:index, :show]
   before_action :find_gallery, only: [:destroy, :edit, :update] # assumes login_required
   before_action :setup_new_icons, only: [:add, :icon]
-  before_action :set_s3_url, only: [:edit, :add, :icon]
   before_action :setup_editor, only: [:new, :edit]
 
   def index
@@ -94,15 +93,14 @@ class GalleriesController < UploadingController
 
   def edit
     @page_title = 'Edit Gallery: ' + @gallery.name
-    use_javascript('galleries/uploader')
     use_javascript('galleries/edit')
   end
 
   def update
-    @gallery.assign_attributes(gallery_params)
-
     begin
       Gallery.transaction do
+        @gallery.assign_attributes(gallery_params)
+        update_urls
         @gallery.gallery_groups = process_tags(GalleryGroup, :gallery, :gallery_group_ids)
         @gallery.save!
       end
@@ -111,10 +109,8 @@ class GalleriesController < UploadingController
       flash.now[:error][:message] = "Gallery could not be saved."
       flash.now[:error][:array] = @gallery.errors.full_messages
       @page_title = 'Edit Gallery: ' + @gallery.name_was
-      use_javascript('galleries/uploader')
       use_javascript('galleries/edit')
       setup_editor
-      set_s3_url
       render :edit
     else
       flash[:success] = "Gallery saved."
@@ -249,19 +245,26 @@ class GalleriesController < UploadingController
     }
   end
 
+  def update_urls
+    changed_images = gallery_params["galleries_icons_attributes"].values
+    chabged_images.collect! { |p| [p["icon_attributes"]["id"], p["icon_attributes"].key?("image")] }.to_h
+    changed_images.select! { |_k, v| v }
+    @gallery.icon.where(id: changed_images.keys).each(&:setup_uploaded_url)
+  end
+
   def gallery_params
     params.fetch(:gallery, {}).permit(
       :name,
       galleries_icons_attributes: [
         :id,
         :_destroy,
-        icon_attributes: [:url, :keyword, :credit, :id, :_destroy, :s3_key]
+        icon_attributes: [:url, :keyword, :credit, :id, :_destroy, :s3_key, :image]
       ],
       icon_ids: [],
     )
   end
 
   def icon_params(paramset)
-    paramset.permit(:url, :keyword, :credit, :s3_key)
+    paramset.permit(:url, :keyword, :credit, :s3_key, :image)
   end
 end

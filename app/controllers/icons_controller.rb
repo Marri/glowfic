@@ -1,9 +1,8 @@
 # frozen_string_literal: true
-class IconsController < UploadingController
+class IconsController < ApplicationController
   before_action :login_required, except: :show
   before_action :find_icon, except: :delete_multiple
   before_action :require_own_icon, only: [:edit, :update, :replace, :do_replace, :destroy, :avatar]
-  before_action :set_s3_url, only: :edit
 
   def delete_multiple
     gallery = Gallery.find_by_id(params[:gallery_id])
@@ -61,7 +60,6 @@ class IconsController < UploadingController
   def edit
     @page_title = 'Edit Icon: ' + @icon.keyword
     use_javascript('galleries/update_existing')
-    use_javascript('galleries/uploader')
   end
 
   def update
@@ -74,8 +72,6 @@ class IconsController < UploadingController
       }
       @page_title = 'Edit icon: ' + @icon.keyword_was
       use_javascript('galleries/update_existing')
-      use_javascript('galleries/uploader')
-      set_s3_url
       render :edit
     else
       flash[:success] = "Icon updated."
@@ -200,6 +196,6 @@ class IconsController < UploadingController
   end
 
   def icon_params
-    params.fetch(:icon, {}).permit(:url, :keyword, :credit, :s3_key)
+    params.fetch(:icon, {}).permit(:url, :keyword, :credit, :s3_key, :image)
   end
 end

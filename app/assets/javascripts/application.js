@@ -19,8 +19,8 @@
 //= require jquery-ui/widgets/sortable
 //= require jquery-ui/widgets/button
 //= require jquery-ui/widgets/dialog
-//= require jquery-fileupload/basic
 //= require bootstrap.min
 //= require tinymce-jquery
 //= require select2
 //= require global
+//= require activestorage

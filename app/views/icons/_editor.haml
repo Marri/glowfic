@@ -18,7 +18,7 @@
       - klass = cycle('even', 'odd')
       - file_id = "icon_files_#{f.object.id}"
       %td.centered{class: klass} Upload
-      %td{class: klass}= file_field_tag file_id, id: file_id, class: 'icon_files', data: {icon_id: f.object.id}
+      %td{class: klass}= f.file_field :image, direct_upload: true, data: {icon_id: f.object.id}
     %tr.gallery-icon-keyword
       - klass = cycle('even', 'odd')
       %td.centered{class: klass} Keyword

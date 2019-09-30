@@ -16,6 +16,6 @@
     %th
       Edit Icon
 
-= form_for @icon, method: :put, html: {class: 'icon-upload'}, data: { 'form-data' => @s3_direct_post.fields, url: @s3_direct_post.url, host: URI.parse(@s3_direct_post.url).host, limit: 1 } do |f|
+= form_for @icon, method: :put, html: {class: 'icon-upload'} do |f|
   .icon-editor
     = render 'editor', f: f, gif: nil

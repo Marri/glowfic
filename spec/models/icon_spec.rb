@@ -30,14 +30,14 @@ RSpec.describe Icon do
 
     context "#uploaded_url_not_in_use" do
       it "should set the url back to its previous url on create" do
-        icon = create(:uploaded_icon)
+        icon = create(:old_uploaded_icon)
         dupe_icon = build(:icon, url: icon.url, s3_key: icon.s3_key)
         expect(dupe_icon).not_to be_valid
         expect(dupe_icon.url).to be nil
       end
 
       it "should set the url back to its previous url on update" do
-        icon = create(:uploaded_icon)
+        icon = create(:old_uploaded_icon)
         dupe_icon = create(:icon)
         old_url = dupe_icon.url
         dupe_icon.url = icon.url
@@ -93,7 +93,7 @@ RSpec.describe Icon do
     before(:each) { clear_enqueued_jobs }
 
     it "deletes uploaded on destroy" do
-      icon = create(:uploaded_icon)
+      icon = create(:old_uploaded_icon)
       icon.destroy!
       expect(DeleteIconFromS3Job).to have_been_enqueued.with(icon.s3_key).on_queue('high')
     end
@@ -102,10 +102,11 @@ RSpec.describe Icon do
       icon = create(:icon)
       icon.destroy!
       expect(DeleteIconFromS3Job).not_to have_been_enqueued
+      expect(ActiveStorage::PurgeJob).not_to have_been_enqueued
     end
 
     it "deletes uploaded on new uploaded update" do
-      icon = create(:uploaded_icon)
+      icon = create(:old_uploaded_icon)
       old_key = icon.s3_key
       icon.url = "https://d1anwqy6ci9o1i.cloudfront.net/users/#{icon.user.id}/icons/nonsense-fakeimg2.png"
       icon.s3_key = "/users/#{icon.user.id}/icons/nonsense-fakeimg2.png"
@@ -114,7 +115,7 @@ RSpec.describe Icon do
     end
 
     it "deletes uploaded on new non-uploaded update" do
-      icon = create(:uploaded_icon)
+      icon = create(:old_uploaded_icon)
       old_key = icon.s3_key
       icon.url = "https://fake.com/nonsense-fakeimg2.png"
       icon.s3_key = "/users/#{icon.user.id}/icons/nonsense-fakeimg2.png"
@@ -123,58 +124,36 @@ RSpec.describe Icon do
     end
 
     it "does not delete uploaded on non-url update" do
-      icon = create(:uploaded_icon)
+      icon = create(:old_uploaded_icon)
       icon.keyword = "not a url update"
       icon.save!
       expect(DeleteIconFromS3Job).not_to have_been_enqueued
     end
   end
 
-  context "#use_icon_host" do
-    let(:asset_host) { "https://fake.cloudfront.net" }
-    before(:each) { @cached_host = ENV['ICON_HOST'] }
-    after(:each) { ENV['ICON_HOST'] = @cached_host }
+  describe "#delete_from_storage" do
+    before(:each) { clear_enqueued_jobs }
 
-    it "does nothing unless asset host is present" do
-      ENV['ICON_HOST'] = nil
-      icon = build(:icon)
-      icon.s3_key = 'users/1/icons/fake_test.png'
-      icon.url = 'https://glowfic-bucket.s3.amazonaws.com/users%2F1%2Ficons%2Ffake_test.png'
-      icon.save!
-      expect(icon.reload.url).to eq('https://glowfic-bucket.s3.amazonaws.com/users%2F1%2Ficons%2Ffake_test.png')
+    it "deletes uploaded on destroy" do
+      icon = create(:uploaded_icon)
+      icon.destroy!
+      blob = ActiveStorage::Blob.first
+      expect(ActiveStorage::PurgeJob).to have_been_enqueued.with(blob).on_queue('default')
+      expect(DeleteIconFromS3Job).not_to have_been_enqueued
     end
 
-    it "does nothing unless the icon is uploaded" do
-      ENV['ICON_HOST'] = asset_host
-      icon = build(:icon)
-      icon.s3_key = nil
-      icon.url = 'https://glowfic-bucket.s3.amazonaws.com/users%2F1%2Ficons%2Ffake_test.png'
-      icon.save!
-      expect(icon.reload.url).to eq('https://glowfic-bucket.s3.amazonaws.com/users%2F1%2Ficons%2Ffake_test.png')
+    it "deletes uploaded on new uploaded update" do
+      icon = create(:uploaded_icon)
+      blob = ActiveStorage::Blob.first
+      icon.update!(image: fixture_file_upload(Rails.root.join('app', 'assets', 'images', 'icons', 'accept.png'), 'image/png'))
+      expect(ActiveStorage::PurgeJob).to have_been_enqueued.with(blob).on_queue('default')
     end
 
-    it "does nothing unless the icon already has the asset host domain in it" do
-      ENV['ICON_HOST'] = asset_host
-      icon = build(:icon)
-      icon.s3_key = 'users/1/icons/fake_test.png'
-      icon.url = asset_host + '/users%2F1%2Ficons%2Ffake_test.png'
+    it "does not delete uploaded on non-url update" do
+      icon = create(:uploaded_icon)
+      icon.keyword = "not a url update"
       icon.save!
-      expect(icon.reload.url).to eq(asset_host + '/users%2F1%2Ficons%2Ffake_test.png')
-    end
-
-    it "handles weird URL-less AWS edge case" do
-      ENV['ICON_HOST'] = asset_host
-      icon = build(:uploaded_icon, url: '')
-      expect(icon.save).to eq(false)
-    end
-
-    it "updates the s3 domain to the asset host domain" do
-      ENV['ICON_HOST'] = asset_host
-      icon = build(:icon)
-      icon.s3_key = 'users/1/icons/fake_test.png'
-      icon.url = 'https://glowfic-bucket.s3.amazonaws.com/users%2F1%2Ficons%2Ffake_test.png'
-      icon.save!
-      expect(icon.reload.url).to eq(asset_host + '/users%2F1%2Ficons%2Ffake_test.png')
+      expect(ActiveStorage::PurgeJob).not_to have_been_enqueued
     end
   end
 end

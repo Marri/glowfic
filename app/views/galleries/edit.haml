@@ -5,7 +5,7 @@
   &raquo;
   %b Edit
 
-= form_for @gallery, method: :put, html: {class: 'icon-upload'}, data: { 'form-data' => @s3_direct_post.fields, url: @s3_direct_post.url, host: URI.parse(@s3_direct_post.url).host, limit: 1 } do |f|
+= form_for @gallery, method: :put, html: {class: 'icon-upload'} do |f|
   %table.form-table.gallery-edit-form
     %thead
       %tr

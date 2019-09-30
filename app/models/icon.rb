@@ -11,6 +11,8 @@ class Icon < ApplicationRecord
   has_many :galleries_icons, dependent: :destroy, inverse_of: :icon
   has_many :galleries, through: :galleries_icons, dependent: :destroy
 
+  has_one_attached :image, dependent: :purge_later
+
   validates :keyword, presence: true
   validates :url,
     presence: true,
@@ -19,15 +21,15 @@ class Icon < ApplicationRecord
   validate :uploaded_url_not_in_use
   nilify_blanks
 
-  before_validation :use_icon_host
-  before_save :use_https
-  before_update :delete_from_s3
+  before_validation :setup_uploaded_url, if: :new_record
+  before_save :use_https, :setup_uploaded_url
+  before_update :delete_from_s3, :delete_from_storage
   after_destroy :clear_icon_ids, :delete_from_s3
 
   scope :ordered, -> { order(Arel.sql('lower(keyword) asc'), created_at: :asc, id: :asc) }
 
   def uploaded?
-    s3_key.present?
+    s3_key.present? || image.attached?
   end
 
   private
@@ -36,13 +38,6 @@ class Icon < ApplicationRecord
     return true if url.to_s.starts_with?('http://') || url.to_s.starts_with?('https://')
     self.url = url_was unless new_record?
     errors.add(:url, "must be an actual fully qualified url (http://www.example.com)")
-  end
-
-  def use_icon_host
-    return unless uploaded?
-    return unless url.present? && ENV['ICON_HOST'].present?
-    return if url.to_s.include?(ENV['ICON_HOST'])
-    self.url = ENV['ICON_HOST'] + url[(url.index(S3_DOMAIN).to_i + S3_DOMAIN.length)..-1]
   end
 
   def use_https
@@ -58,8 +53,14 @@ class Icon < ApplicationRecord
     DeleteIconFromS3Job.perform_later(s3_key_was)
   end
 
+  def delete_from_storage
+    return unless self.url_changed? && self.image.attached? && self.image.changes.empty?
+    return if self.url == Rails.application.routes.url_helpers.rails_blob_url(self.image)
+    image.purge_later
+  end
+
   def uploaded_url_not_in_use
-    return unless uploaded?
+    return unless s3_key.present?
     check = Icon.where(s3_key: s3_key)
     check = check.where.not(id: id) unless new_record?
     return unless check.exists?
@@ -71,6 +72,11 @@ class Icon < ApplicationRecord
   def clear_icon_ids
     UpdateModelJob.perform_later(Post.to_s, {icon_id: id}, {icon_id: nil})
     UpdateModelJob.perform_later(Reply.to_s, {icon_id: id}, {icon_id: nil})
+  end
+
+  def setup_uploaded_url
+    return unless self.image.attached?
+    self.url = Rails.application.routes.url_helpers.rails_blob_url(self.image)
   end
 
   class UploadError < RuntimeError

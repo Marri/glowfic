@@ -1,7 +1,6 @@
 = form_tag icon_gallery_path(id: @gallery&.id || 0),
   method: :post,
-  class: 'icon-upload',
-  data: { 'form-data' => @s3_direct_post.fields, url: @s3_direct_post.url, host: URI.parse(@s3_direct_post.url).host } do
+  class: 'icon-upload' do
   .content-header
     %span.vmid Add New Icons to Gallery: #{@gallery.try(:name) || 'Galleryless'}
     - if @gallery
@@ -13,7 +12,7 @@
     %tr
       %th.subber.width-150.centered Upload Files
       %td.odd
-        = file_field_tag "icons[][file]", id: "icon_files", class: 'icon_files', multiple: true
+        = file_field_tag "icons[][file]", id: "icon_files", class: 'icon_files', multiple: true, direct_upload: true
         %span.progress-box{style: 'margin-left: 5px;'}
   %table.form-table#icon-table
     %thead
