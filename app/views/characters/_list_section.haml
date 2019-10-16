@@ -1,5 +1,8 @@
 - col_count = 6
+- col_count -= 1 if local_assigns[:hide_buttons]
 - col_count += 1 if local_assigns[:show_template]
+- col_count += 1 if local_assigns[:show_user] && local_assigns[:show_settings]
+
 - if @template.nil? && name.present?
   %tr
     %td.subber.character-list-template{colspan: col_count}
@@ -44,12 +47,14 @@
       %b Screenname
     %td.padding-5{class: klass}
       %b Facecast
-    %td.padding-5{class: klass}
-      - if local_assigns[:show_user]
-        %b User
-      - else
+    - if local_assigns[:show_settings] || !local_assigns[:show_user]
+      %td.padding-5{class: klass}
         %b Setting
-    %td.padding-5{class: klass}
+    - if local_assigns[:show_user]
+      %td.padding-5{class: klass}
+        %b User
+    - unless local_assigns[:hide_buttons]
+      %td.padding-5{class: klass}
   - characters.ordered.each do |character|
     - klass = cycle('even', 'odd')
     %tr
@@ -62,14 +67,14 @@
       %td.padding-5{class: klass, style: 'width:15%'}= character.template_name
       %td.padding-5{class: klass, style: 'width:15%'}= breakable_text(character.screenname)
       %td.padding-5{class: klass, style: 'width:20%'}= character.pb
-      %td.padding-5{class: klass, style: 'width:15%'}
-        - if local_assigns[:show_user]
-          = user_link(character.user)
-        - else
+      - if local_assigns[:show_settings] || !local_assigns[:show_user]
+        %td.padding-5{class: klass, style: 'width:15%'}
           = safe_join(character.settings.map { |setting| link_to(setting.name, tag_path(setting)) }, ', ')
-
-      %td.width-70.right-align{class: klass}
-        - unless local_assigns[:hide_buttons]
+      - if local_assigns[:show_user]
+        %td.padding-5{class: klass, style: 'width:10%'}
+          = user_link(character.user)
+      - unless local_assigns[:hide_buttons]
+        %td.width-70.right-align{class: klass}
           - if character.editable_by?(current_user)
             = link_to edit_character_path(character) do
               = image_tag "icons/pencil.png"

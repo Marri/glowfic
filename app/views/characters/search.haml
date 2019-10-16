@@ -22,8 +22,14 @@
               %td= label_tag :template_id, 'Template'
               %td= select_tag :template_id, options_from_collection_for_select(@templates, :id, :name, params[:template_id]), {class: 'chosen-select', prompt: '— Choose Template —'}
             %tr
+              %td= label_tag :setting_id, 'Setting'
+              %td= select_tag :setting_id, options_from_collection_for_select(@settings, :id, :name, params[:setting_id]), {class: 'chosen-select', prompt: '— Choose Setting —'}
+            %tr
               %td= label_tag :name, 'Name'
-              %td= text_field_tag :name, params[:name], style: 'width: 100%; margin: 5px 0px; box-sizing: border-box;'
+              %td= text_field_tag :name, params[:name], style: 'width: 100%; margin: 5px 0px;'
+            %tr
+              %td= label_tag :pb, 'Facecast'
+              %td= text_field_tag :pb, params[:pb], style: 'width: 100%; margin: 5px 0px;'
             %tr
               %td
               %td
@@ -37,44 +43,12 @@
                 %br
                 = check_box_tag :search_nickname, true, params[:commit] ? params[:search_nickname] : true, {class: 'vmid no-margin', style: 'margin-bottom: 3px;'}
                 = label_tag :search_nickname, "Nickname"
-                - if false # TODO
-                  %br
-                  = check_box_tag :search_aliases, true, params[:commit] ? params[:search_aliases] : true, {class: 'vmid no-margin', style: 'margin-bottom: 3px;'}
-                  = label_tag :search_aliases, "Aliases"
-            -# TODO: setting search, facecast search
+                %br
+                = check_box_tag :search_aliases, true, params[:commit] ? params[:search_aliases] : true, {class: 'vmid no-margin', style: 'margin-bottom: 3px;'}
+                = label_tag :search_aliases, "Aliases"
             %tr
               %td.centered{colspan: 2}= submit_tag "Search", class: 'button'
       %td.vtop
         - if @search_results.present?
           %table
-            %thead
-              %tr
-                - klass = cycle('even'.freeze, 'odd'.freeze)
-                %td.padding-5{class: klass}
-                  %b Name
-                %td.padding-5{class: klass}
-                  %b Nickname
-                %td.padding-5{class: klass}
-                  %b Screenname
-                %td.padding-5{class: klass}
-                  %b Facecast
-                %td.padding-5{class: klass}
-                  %b User
-                - if false # TODO once setting is fixed for characters
-                  %td.padding-5{class: klass}
-                    %b Setting
-            %tbody
-              - @search_results.each do |character|
-                - klass = cycle('even'.freeze, 'odd'.freeze)
-                %tr
-                  %td.padding-5{class: klass}= link_to character.name, character_path(character)
-                  %td.padding-5{class: klass, style: 'width:15%'}= character.template_name
-                  %td.padding-5{class: klass, style: 'width:15%'}= breakable_text(character.screenname)
-                  %td.padding-5{class: klass, style: 'width:25%'}= character.pb
-                  %td.padding-5{class: klass, style: 'width:15%'}= user_link(character.user)
-
-  - if @search_results && @search_results.total_pages > 1
-    %tfoot
-      %tr
-        %th.width-150.empty
-        %th= render 'posts/paginator', paginated: @search_results, no_per: true
+            = render 'characters/list_section', characters: @search_results, name: nil, show_user: true, show_settings: true, show_template: true, hide_buttons: true

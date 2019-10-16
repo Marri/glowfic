@@ -1102,7 +1102,7 @@ RSpec.describe CharactersController do
       character = create(:template_character)
       get :search, params: { commit: true, author_id: 9999 }
       expect(response).to have_http_status(200)
-      expect(flash[:error]).to eq('The specified author could not be found.')
+      expect(flash[:error]).to eq('User could not be found.')
       expect(assigns(:users)).to be_empty
       expect(assigns(:search_results)).to match_array([character])
     end
@@ -1121,7 +1121,7 @@ RSpec.describe CharactersController do
       character = create(:template_character)
       get :search, params: { commit: true, template_id: 9999 }
       expect(response).to have_http_status(200)
-      expect(flash[:error]).to eq('The specified template could not be found.')
+      expect(flash[:error]).to eq('Template could not be found.')
       expect(assigns(:templates)).to be_empty
       expect(assigns(:search_results)).to match_array([character])
     end
@@ -1147,68 +1147,17 @@ RSpec.describe CharactersController do
       expect(assigns(:search_results)).to match_array([found])
     end
 
-    context "searching" do
-      before(:each) do
-        @name = create(:character, name: 'a', screenname: 'b', template_name: 'c')
-        @nickname = create(:character, name: 'b', screenname: 'c', template_name: 'a')
-        @screenname = create(:character, name: 'c', screenname: 'a', template_name: 'b')
-      end
+    it 'handles failure' do
+      create(:character, name: 'a')
+      get :search, params: { commit: true, name: 'a', search_name: true, author_id: -1 }
+      expect(flash[:error]).to eq("User could not be found.")
+    end
 
-      it "searches names correctly" do
-        get :search, params: { commit: true, name: 'a', search_name: true }
-        expect(assigns(:search_results)).to match_array([@name])
-      end
-
-      it "searches screenname correctly" do
-        get :search, params: { commit: true, name: 'a', search_screenname: true }
-        expect(assigns(:search_results)).to match_array([@screenname])
-      end
-
-      it "searches nickname correctly" do
-        get :search, params: { commit: true, name: 'a', search_nickname: true }
-        expect(assigns(:search_results)).to match_array([@nickname])
-      end
-
-      it "searches name + screenname correctly" do
-        get :search, params: { commit: true, name: 'a', search_name: true, search_screenname: true }
-        expect(assigns(:search_results)).to match_array([@name, @screenname])
-      end
-
-      it "searches name + nickname correctly" do
-        get :search, params: { commit: true, name: 'a', search_name: true, search_nickname: true }
-        expect(assigns(:search_results)).to match_array([@name, @nickname])
-      end
-
-      it "searches nickname + screenname correctly" do
-        get :search, params: { commit: true, name: 'a', search_nickname: true, search_screenname: true }
-        expect(assigns(:search_results)).to match_array([@nickname, @screenname])
-      end
-
-      it "searches all correctly" do
-        get :search, params: { commit: true, name: 'a', search_name: true, search_screenname: true, search_nickname: true }
-        expect(assigns(:search_results)).to match_array([@name, @screenname, @nickname])
-      end
-
-      it "orders results correctly" do
-        template = create(:template)
-        user = template.user
-        char4 = create(:character, user: user, template: template, name: 'd')
-        char2 = create(:character, user: user, name: 'b')
-        char1 = create(:character, user: user, template: template, name: 'a')
-        char5 = create(:character, user: user, name: 'e')
-        char3 = create(:character, user: user, name: 'c')
-        get :search, params: { commit: true, author_id: user.id }
-        expect(assigns(:search_results)).to eq([char1, char2, char3, char4, char5])
-      end
-
-      it "paginates correctly" do
-        user = create(:user)
-        26.times do |i|
-          create(:character, user: user, name: "character#{i}")
-        end
-        get :search, params: { commit: true, author_id: user.id }
-        expect(assigns(:search_results).length).to eq(25)
-      end
+    it 'handles multiple failures' do
+      create(:character, name: 'a')
+      get :search, params: { commit: true, name: 'a', search_name: true, author_id: -1, template_id: -1 }
+      expect(flash[:error][:message]).to eq("Search could not be completed.")
+      expect(flash[:error][:array]).to match_array(["User could not be found.", "Template could not be found."])
     end
   end
 
