@@ -228,8 +228,12 @@ span.badge {
   .disabled { color: $font_color_paginate_link_disabled; }
 
   a { color: $font_color_paginate_link; }
-  a:hover { background-color: $bg_color_paginate_link_hover; }
   a:visited { color: $font_color_paginate_link_visited; }
+
+  a:hover {
+    background-color: $bg_color_paginate_link_hover;
+    color: $font_color_link_hover;
+  }
 }
 
 .paginator {
