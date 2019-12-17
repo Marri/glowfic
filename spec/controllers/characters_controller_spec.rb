@@ -113,13 +113,6 @@ RSpec.describe CharactersController do
       expect(flash[:error][:message]).to eq("Your character could not be saved.")
     end
 
-    it "fails with invalid params" do
-      login
-      post :create, params: { character: {} }
-      expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Your character could not be saved.")
-    end
-
     it "succeeds when valid" do
       expect(Character.count).to eq(0)
       test_name = 'Test character'
@@ -144,15 +137,6 @@ RSpec.describe CharactersController do
       expect(character.pb).to eq('Facecast')
       expect(character.description).to eq('Desc')
       expect(character.galleries).to match_array([gallery])
-    end
-
-    it "creates new templates when specified" do
-      expect(Template.count).to eq(0)
-      login
-      post :create, params: { new_template: '1', character: {template_attributes: {name: 'TemplateTest'}, name: 'Test'} }
-      expect(Template.count).to eq(1)
-      expect(Template.first.name).to eq('TemplateTest')
-      expect(assigns(:character).template_id).to eq(Template.first.id)
     end
 
     context "with views" do
@@ -389,24 +373,6 @@ RSpec.describe CharactersController do
       expect(flash[:error]).to eq("You do not have permission to edit that character.")
     end
 
-    it "fails with invalid params" do
-      character = create(:character)
-      login_as(character.user)
-      put :update, params: { id: character.id, character: {name: ''} }
-      expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Your character could not be saved.")
-    end
-
-    it "fails with invalid template params" do
-      character = create(:character)
-      login_as(character.user)
-      new_name = character.name + 'aaa'
-      put :update, params: { id: character.id, new_template: '1', character: {template_attributes: {name: ''}, name: new_name} }
-      expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Your character could not be saved.")
-      expect(character.reload.name).not_to eq(new_name)
-    end
-
     it "requires notes from moderators" do
       character = create(:character, name: 'a')
       login_as(create(:mod_user))
@@ -450,150 +416,6 @@ RSpec.describe CharactersController do
       expect(character.galleries).to match_array([gallery])
     end
 
-    it "does not persist values when invalid" do
-      character = create(:character)
-      user = character.user
-      login_as(user)
-      old_name = character.name
-      template = create(:template, user: user)
-      gallery = create(:gallery, user: user)
-      setting = create(:setting, name: 'Another World')
-
-      put :update, params: {
-        id: character.id,
-        character: {
-          name: '',
-          template_name: 'TemplateName',
-          screenname: 'a-new-test',
-          setting_ids: [setting.id],
-          template_id: template.id,
-          pb: 'Actor',
-          description: 'Description',
-          ungrouped_gallery_ids: [gallery.id]
-        }
-      }
-
-      expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Your character could not be saved.")
-      character.reload
-      expect(character.name).to eq(old_name)
-      expect(character.template_name).to be_nil
-      expect(character.screenname).to be_nil
-      expect(character.settings).to be_blank
-      expect(character.template).to be_blank
-      expect(character.pb).to be_nil
-      expect(character.description).to be_nil
-      expect(character.galleries).to be_blank
-    end
-
-    it "adds galleries by groups" do
-      user = create(:user)
-      group = create(:gallery_group)
-      gallery = create(:gallery, gallery_groups: [group], user: user)
-      character = create(:character, user: user)
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group.id]} }
-
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to match_array([gallery])
-      expect(character.ungrouped_gallery_ids).to be_blank
-      expect(character.characters_galleries.first).to be_added_by_group
-    end
-
-    it "creates new templates when specified" do
-      expect(Template.count).to eq(0)
-      character = create(:character)
-      login_as(character.user)
-      put :update, params: { id: character.id, new_template: '1', character: {template_attributes: {name: 'Test'}} }
-      expect(Template.count).to eq(1)
-      expect(Template.first.name).to eq('Test')
-      expect(character.reload.template_id).to eq(Template.first.id)
-    end
-
-    it "removes gallery only if not shared between groups" do
-      user = create(:user)
-      group1 = create(:gallery_group) # gallery1
-      group2 = create(:gallery_group) # -> gallery1
-      group3 = create(:gallery_group) # gallery2 ->
-      group4 = create(:gallery_group) # gallery2
-      gallery1 = create(:gallery, gallery_groups: [group1, group2], user: user)
-      gallery2 = create(:gallery, gallery_groups: [group3, group4], user: user)
-      character = create(:character, gallery_groups: [group1, group3, group4], user: user)
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group2.id, group4.id]} }
-
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group2, group4])
-      expect(character.galleries).to match_array([gallery1, gallery2])
-      expect(character.ungrouped_gallery_ids).to be_blank
-      expect(character.characters_galleries.map(&:added_by_group)).to eq([true, true])
-    end
-
-    it "does not remove gallery if tethered by group" do
-      user = create(:user)
-      group = create(:gallery_group)
-      gallery = create(:gallery, gallery_groups: [group], user: user)
-      character = create(:character, gallery_groups: [group], user: user)
-      character.ungrouped_gallery_ids = [gallery.id]
-      character.save!
-      expect(character.characters_galleries.first).not_to be_added_by_group
-
-      login_as(user)
-      put :update, params: { id: character.id, character: {ungrouped_gallery_ids: [''], gallery_group_ids: [group.id]} }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to match_array([gallery])
-      expect(character.ungrouped_gallery_ids).to be_blank
-      expect(character.characters_galleries.first).to be_added_by_group
-    end
-
-    it "works when adding both group and gallery" do
-      user = create(:user)
-      group = create(:gallery_group)
-      gallery = create(:gallery, gallery_groups: [group], user: user)
-      character = create(:character, user: user)
-
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group.id], ungrouped_gallery_ids: [gallery.id]} }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to match_array([gallery])
-      expect(character.ungrouped_gallery_ids).to eq([gallery.id])
-      expect(character.characters_galleries.first).not_to be_added_by_group
-    end
-
-    it "does not add another user's galleries" do
-      group = create(:gallery_group)
-      create(:gallery, gallery_groups: [group]) # gallery
-      character = create(:character)
-
-      login_as(character.user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group.id]} }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to be_blank
-    end
-
-    it "removes untethered galleries when group goes" do
-      user = create(:user)
-      group = create(:gallery_group)
-      create(:gallery, gallery_groups: [group], user: user) # gallery
-      character = create(:character, gallery_groups: [group], user: user)
-
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: ['']} }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to eq([])
-      expect(character.galleries).to eq([])
-    end
-
     context "with views" do
       render_views
       it "sets correct variables when invalid" do
@@ -615,54 +437,6 @@ RSpec.describe CharactersController do
         expect(assigns(:character).gallery_groups).to match_array([group])
         expect(assigns(:templates).map(&:name)).to match_array(templates.map(&:name))
       end
-    end
-
-    it "reorders galleries as necessary" do
-      character = create(:character)
-      g1 = create(:gallery, user: character.user)
-      g2 = create(:gallery, user: character.user)
-      character.galleries << g1
-      character.galleries << g2
-      g1_cg = CharactersGallery.where(gallery_id: g1.id).first
-      g2_cg = CharactersGallery.where(gallery_id: g2.id).first
-      expect(g1_cg.section_order).to eq(0)
-      expect(g2_cg.section_order).to eq(1)
-
-      login_as(character.user)
-      put :update, params: { id: character.id, character: {ungrouped_gallery_ids: [g2.id.to_s]} }
-
-      expect(character.reload.galleries.pluck(:id)).to eq([g2.id])
-      expect(g2_cg.reload.section_order).to eq(0)
-    end
-
-    it "orders settings by default" do
-      char = create(:character)
-      login_as(char.user)
-      setting1 = create(:setting)
-      setting3 = create(:setting)
-      setting2 = create(:setting)
-      put :update, params: {
-        id: char.id,
-        character: {setting_ids: [setting1, setting2, setting3].map(&:id)}
-      }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      expect(char.settings).to eq([setting1, setting2, setting3])
-    end
-
-    it "orders gallery groups by default" do
-      user = create(:user)
-      login_as(user)
-      char = create(:character, user: user)
-      group4 = create(:gallery_group, user: user)
-      group1 = create(:gallery_group, user: user)
-      group3 = create(:gallery_group, user: user)
-      group2 = create(:gallery_group, user: user)
-      put :update, params: {
-        id: char.id,
-        character: {gallery_group_ids: [group1, group2, group3, group4].map(&:id)}
-      }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      expect(char.gallery_groups).to eq([group1, group2, group3, group4])
     end
   end
 
