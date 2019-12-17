@@ -2,7 +2,7 @@
 class GalleriesController < UploadingController
   include Taggable
 
-  before_action :login_required, except: [:index, :show, :search]
+  before_action :login_required, except: [:index, :show]
   before_action :find_gallery, only: [:destroy, :edit, :update] # assumes login_required
   before_action :setup_new_icons, only: [:add, :icon]
   before_action :set_s3_url, only: [:edit, :add, :icon]
@@ -134,62 +134,36 @@ class GalleriesController < UploadingController
   end
 
   def icon
+    adder = Gallery::IconAdder.new(@gallery, user: current_user, params: params)
+
     if params[:image_ids].present?
-      unless @gallery # gallery required for adding icons from other galleries
-        flash[:error] = "Gallery could not be found."
-        redirect_to user_galleries_path(current_user) and return
-      end
-
-      icon_ids = params[:image_ids].split(',').map(&:to_i).reject(&:zero?)
-      icon_ids -= @gallery.icons.pluck(:id)
-      icons = Icon.where(id: icon_ids)
-      icons.each do |icon|
-        next unless icon.user_id == current_user.id
-        @gallery.icons << icon
-      end
-      flash[:success] = "Icons added to gallery successfully."
-      redirect_to gallery_path(@gallery) and return
-    end
-
-    icons = (params[:icons] || []).reject { |icon| icon.values.all?(&:blank?) }
-    if icons.empty?
-      flash.now[:error] = "You have to enter something."
-      render :add and return
-    end
-
-    failed = false
-    @icons = icons
-    icons = []
-    @icons.each_with_index do |icon, index|
-      icon = Icon.new(icon_params(icon.except('filename', 'file')))
-      icon.user = current_user
-      unless icon.valid?
-        @icons[index]['url'] = @icons[index]['s3_key'] = '' if icon.errors.messages[:url]&.include?('is invalid')
-        flash.now[:error] ||= {}
-        flash.now[:error][:array] ||= []
-        flash.now[:error][:array] += icon.errors.full_messages.map{|m| "Icon "+(index+1).to_s+": "+m.downcase}
-        failed = true and next
-      end
-      icons << icon
-    end
-
-    if failed
-      flash.now[:error][:message] = "Your icons could not be saved."
-      render :add and return
-    elsif icons.empty?
-      @icons = []
-      flash.now[:error] = "Your icons could not be saved."
-      render :add
-    elsif icons.all?(&:save)
-      flash[:success] = "Icons saved successfully."
-      if @gallery
-        icons.each do |icon| @gallery.icons << icon end
-        redirect_to gallery_path(@gallery) and return
-      end
-      redirect_to user_gallery_path(id: 0, user_id: current_user.id)
+      adder.assign_existing
     else
-      flash.now[:error] = "Your icons could not be saved."
-      render :add
+      adder.create_new
+    end
+    @icons = adder.icons
+    if adder.errors.present?
+      error = adder.errors.full_messages.first
+      if adder.icon_errors.present?
+        flash[:error] = {
+          message: error,
+          array: adder.icon_errors
+        }
+      else
+        flash[:error] = error
+      end
+      if @gallery.nil? && params[:image_ids].present?
+        redirect_to user_galleries_path(current_user)
+      else
+        render :add
+      end
+    else
+      flash[:success] = "Icons #{params[:image_ids].present? ? 'added to gallery' : 'saved'} successfully."
+      if @gallery
+        redirect_to gallery_path(@gallery)
+      else
+        redirect_to user_gallery_path(id: 0, user_id: current_user.id)
+      end
     end
   end
 
