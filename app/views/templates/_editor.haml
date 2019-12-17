@@ -1,14 +1,14 @@
-%tbody
+%tbody.alternating
   %tr
     %th.sub Name
-    %td.even= f.text_field :name, placeholder: "Template Name", class: 'text'
+    %td= f.text_field :name, placeholder: "Template Name", class: 'text'
   %tr
     %th.sub.vtop Description
-    %td.odd= f.text_area :description
+    %td= f.text_area :description
   - if @selectable_characters.present?
     %tr
       %th.sub.vtop Characters
-      %td.even
+      %td
         = collection_check_boxes :template, :character_ids, @selectable_characters, :id, :name, selected: @character_ids do |box|
           = box.check_box
           = box.label

@@ -1,6 +1,5 @@
 %tr{id: "gallery-#{gallery.id}"}
-  - klass = cycle('even', 'odd')
-  %td.gallery-name{class: klass}
+  %td.gallery-name
     = link_to gallery.name, gallery_path(gallery)
     .tag-box
       - gallery.gallery_groups_data.each do |group|
@@ -8,8 +7,8 @@
         = link_to tag_path(group.id), class: 'tag-item-link' do
           %span.tag-item.semiplusopaque
             = group.name
-  %td.width-150.centered.gallery-icon-count{class: klass}= gallery.icon_count
-  %td.width-70.gallery-buttons{class: klass}
+  %td.width-150.centered.gallery-icon-count= gallery.icon_count
+  %td.width-70.gallery-buttons
     - if gallery.user_id == current_user.try(:id)
       = link_to add_gallery_path(gallery), title: "Add Icons", class: 'gallery-add' do
         = image_tag "icons/add.png"
@@ -17,13 +16,13 @@
         = image_tag "icons/pencil.png"
       = link_to gallery_path(gallery), title: "Delete Gallery", method: :delete, data: { confirm: "Are you sure you want to delete #{gallery.name}?" }, class: 'gallery-delete' do
         = image_tag "icons/cross.png"
-  %td.centered.width-70{class: klass}
+  %td.centered.width-70
     .gallery-box.vmid{id: "minmax-#{gallery.id}", style: 'display: inline-block;', data: {id: gallery.id}}
       .view-button{style: 'padding: 5px 7px;'}
         = image_tag "icons/bullet_arrow_down.png", class: 'vmid down-arrow'
         = image_tag "icons/bullet_arrow_up.png", class: 'vmid hidden up-arrow'
 %tr
-  %td.padding-5.hidden{class: klass, id: "icons-#{gallery.id}", colspan: 4}
+  %td.padding-5.hidden{id: "icons-#{gallery.id}", colspan: 4}
     = form_tag delete_multiple_icons_path, method: :delete do
       .gallery{style: 'padding: 0px;'}
       - if gallery.user_id == current_user.try(:id)

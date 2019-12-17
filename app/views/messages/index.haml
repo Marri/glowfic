@@ -1,5 +1,5 @@
 = form_tag mark_messages_path, method: :post do
-  %table
+  %table.alternating
     %thead
       = render @view
       - if @messages.present?
@@ -16,22 +16,21 @@
       - else
         - @messages.each do |message|
           %tr.message-row
-            - klass = cycle('even', 'odd')
-            - klass += ' bold' if @view == 'inbox' and message.unread?
-            %td.padding-left-5{class: klass}= # just padding
-            %td{class: klass}
+            - bold = @view == 'inbox' && message.unread? ? 'bold' : ''
+            %td.padding-left-5{class: bold}= # just padding
+            %td{class: bold}
               = link_to message.unempty_subject, message_path(message)
               - if message.num_in_thread.to_i > 1
                 (#{message.num_in_thread})
-            %td{class: klass}
+            %td{class: bold}
               - if @view == 'inbox'
                 = message_sender(message)
               - else
                 = user_link(message.recipient)
-            %td{class: klass}= pretty_time(message.last_in_thread.created_at)
-            %td{class: klass}= check_box_tag :"marked_ids[]", message.id, false, class: 'select-all-box', id: nil
+            %td{class: bold}= pretty_time(message.last_in_thread.created_at)
+            %td{class: bold}= check_box_tag :"marked_ids[]", message.id, false, class: 'select-all-box', id: nil
         %tr
-          %td.right-align.padding-5{colspan: 5, class: cycle('even', 'odd')}
+          %td.right-align.padding-5{colspan: 5}
             - if @view == 'inbox'
               = submit_tag "Mark Read", class: 'button'
               = submit_tag "Mark Unread", class: 'button'

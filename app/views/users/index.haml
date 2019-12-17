@@ -1,4 +1,4 @@
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: 3} Users
@@ -15,10 +15,9 @@
   %tbody
     - @users.each do |user|
       %tr.user-row
-        - klass = cycle('even', 'odd')
-        %td.padding-10.username{class: klass}= link_to user.username, user_path(user)
-        %td.padding-10.user-moiety.centered.width-70{class: klass}= color_block(user)
-        %td.padding-10.user-date{class: klass}= pretty_time(user.created_at)
+        %td.padding-10.username= link_to user.username, user_path(user)
+        %td.padding-10.user-moiety.centered.width-70= color_block(user)
+        %td.padding-10.user-date= pretty_time(user.created_at)
   - if @users.total_pages > 1
     %tfoot
       %tr

@@ -3,7 +3,8 @@
   - if current_user&.admin?
     = link_to new_news_path do
       .link-box.action-new + New News Post
-= render @news
+.alternating
+  = render @news
 
 - if @news.total_entries > @news.per_page
   .paginator.centered.sub

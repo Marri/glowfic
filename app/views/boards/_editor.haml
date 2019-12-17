@@ -1,21 +1,21 @@
-%tbody
+%tbody.alternating
   %tr
     %th.sub Name
-    %td.even= f.text_field :name, placeholder: "Continuity Name", class: 'text'
+    %td= f.text_field :name, placeholder: "Continuity Name", class: 'text'
   %tr
     %th.sub Creator
-    %td.odd= @board.creator.username
+    %td= @board.creator.username
   %tr
     %th.sub Coauthors
-    %td.even
+    %td
       = f.collection_select(:coauthor_ids, @authors, :id, :username, {selected: @board.coauthors.pluck(:user_id)}, {multiple: true})
   %tr
     %th.sub Cameos
-    %td.odd
+    %td
       = f.collection_select(:cameo_ids, @cameos, :id, :username, {selected: @board.cameos.pluck(:user_id)}, {multiple: true})
   %tr
     %th.sub.vtop Description
-    %td.even= f.text_area :description
+    %td= f.text_area :description
 %tfoot
   %tr
     %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

@@ -5,7 +5,7 @@
       Grouped &raquo;
 
 - if params[:view] == 'bucket'
-  %table
+  %table.alternating
     %thead
       %tr
         %th.table-title{colspan: 2}
@@ -19,18 +19,17 @@
     %tbody
       - current_user.favorites.includes(:favorite).order(:favorite_type).each do |favorite_rec|
         %tr
-          - klass = cycle('even', 'odd')
-          %td{class: klass}
+          %td
             - if favorite_rec.favorite.is_a? User
               = user_link(favorite_rec.favorite)
             - elsif favorite_rec.favorite.is_a? Board
               = link_to favorite_rec.favorite.name, board_path(favorite_rec.favorite)
             - else
               = link_to favorite_rec.favorite.subject, post_path(favorite_rec.favorite)
-          %td{class: klass}= favorite_rec.favorite_type == 'Board' ? 'Continuity' : favorite_rec.favorite_type
+          %td= favorite_rec.favorite_type == 'Board' ? 'Continuity' : favorite_rec.favorite_type
       - if current_user.favorites.empty?
         %tr
-          %td.centered.no-posts.odd{colspan: 2} — No favorites yet —
+          %td.centered.no-posts{colspan: 2} — No favorites yet —
 
 - else
   = render 'posts/list', posts: @posts, show_unread_count: true

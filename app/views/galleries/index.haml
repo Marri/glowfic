@@ -4,7 +4,7 @@
     &raquo;
     %b #{@user.username}'s Galleries
 
-%table
+%table.alternating-doubles
   %thead
     %tr
       %th.gallery-table-title{colspan: 4}
@@ -21,19 +21,19 @@
       %th.sub.width-70 Expand
   %tbody
     %tr
-      %td.odd.gallery-name= link_to '[Galleryless]', user_gallery_path(id: 0, user_id: @user.id)
-      %td.width-150.centered.odd.gallery-icon-count= @user.icons.where(has_gallery: false).count
-      %td.width-70.odd.gallery-buttons
+      %td.gallery-name= link_to '[Galleryless]', user_gallery_path(id: 0, user_id: @user.id)
+      %td.width-150.centered.gallery-icon-count= @user.icons.where(has_gallery: false).count
+      %td.width-70.gallery-buttons
         - if @user.id == current_user.try(:id)
           = link_to add_gallery_path(id: 0), title: "Add Icons", class: 'gallery-add' do
             = image_tag "icons/add.png"
-      %td.centered.width-70.odd
+      %td.centered.width-70
         .gallery-box.vmid{id: "minmax-0", style: 'display: inline-block;', data: {id: 0}}
           .view-button{style: 'padding: 5px 7px;'}
             = image_tag "icons/bullet_arrow_down.png", class: 'vmid down-arrow'
             = image_tag "icons/bullet_arrow_up.png", class: 'vmid hidden up-arrow'
     %tr
-      %td.padding-5.hidden.odd{id: "icons-0", colspan: 4}
+      %td.padding-5.hidden{id: "icons-0", colspan: 4}
         = form_tag delete_multiple_icons_path, method: :delete do
           .gallery{style: 'padding: 0px;'}
           - if @user.id == current_user.try(:id)

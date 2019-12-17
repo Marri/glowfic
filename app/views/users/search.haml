@@ -22,7 +22,7 @@
               %td.centered{colspan: 2}= submit_tag "Search", class: 'button'
       %td.vtop
         - if @search_results.present?
-          %table
+          %table.alternating
             %thead
               %tr
                 %th.sub Name
@@ -31,10 +31,9 @@
             %tbody
               - @search_results.each do |user|
                 %tr.user-row
-                  - klass = cycle('even', 'odd')
-                  %td.padding-10.username{class: klass}= user_link(user)
-                  %td.padding-10.user-moiety.centered.width-70{class: klass}= color_block(user)
-                  %td.padding-10.user-date{class: klass}= pretty_time(user.created_at)
+                  %td.padding-10.username= user_link(user)
+                  %td.padding-10.user-moiety.centered.width-70= color_block(user)
+                  %td.padding-10.user-date= pretty_time(user.created_at)
 
   - if @search_results && @search_results.total_pages > 1
     %tfoot

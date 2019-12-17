@@ -10,14 +10,14 @@
 
 = form_for @character, url: character_path(@character), method: :put do |f|
   .character-form
-    %table.form-table
+    %table.form-table.alternating
       %thead
         %tr
           %th.editor-title{colspan: 2}= @character.name
       = render 'editor', f: f
 
     %br
-    %table.form-table
+    %table.form-table.alternating
       %thead
         %tr
           %th.editor-title
@@ -28,7 +28,7 @@
       %tbody
         - @aliases.each do |calias|
           %tr
-            %td.padding-5{class: cycle('even', 'odd')}
+            %td.padding-5
               = calias.name
               - if @character.user_id == current_user.id
                 .float-right
@@ -36,6 +36,6 @@
                     = image_tag "icons/cross.png"
         - if @aliases.empty?
           %tr
-            %td.centered.padding-10{ class: cycle('even', 'odd'), colspan: 6 } — No aliases yet —
+            %td.centered.padding-10{colspan: 6} — No aliases yet —
 
   = render 'icon_selector'

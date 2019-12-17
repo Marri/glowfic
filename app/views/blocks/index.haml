@@ -5,7 +5,7 @@
     = image_tag "icons/exclamation.png".freeze, class: 'vmid'.freeze
     Warning: blocking is not currently implemented. This page should remember any blocks you have created, but they will not take effect yet.
 
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: 5}
@@ -20,26 +20,25 @@
       %th.sub
   %tbody
     - @blocks.ordered.each do |block|
-      - klass = cycle('even', 'odd')
       %tr
-        %td.padding-5{class: klass}
+        %td.padding-5
           = user_link(block.blocked_user)
-        %td.padding-5{class: klass}= block.block_interactions? ? 'Yes' : 'No'
-        %td.padding-5{class: klass}
+        %td.padding-5= block.block_interactions? ? 'Yes' : 'No'
+        %td.padding-5
           - if block.hide_their_content?
             All
           - elsif block.hide_their_posts?
             Posts
           - else
             None
-        %td.padding-5{class: klass}
+        %td.padding-5
           - if block.hide_my_content?
             All
           - elsif block.hide_my_posts?
             Posts
           - else
             None
-        %td.width-70.right-align{class: klass}
+        %td.width-70.right-align
           = link_to edit_block_path(block) do
             = image_tag "icons/pencil.png"
           = link_to block_path(block), :method => :delete, data: { confirm: "Are you sure you want to unblock #{block.blocked_user.username}?" } do
@@ -47,4 +46,4 @@
           &nbsp;
     - if @blocks.empty?
       %tr
-        %td.centered.padding-10.no-posts{ class: cycle('even', 'odd'), colspan: 5 } — No blocks yet —
+        %td.centered.padding-10.no-posts{colspan: 5} — No blocks yet —

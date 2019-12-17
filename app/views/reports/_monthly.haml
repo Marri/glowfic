@@ -18,5 +18,6 @@
           %th.sub Authors
           %th.sub Replies
           %th.sub Last Updated
+      %tbody.alternating
         - posts.each do |post|
           = render 'posts/list_item', post: post, hide_continuity: false

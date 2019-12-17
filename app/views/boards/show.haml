@@ -40,20 +40,24 @@
     %tbody
       %tr
         %td.continuity-spacer{colspan: 5}
-      - @board_sections.each do |section|
+    - @board_sections.each do |section|
+      %tbody
         %tr
           %th.sub.continuity-header{colspan: 5, id: "section-#{section.id}"}= link_to section.name, board_section_path(section)
+      %tbody.alternating
         - if section.description.present?
           %tr
-            %td.written-content{colspan: 5, class: cycle('even', 'odd')}= shortened_desc(section.description, section.id)
+            %td.written-content{colspan: 5}= shortened_desc(section.description, section.id)
         - section_posts = posts_from_relation(section.posts.ordered_in_section, no_tests: false, with_pagination: false)
         - if section_posts.present?
           = render partial: 'posts/list_item', collection: section_posts, as: :post, locals: {hide_continuity: true}
         - else
           %tr
-            %td.centered.padding-10.no-posts{ class: cycle('even', 'odd'), colspan: 6 } — No posts yet —
+            %td.centered.padding-10.no-posts{colspan: 6} — No posts yet —
+      %tbody
         %tr
           %td.continuity-spacer{colspan: 5}
+    %tbody.alternating
       = render partial: 'posts/list_item', collection: @posts, as: :post, locals: {hide_continuity: true}
 - else
   - if @board.description.present?

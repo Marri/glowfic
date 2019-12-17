@@ -23,11 +23,19 @@ a:visited { color: $font_color_link_visited; }
 .form-table-ender { background-color: $bg_color_ender; }
 
 /* - content */
-#content .odd, #content .even, .post-post, .post-reply, #post-editor {
+%unalternating {
   background-color: $bg_color_even !important;
   border-top: solid 1px $bg_color_content_border;
+}
+
+.odd, .even, div.alternating {
+  @extend %unalternating;
   blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2) !important; }
 }
+
+ul.alternating { @extend %unalternating; }
+table.alternating tbody, tbody.alternating { @extend %unalternating; }
+table.alternating-doubles tbody, tbody.alternating-doubles { @extend %unalternating; }
 
 .post-edit-box img {
   width: 1em;
@@ -50,6 +58,11 @@ a:visited { color: $font_color_link_visited; }
 // TODO: Check pagination displays fine in this theme
 .pagination .current { background-color: $bg_color_paginate_current_page; }
 .pagination a:visited { color: $font_color_paginate_link_visited; }
+
+td.post-list-buttons {
+  background-color: $bg_color_subber;
+  color: $font_color_subber;
+}
 
 /* - icons */
 .replace-icon, .icons-box { background-color: $bg_color_icon; }

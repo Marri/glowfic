@@ -6,7 +6,8 @@
 .content-header
   %span= @page_title
 
-= render @messages
-%br
-- unless @message.parent.site_message?
-  = render 'editor'
+.alternating
+  = render @messages
+  %br
+  - unless @message.parent.site_message?
+    = render 'editor'

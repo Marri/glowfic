@@ -8,7 +8,7 @@
     &raquo;
     %b= @view.pluralize.titlecase
 
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: col_count}
@@ -31,21 +31,20 @@
       %th.sub
   %tbody
     - @tags.each do |tag|
-      - klass = cycle('even', 'odd')
       %tr
-        %td{class: klass}= link_to tag.name, tag_path(tag)
+        %td= link_to tag.name, tag_path(tag)
         - unless @view.present?
-          %td{class: klass}= link_to tag.type.titlecase, tags_path(view: tag.type)
+          %td= link_to tag.type.titlecase, tags_path(view: tag.type)
         - if @view == 'Setting'
-          %td{class: klass}
+          %td
             = link_to tag.user do
               - if tag.owned?
                 = tag.user.username
               - else
                 %em= tag.user.deleted? ? 'deleted user' : tag.user.username
-        %td{class: klass}= tag.post_count
-        %td{class: klass}= tag.character_count
-        %td.width-70.right-align{class: klass}
+        %td= tag.post_count
+        %td= tag.character_count
+        %td.width-70.right-align
           - if tag.editable_by?(current_user)
             = link_to edit_tag_path(tag) do
               = image_tag "icons/pencil.png"
@@ -55,7 +54,7 @@
             &nbsp;
     - if @tags.empty?
       %tr
-        %td.centered.padding-10{ class: cycle('even', 'odd'), colspan: col_count } — No matching tags —
+        %td.centered.padding-10{colspan: col_count} — No matching tags —
   - if @tags.total_pages > 1
     %tfoot
       %tr

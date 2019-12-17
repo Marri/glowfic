@@ -1,15 +1,15 @@
-%tbody
+%tbody.alternating
   %tr
     %th.sub Name
-    %td.even= f.text_field :name, placeholder: "Section Name", class: 'text'
+    %td= f.text_field :name, placeholder: "Section Name", class: 'text'
   %tr
     %th.sub Index
-    %td.odd
+    %td
       = @section.index.name
       = f.hidden_field :index_id
   %tr
     %th.sub.vtop Description
-    %td.even= f.text_area :description
+    %td= f.text_area :description
 %tfoot
   %tr
     %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

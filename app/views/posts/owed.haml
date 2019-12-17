@@ -28,7 +28,7 @@
   - unless @posts.empty?
     %table
       %tr
-        %td.right-align.padding-5{colspan: 7, class: cycle('even', 'odd')}
+        %td.post-list-buttons{colspan: 7}
           -if params[:view] == 'hidden'
             = submit_tag 'Show in Replies Owed', class: 'button'
           - else

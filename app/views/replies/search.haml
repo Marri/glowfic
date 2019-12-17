@@ -59,12 +59,11 @@
               %td.centered{colspan: 2}= submit_tag "Search", class: 'button'
       %td.vtop
         - if @search_results.present?
-          %table
+          %table.alternating
             %tbody
               - @search_results.each do |reply|
-                - klass = cycle('even'.freeze, 'odd'.freeze)
                 %tr
-                  %td.vtop{class: klass}
+                  %td.vtop
                     .post-info-box
                       - if reply.icon_id && reply.keyword && !params[:condensed]
                         .post-icon

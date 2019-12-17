@@ -1,7 +1,6 @@
 %tr
-  - klass = cycle('even', 'odd')
   - replies_count = post.reply_count
-  %td.post-completed.vtop{class: [klass, (post.completed? ? 'post-complete' : 'post-incomplete')]}
+  %td.post-completed.vtop{class: (post.completed? ? 'post-complete' : 'post-incomplete')}
     - if post.completed?
       = image_tag "icons/book.png", class: 'vmid', title: "Thread Complete"
     - elsif post.on_hiatus?
@@ -12,7 +11,7 @@
       = privacy_icon(post.privacy)
     - if !current_user.try(:hide_warnings) && post.has_content_warnings?
       = image_tag "icons/exclamation.png", class: 'vmid', title: "Content Warning: " + post.content_warnings.pluck(:name).join(', '), alt: '!'
-  %td.post-subject.vtop{class: klass}
+  %td.post-subject.vtop
     - if logged_in?
       - if unread_post?(post, unread_ids) || (@show_unread && !opened_post?(post, opened_ids))
         = link_to unread_path(post) do
@@ -41,23 +40,23 @@
             - (total_pages-2).upto(total_pages) do |index|
               = link_to index, post_path(post, page: index)
   - unless local_assigns[:hide_continuity]
-    %td.post-board.vtop{class: klass}= link_to post.board_name, anchored_board_path(post)
-  %td.post-authors.vtop{class: klass}= author_links(post).html_safe
-  %td.width-70.post-replies.vtop{class: klass}= link_to replies_count, stats_post_path(post)
+    %td.post-board.vtop= link_to post.board_name, anchored_board_path(post)
+  %td.post-authors.vtop= author_links(post).html_safe
+  %td.width-70.post-replies.vtop= link_to replies_count, stats_post_path(post)
   - if logged_in? && local_assigns[:show_unread_count]
-    %td.width-70.vtop{class: klass}
+    %td.width-70.vtop
       - if @opened_ids.include?(post.id) && unread_ids.include?(post.id)
         = Reply.where(post_id: post.id).where('created_at > ?', post.last_read(current_user)).count
       - else
         \-
-  %td.post-time.vtop{class: klass}
+  %td.post-time.vtop
     = pretty_time(post.tagged_at)
     by
     = user_mem_link(post.last_user_id, post.last_user_name, post.last_user_deleted?)
   - if local_assigns[:check_box_name]
-    %td.post-check-box{class: klass}= check_box_tag check_box_name, post.id, false, class: 'checkbox', id: nil
+    %td.post-check-box= check_box_tag check_box_name, post.id, false, class: 'checkbox', id: nil
 - if post.respond_to?(:index_description)
   %tr
-    %td{class: klass}
-    %td{class: klass, colspan: 5, style: 'padding-top: 0px;'}
+    %td
+    %td{colspan: 5, style: 'padding-top: 0px;'}
       %span.details= sanitize_simple_link_text(post.index_description)

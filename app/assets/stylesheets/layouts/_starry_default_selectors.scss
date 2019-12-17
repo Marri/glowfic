@@ -80,14 +80,38 @@ a:visited { color: $font_color_link_visited; }
 }
 
 /* - content */
-.even, .post-post, .post-reply:nth-child(even), #post-editor {
+.even {
   background-color: $bg_color_even;
   blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, $opacity_blockquote); }
 }
 
-.odd, .post-reply:nth-child(odd), .post-post + #post-editor, .post-post + a + #post-editor {
+.odd {
   background-color: $bg_color_odd;
   blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, $opacity_blockquote); }
+}
+
+@mixin alternating($type, $subtype: '') {
+  #{$type}:nth-child(2n) #{$subtype} { background-color: $bg_color_odd; }
+  #{$type}:nth-child(2n+1) #{$subtype} { background-color: $bg_color_even; }
+}
+
+ul.alternating { @include alternating('li') }
+table.alternating tbody, tbody.alternating { @include alternating('tr', 'td') }
+
+table.alternating-doubles tbody, tbody.alternating-doubles {
+  tr:nth-child(4n+1), tr:nth-child(4n+2) {
+    td { background-color: $bg_color_even; }
+  }
+
+  tr:nth-child(4n), tr:nth-child(4n+3) {
+    td { background-color: $bg_color_odd; }
+  }
+}
+
+div.alternating {
+  @include alternating('.post-container')
+  .post-container:nth-child(2n) blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, 0.2); }
+  .post-container:nth-child(2n+1) blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2); }
 }
 
 /* - replies.scss */
@@ -151,6 +175,11 @@ a:visited { color: $font_color_link_visited; }
 .pagination a { color: $font_color_paginate_link; }
 .pagination a:visited { color: $font_color_paginate_link_visited; }
 .pagination .disabled { color: $font_color_paginate_link_disabled; }
+
+td.post-list-buttons {
+  background-color: $bg_color_ender;
+  color: $font_color_ender;
+}
 
 /* - icons */
 .replace-icon, .icons-box { background-color: $bg_color_icon; }

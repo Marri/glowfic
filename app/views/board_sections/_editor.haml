@@ -1,15 +1,17 @@
-%tr
-  %th.sub Continuity
-  %td.odd
-    - if @board_section.posts.present?
-      = @board_section.board.name
-    - else
-      = f.select :board_id, options_from_collection_for_select(allowed_boards(@board_section, current_user), :id, :name, @board_section.board_id), {}, class: 'chosen-select'
-%tr
-  %th.sub Name
-  %td.even= f.text_field :name, placeholder: "Section Name", class: 'text'
-%tr
-  %th.sub.vtop Description
-  %td.odd= f.text_area :description
-%tr
-  %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'
+%tbody.alternating
+  %tr
+    %th.sub Continuity
+    %td
+      - if @board_section.posts.present?
+        = @board_section.board.name
+      - else
+        = f.select :board_id, options_from_collection_for_select(allowed_boards(@board_section, current_user), :id, :name, @board_section.board_id), {}, class: 'chosen-select'
+  %tr
+    %th.sub Name
+    %td= f.text_field :name, placeholder: "Section Name", class: 'text'
+  %tr
+    %th.sub.vtop Description
+    %td= f.text_area :description
+%tfoot
+  %tr
+    %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

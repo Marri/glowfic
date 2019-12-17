@@ -1,6 +1,6 @@
 %tr
   %th.sub Name
-  %td{class: cycle('even', 'odd')}= f.text_field :name, placeholder: "Gallery Name", class: 'text'
+  %td= f.text_field :name, placeholder: "Gallery Name", class: 'text'
 %tr
   %th.vtop.sub Groups
-  %td{class: cycle('even', 'odd')}= tag_select(gallery, f, :gallery_groups)
+  %td= tag_select(gallery, f, :gallery_groups)

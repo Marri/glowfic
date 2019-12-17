@@ -9,14 +9,14 @@
 
 = form_for @board_section, url: board_section_path(@board_section), method: :put do |f|
   %table.form-table
-    %tr
-      %th.editor-title{colspan: 2} Edit #{@board_section.name}
+    %thead
+      %tr
+        %th.editor-title{colspan: 2} Edit #{@board_section.name}
     = render 'editor', f: f
 
 - if @board_section.posts.present?
   %br
   %br
-  - reset_cycle
   #reorder-posts-table
     .content-header
       Organize Section Posts
@@ -27,9 +27,9 @@
       .saveconf.float-right.hidden
         = image_tag "icons/accept.png", title: 'Saved', class: 'vmid', alt: ''
         Saved
-    %ul.sortable.table-list
+    %ul.alternating.sortable.table-list
       - @board_section.posts.ordered_in_section.each do |post|
-        %li.section-ordered{class: cycle('even', 'odd'), data: {id: post.id, type: post.class.to_s, order: post.section_order}}
+        %li.section-ordered{data: {id: post.id, type: post.class.to_s, order: post.section_order}}
           .section-ordered-handle
             = image_tag "icons/arrow_double.png", title: 'Reorder', class: 'disabled-arrow', alt: '↕'
           = link_to post.subject, post_path(post)

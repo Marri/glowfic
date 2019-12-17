@@ -1,4 +1,4 @@
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: 4} Facecasts
@@ -10,12 +10,11 @@
   %tbody
     - @pbs.each do |obj|
       %tr
-        - klass = cycle('even', 'odd')
-        %td.padding-5{class: klass}= obj.pb
-        %td.padding-5{class: klass}= obj.type
-        %td.padding-5{class: klass}
+        %td.padding-5= obj.pb
+        %td.padding-5= obj.type
+        %td.padding-5
           - if obj.type == Character
             = link_to obj.item_name, character_path(obj.item_id)
           - else
             = link_to obj.item_name, template_path(obj.item_id)
-        %td.padding-5{class: klass}= user_mem_link(obj.user_id, obj.username, false)
+        %td.padding-5= user_mem_link(obj.user_id, obj.username, false)

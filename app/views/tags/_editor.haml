@@ -1,30 +1,30 @@
 %tbody
   %tr
     %th.sub Name
-    %td{class: cycle('even', 'odd')}
+    %td
       - if current_user.admin? || f.object.user_id == current_user.id
         = f.text_field :name, placeholder: "Tag Name", class: 'text'
       - else
         = f.object.name
   %tr
     %th.sub Owner
-    %td{class: cycle('even', 'odd')}
+    %td
       - if current_user.admin? || f.object.user_id == current_user.id
         = f.select :user_id, options_from_collection_for_select(User.ordered.active, :id, :username, f.object.user_id), {}, {class: 'chosen-select'}
       - else
         = user_link(f.object.user)
   %tr
     %th.sub Owned?
-    %td{class: cycle('even', 'odd')}
+    %td
       = f.check_box :owned, class: 'vmid width-15'
       = f.label :owned, 'Tag belongs to owner'
   - if f.object.is_a?(Setting)
     %tr
       %th.sub Parent Settings
-      %td{class: cycle('even', 'odd')}= tag_select(@tag, f, :parent_settings, data: {tag_id: f.object.id})
+      %td= tag_select(@tag, f, :parent_settings, data: {tag_id: f.object.id})
     %tr
       %th.sub.vtop Description
-      %td{class: cycle('even', 'odd')}= f.text_area :description, placeholder: 'Description', cols: 35
+      %td= f.text_area :description, placeholder: 'Description', cols: 35
 %tfoot
   %tr
     %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

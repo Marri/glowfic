@@ -1,20 +1,19 @@
 %tbody
   %tr
     %th.sub Name
-    %td{class: cycle('even', 'odd')}= f.text_field :name, placeholder: "Character Name", class: 'text'
+    %td= f.text_field :name, placeholder: "Character Name", class: 'text'
   %tr
     %th.sub Nickname
-    %td{class: cycle('even', 'odd')}= f.text_field :template_name, placeholder: "Template Nickname", class: 'text'
+    %td= f.text_field :template_name, placeholder: "Template Nickname", class: 'text'
   %tr
     %th.sub Screenname
-    %td{class: cycle('even', 'odd')}= f.text_field :screenname, placeholder: "Screen Name", class: 'text'
+    %td= f.text_field :screenname, placeholder: "Screen Name", class: 'text'
   %tr
     %th.sub Setting
-    %td{class: cycle('even', 'odd')}= tag_select(@character, f, :settings)
+    %td= tag_select(@character, f, :settings)
   %tr
-    - klass = cycle('even', 'odd')
     %th.sub.vtop Template
-    %td{class: klass}
+    %td
       = f.collection_select :template_id, @templates, :id, :name, {include_blank: '— Choose Template —'}, {class: 'text chosen-select', disabled: params[:new_template].present?}
       - if @character.user == current_user
         %br
@@ -24,27 +23,27 @@
     %tr#create_template{class: ('hidden' unless params[:new_template])}
       %th.sub &#8627; Name
       = f.fields_for :template do |ff|
-        %td{class: klass}= ff.text_field :name, placeholder: "Template Name", class: 'text'
+        %td= ff.text_field :name, placeholder: "Template Name", class: 'text'
   - if @character.user.galleries.present?
     %tr
       %th.sub Galleries
-      %td{class: cycle('even', 'odd')}
+      %td
         = f.collection_select(:ungrouped_gallery_ids,
         @character.user.galleries.ordered_by_name,
         :id, :name, {selected: @character.ungrouped_gallery_ids}, {multiple: true})
     %tr
       %th.sub Gallery Groups
-      %td{class: cycle('even', 'odd')}= tag_select(@character, f, :gallery_groups)
+      %td= tag_select(@character, f, :gallery_groups)
   %tr
     %th.sub Facecast
-    %td{class: cycle('even', 'odd')}= f.text_field :pb, placeholder: "Facecast", class: 'text'
+    %td= f.text_field :pb, placeholder: "Facecast", class: 'text'
   %tr
     %th.sub.vtop Description
-    %td{class: cycle('even', 'odd')}= f.text_area :description, placeholder: 'Description', class: 'text', cols: 35
+    %td= f.text_area :description, placeholder: 'Description', class: 'text', cols: 35
   - if current_user.id != @character.user_id
     %tr
       %th.sub.vtop Moderator Note
-      %td{class: cycle('even', 'odd')}= f.text_area :audit_comment, placeholder: 'Explain reason for moderation here', class: 'text', cols: 35
+      %td= f.text_area :audit_comment, placeholder: 'Explain reason for moderation here', class: 'text', cols: 35
 %tfoot
   %tr
     %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

@@ -1,12 +1,15 @@
 = form_tag password_resets_path, method: :post do
-  %table.form-table
-    %tr
-      %th.editor-title{colspan: 2} Request Password Reset
-    %tr
-      %th.sub Username
-      %td.even= text_field_tag :username, params[:username], placeholder: "Username", class: 'text', id: 'user_username'
-    %tr
-      %th.sub Email
-      %td.odd= text_field_tag :email, params[:email], placeholder: "Email address", class: 'text', id: 'user_email'
-    %tr
-      %th.form-table-ender{colspan: 2}= submit_tag "Reset Password", class: 'button'
+  %table.form-table.alternating
+    %thead
+      %tr
+        %th.editor-title{colspan: 2} Request Password Reset
+    %tbody
+      %tr
+        %th.sub Username
+        %td= text_field_tag :username, params[:username], placeholder: "Username", class: 'text', id: 'user_username'
+      %tr
+        %th.sub Email
+        %td= text_field_tag :email, params[:email], placeholder: "Email address", class: 'text', id: 'user_email'
+    %tfoot
+      %tr
+        %th.form-table-ender{colspan: 2}= submit_tag "Reset Password", class: 'button'

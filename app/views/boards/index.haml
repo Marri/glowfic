@@ -6,7 +6,7 @@
 
 %span.time-loaded= pretty_time(DateTime.now.in_time_zone)
 
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: 3}
@@ -22,7 +22,7 @@
     = render partial: 'list_item', collection: @boards, as: :board
     - if @boards.empty?
       %tr
-        %td.centered.padding-10.no-posts{ class: cycle('even', 'odd'), colspan: 3 } — No boards yet —
+        %td.centered.padding-10.no-posts{colspan: 3} — No boards yet —
   - if @boards.methods.include?(:total_pages) && @boards.total_pages > 1
     %tfoot
       %tr

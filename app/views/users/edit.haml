@@ -1,18 +1,18 @@
 = form_for current_user do |f|
-  %table.form-table
+  %table.form-table.alternating
     %thead
       %tr
         %th.editor-title{colspan: 2} Account Settings
     %tbody
       %tr
         %th.sub Username
-        %td{class: cycle('even', 'odd')}= f.text_field :username, placeholder: "Username", class: 'text', disabled: current_user.salt_uuid.nil?
+        %td= f.text_field :username, placeholder: "Username", class: 'text', disabled: current_user.salt_uuid.nil?
       %tr
         %th.sub Email
-        %td{class: cycle('even', 'odd')}= f.text_field :email, placeholder: "Email address", class: 'text'
+        %td= f.text_field :email, placeholder: "Email address", class: 'text'
       %tr
         %th.sub Notifications
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :email_notifications, class: 'width-15 vmid'
           = f.label :email_notifications, "Email about new tags"
           %br
@@ -21,45 +21,45 @@
       - unless current_user.avatar.present?
         %tr
           %th.sub Avatar
-          %td{class: cycle('even', 'odd')}
+          %td
             .details Please set your avatar directly from the desired icon's page.
       %tr
         %th.sub Paging
-        %td{class: cycle('even', 'odd')}= f.select(:per_page, per_page_options(current_user.per_page))
+        %td= f.select(:per_page, per_page_options(current_user.per_page))
       %tr
         %th.sub Time zone
-        %td{class: cycle('even', 'odd')}= f.select(:timezone, timezone_options(current_user.timezone))
+        %td= f.select(:timezone, timezone_options(current_user.timezone))
       %tr
         %th.sub Split icon picker
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :icon_picker_grouping, class: 'width-15 vmid'
           = f.label :icon_picker_grouping, "Group the icon picker by gallery"
       %tr
         %th.sub Default view
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.select(:default_view, options_for_select({Icon: 'icon', List: 'list'}, current_user.default_view))
           %br
           = f.select(:default_character_split, options_for_select({'Group characters page by template': 'template', 'Do not group characters page': 'none'}, current_user.default_character_split))
       %tr
         %th.sub Default editor
-        %td{class: cycle('even', 'odd')}= f.select(:default_editor, options_for_select({'Rich Text' => 'rtf', HTML: 'html'}, current_user.default_editor))
+        %td= f.select(:default_editor, options_for_select({'Rich Text' => 'rtf', HTML: 'html'}, current_user.default_editor))
       %tr
         %th.sub Moiety hex
-        %td{class: cycle('even', 'odd')}
+        %td
           \#
           = f.text_field :moiety, placeholder: "Hex code", class: 'text', style: 'width: 80px;', maxlength: 6
       %tr
         %th.sub Moiety name
-        %td{class: cycle('even', 'odd')}= f.text_field :moiety_name, placeholder: "Moiety", class: 'text'
+        %td= f.text_field :moiety_name, placeholder: "Moiety", class: 'text'
       %tr
         %th.sub Layout
-        %td{class: cycle('even', 'odd')}= f.select :layout, layout_options(current_user.layout)
+        %td= f.select :layout, layout_options(current_user.layout)
       %tr
         %th.sub Time display
-        %td{class: cycle('even', 'odd')}= f.select :time_display, time_display_options(current_user.time_display)
+        %td= f.select :time_display, time_display_options(current_user.time_display)
       %tr
         %th.sub Unread
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :unread_opened, class: 'width-15 vmid'
           = f.label :unread_opened, "Display opened threads only"
           %br
@@ -67,22 +67,22 @@
           = f.label :visible_unread, "Outline when jumping to unread"
       %tr
         %th.sub Daily Report
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :ignore_unread_daily_report, class: 'width-15 vmid'
           = f.label :ignore_unread_daily_report, "Hide unread notice"
       %tr
         %th.sub Warnings
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :hide_warnings, class: 'width-15 vmid'
           = f.label :hide_warnings, "Hide content warnings"
       %tr
         %th.sub Replies Owed
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :hide_hiatused_tags_owed, class: 'width-15 vmid'
           = f.label :hide_hiatused_tags_owed, "Hide hiatused threads"
       %tr
         %th.sub Character Quick Switcher
-        %td{class: cycle('even', 'odd')}
+        %td
           = f.check_box :show_user_in_switcher, class: 'width-15 vmid'
           = f.label :show_user_in_switcher, "Show user character"
     %tfoot
@@ -91,20 +91,20 @@
 
 %br
 = form_for current_user, url: password_user_path(current_user), method: :put, html: {id: 'change_password_form'} do |f|
-  %table.form-table#change-password
+  %table.form-table.alternating#change-password
     %thead
       %tr
         %th.editor-title{colspan: 2} Change Password
     %tbody
       %tr
         %th.sub Old
-        %td{class: cycle('even', 'odd')}= password_field_tag :old_password, params[:old_password], :placeholder => "Old Password", :class => 'text'
+        %td= password_field_tag :old_password, params[:old_password], :placeholder => "Old Password", :class => 'text'
       %tr
         %th.sub New
-        %td{class: cycle('even', 'odd')}= f.password_field :password, :placeholder => "New Password", :class => 'text', :value => (params[:user]||{})[:password]
+        %td= f.password_field :password, :placeholder => "New Password", :class => 'text', :value => (params[:user]||{})[:password]
       %tr
         %th.sub Confirm
-        %td{class: cycle('even', 'odd')}= f.password_field :password_confirmation, :placeholder => "Confirm Password", :class => 'text', :value => (params[:user]||{})[:password_confirmation]
+        %td= f.password_field :password_confirmation, :placeholder => "Confirm Password", :class => 'text', :value => (params[:user]||{})[:password_confirmation]
     %tfoot
       %tr
         %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

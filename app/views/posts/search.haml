@@ -39,7 +39,7 @@
               %td.centered{colspan: 2}= submit_tag "Search", class: 'button'
       %td.vtop#search_results
         - if @search_results.present?
-          %table
+          %table.alternating
             %thead
               %tr
                 %th.sub

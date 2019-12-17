@@ -9,4 +9,4 @@
     = render partial_type, name: 'No Template', characters: characters.where(template_id: nil).ordered, show_new_character_button: @user.id == current_user&.id
 - else
   %tr
-    %td.centered.padding-5{class: cycle('even', 'odd'), colspan: 6} — No characters yet —
+    %td.even.centered.padding-5{colspan: 6} — No characters yet —

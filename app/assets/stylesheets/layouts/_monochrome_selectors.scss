@@ -38,6 +38,11 @@ a:visited { color: $font_color_link_visited; }
 .pagination .current { background-color: $bg_color_paginate_current_page; }
 .pagination a:visited { color: $font_color_paginate_link_visited; }
 
+td.post-list-buttons {
+  background-color: $bg_color_subber;
+  color: $font_color_subber;
+}
+
 /* - icons */
 .replace-icon, .icons-box { background-color: $bg_color_icon; }
 .icon-credit { background-color: $bg_color_icon_credit; }

@@ -1,44 +1,44 @@
 = form_for @user, url: users_path, method: :post do |f|
-  %table#signup.form-table
+  %table.alternating#signup.form-table
     %thead
       %tr
         %th.table-title{colspan: 2} Sign Up
     %tbody
       %tr#signup-username
         %th.sub.vtop Username
-        %td.even
+        %td
           = f.text_field :username, placeholder: "Username"
           .user-alert.hidden
             = image_tag 'icons/exclamation.png', alt: '!', title: '', class: 'vmid'
             %span.msg
       %tr#signup-email
         %th.sub.vtop Email
-        %td.odd
+        %td
           = f.text_field :email, placeholder: "Email address"
           .user-alert.hidden
             = image_tag 'icons/exclamation.png', alt: '!', title: '', class: 'vmid'
             %span.msg
       %tr#signup-password
         %th.sub.vtop Password
-        %td.even
+        %td
           = f.password_field :password, placeholder: "Password"
           .user-alert.hidden
             = image_tag 'icons/exclamation.png', alt: '!', title: '', class: 'vmid'
             %span.msg
       %tr#signup-password-conf
         %th.sub.vtop Confirm
-        %td.odd
+        %td
           = f.password_field :password_confirmation, placeholder: "Confirm Password"
           .user-alert.hidden
             = image_tag 'icons/exclamation.png', alt: '!', title: '', class: 'vmid'
             %span.msg
       %tr#signup-secret
         %th.sub.vtop Secret
-        %td.even
+        %td
           = text_field_tag :secret, params[:secret], placeholder: "Secret"
       %tr#signup-terms
         %th.sub.vtop Terms
-        %td.odd
+        %td
           = check_box_tag :tos, true, params[:tos].present?
           = label_tag :tos do
             I have read and agree to the

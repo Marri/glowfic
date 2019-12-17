@@ -1,17 +1,17 @@
-%tbody
+%tbody.alternating
   %tr
     %th.sub Name
-    %td.even= f.text_field :name, placeholder: "Index Name", class: 'text'
+    %td= f.text_field :name, placeholder: "Index Name", class: 'text'
   %tr
     %th.sub Owner
-    %td.odd= @inder.user.deleted? ? '(deleted user)' : @index.user.username
+    %td= @inder.user.deleted? ? '(deleted user)' : @index.user.username
   %tr
     %th.sub Privacy
-    %td.even
+    %td
       = f.select :privacy, options_from_collection_for_select(index_privacy_settings.to_a, :second, :first, @index.privacy)
   %tr
     %th.sub.vtop Editors
-    %td.odd
+    %td
       = f.radio_button :open_to_anyone, false, class: 'checkbox'
       = f.label :open_to_anyone, 'Just me', value: false
       %br
@@ -19,7 +19,7 @@
       = f.label :open_to_anyone, 'Any Constellation user', value: true
   %tr
     %th.sub.vtop Description
-    %td.even= f.text_area :description
+    %td= f.text_area :description
 %tfoot
   %tr
     %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

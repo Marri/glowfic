@@ -1,16 +1,16 @@
-%table.form-table
+%table.form-table.alternating
   %thead
     %tr
       %th.sub Contribute to the Constellation
   %tbody
     %tr
-      %td.even= link_to 'Make a Patreon pledge', 'https://patreon.com/user?u=4240260'
+      %td= link_to 'Make a Patreon pledge', 'https://patreon.com/user?u=4240260'
     %tr
-      %td.odd= link_to 'Donate via Paypal', 'http://paypal.me/aschloss'
+      %td= link_to 'Donate via Paypal', 'http://paypal.me/aschloss'
     %tr
-      %td.even= link_to 'Submit a pull request', 'https://github.com/Marri/glowfic'
+      %td= link_to 'Submit a pull request', 'https://github.com/Marri/glowfic'
     %tr
       - if logged_in?
-        %td.odd= link_to 'Write something!', new_post_path
+        %td= link_to 'Write something!', new_post_path
       - else
-        %td.odd= link_to 'Join us', new_user_path
+        %td= link_to 'Join us', new_user_path

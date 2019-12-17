@@ -144,12 +144,9 @@ div.post-subheader { width: 100%; }
 /* Written content */
 /* - Blockquotes */
 /* -- Color on even/odd background */
-.even, .post-post, .post-reply:nth-child(even) {
-  blockquote { background-color: $bg_color_even_blockquote; }
-}
-
-.odd, .post-reply:nth-child(odd) {
-  blockquote { background-color: $bg_color_odd_blockquote; }
+div.alternating {
+  .post-container:nth-child(2n+1) blockquote { background-color: $bg_color_even_blockquote; }
+  .post-container:nth-child(2n) blockquote { background-color: $bg_color_odd_blockquote; }
 }
 
 .single-description blockquote { background-color: rgba($bg_color_descriptions_blockquote, 0.3); }
@@ -526,4 +523,13 @@ div.post-subheader { width: 100%; }
 .mod {
   width: 100%;
   height: 50px;
+}
+
+// row for the buttons on replies owed, unread, and hidden
+td.post-list-buttons {
+  background-color: $bg_color_subber;
+  padding: 5px 10px;
+  text-align: right;
+  color: $font_color_subber;
+  font-size: $font_size_smallish;
 }

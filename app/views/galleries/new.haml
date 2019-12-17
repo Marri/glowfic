@@ -1,6 +1,6 @@
 = form_for @gallery, url: galleries_path, method: :post do |f|
   - icons_present = current_user.galleryless_icons.present?
-  %table.form-table{style: (icons_present ? 'width: 100%;' : nil)}
+  %table.form-table.alternating{style: (icons_present ? 'width: 100%;' : nil)}
     %thead
       %tr
         %th.editor-title{colspan: 2}New Gallery
@@ -9,7 +9,7 @@
       - if icons_present
         %tr
           %th.vtop.sub Icons
-          %td{class: cycle('even', 'odd')}
+          %td
             - current_user.galleryless_icons.each do |icon|
               = label_tag "gallery_icon_ids_#{icon.id}" do
                 .gallery-icon

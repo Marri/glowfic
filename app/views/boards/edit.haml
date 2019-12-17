@@ -15,7 +15,6 @@
 %br
 %br
 
-- reset_cycle
 #reorder-sections-table
   .content-header
     Organize Continuity Sections
@@ -28,9 +27,9 @@
     .saveconf.float-right.hidden
       = image_tag "icons/accept.png", title: 'Saved', class: 'vmid', alt: ''
       Saved
-  %ul.sortable.table-list
+  %ul.alternating.sortable.table-list
     - @board_sections.each do |section|
-      %li.padding-5.section-ordered{class: cycle('even', 'odd'), data: {id: section.id, type: section.class.to_s, order: section.section_order}}
+      %li.padding-5.section-ordered{data: {id: section.id, type: section.class.to_s, order: section.section_order}}
         .section-ordered-handle
           = image_tag "icons/arrow_double.png", title: 'Reorder', class: 'disabled-arrow', alt: '↕'
         = link_to section.name, board_section_path(section)
@@ -42,11 +41,10 @@
           = link_to board_section_path(section), method: :delete, data: { confirm: 'Are you sure you want to delete this board section?' } do
             = image_tag "icons/cross.png"
     - if @board_sections.empty?
-      %li.centered.padding-10{class: cycle('even', 'odd')} — No items yet —
+      %li.centered.padding-10 — No items yet —
 
 - if @board.ordered? && @unsectioned_posts.present?
   %br
-  - reset_cycle
   #reorder-posts-table
     .content-header
       Organize Unsectioned Posts
@@ -58,9 +56,9 @@
       .saveconf.float-right.hidden
         = image_tag "icons/accept.png", title: 'Saved', class: 'vmid', alt: ''
         Saved
-    %ul.sortable.table-list
+    %ul.alternating.sortable.table-list
       - @unsectioned_posts.each do |post|
-        %li.section-ordered{class: cycle('even', 'odd'), data: {id: post.id, type: post.class.to_s, order: post.section_order}}
+        %li.section-ordered{data: {id: post.id, type: post.class.to_s, order: post.section_order}}
           .section-ordered-handle
             = image_tag "icons/arrow_double.png", title: 'Reorder', class: 'disabled-arrow', alt: '↕'
           = link_to post.subject, post_path(post)

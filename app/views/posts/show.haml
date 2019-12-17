@@ -139,7 +139,8 @@
       = render 'replies/single', reply: @post
 - if @replies.present?
   = render 'posts/paginator', paginated: @replies
-= render partial: 'replies/single', collection: @replies, as: :reply
+.alternating
+  = render partial: 'replies/single', collection: @replies, as: :reply
 - if @post.completed? && (@replies.empty? || (@replies.last.id == @post.last_reply_id))
   .post-ender Here Ends This Thread
   - if @prev_post || @next_post
@@ -162,7 +163,9 @@
   - post_open = !@post.authors_locked?
   - draft_exists = !@reply.content.nil?
   - if (post_open && draft_exists) || @post.author_for(current_user)&.can_reply?
-    = render 'replies/write', reply: @reply, url: replies_path, method: :post
+    - parity = (@replies.count).even? ? 'even' : 'odd'
+    %div{class: parity}
+      = render 'replies/write', reply: @reply, url: replies_path, method: :post
   - elsif post_open
     .post-expander.post-editor-expander
       .info + Join Thread

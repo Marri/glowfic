@@ -15,7 +15,7 @@
       %td.odd
         = file_field_tag "icons[][file]", id: "icon_files", class: 'icon_files', multiple: true
         %span.progress-box{style: 'margin-left: 5px;'}
-  %table.form-table#icon-table
+  %table.form-table.alternating#icon-table
     %thead
       %tr
         %th.sub.width-15
@@ -26,14 +26,13 @@
     %tbody
       - len = @icons.empty? ? 1 : @icons.size
       - len.times do |i|
-        - klass = cycle('even', 'odd')
         - s3_key = @icons[i].try(:[], :s3_key)
         - url = @icons[i].try(:[], :url)
         - keyword = @icons[i].try(:[], :keyword)
         - purl, pkey = url, keyword if s3_key.present?
         %tr.icon-row{data: {index: i}}
-          %td.width-15{class: klass, style: 'padding: 0px;'}= icon_mem_tag purl || '', pkey || '', class: 'vmid preview-icon'
-          %td.padding-5{class: klass}
+          %td.width-15{style: 'padding: 0px;'}= icon_mem_tag purl || '', pkey || '', class: 'vmid preview-icon'
+          %td.padding-5
             %span.conf{class: ('hidden' unless s3_key.present?)}
               = image_tag "icons/accept.png", class: 'vmid'
               Uploaded
@@ -41,9 +40,9 @@
             = text_field_tag "icons[][url]", url, placeholder: "URL", class: ('hidden' if s3_key.present?), id: "icons_#{i}_url"
             = hidden_field_tag "icons[][s3_key]", s3_key
             = hidden_field_tag "icons[][filename]", @icons[i].try(:[], :filename)
-          %td.padding-5{class: klass}= text_field_tag "icons[][keyword]", keyword, placeholder: "Keyword"
-          %td.padding-5{class: klass}= text_field_tag "icons[][credit]", @icons[i].try(:[], :credit), placeholder: "Credit"
-          %td.right-align.icon-buttons{class: klass}
+          %td.padding-5= text_field_tag "icons[][keyword]", keyword, placeholder: "Keyword"
+          %td.padding-5= text_field_tag "icons[][credit]", @icons[i].try(:[], :credit), placeholder: "Credit"
+          %td.right-align.icon-buttons
             = image_tag "icons/add.png", class: "icon-row-add"
             = image_tag "icons/minus.png", class: "icon-row-rem"
     %tfoot

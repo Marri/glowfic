@@ -1,5 +1,5 @@
 = form_tag unhide_posts_path, method: :post do
-  %table
+  %table.alternating
     %thead
       %tr
         %th.table-title{colspan: 7}
@@ -11,22 +11,23 @@
     %tbody
       - @hidden_boardviews.each do |view|
         %tr
-          - klass = cycle('even, odd')
-          %td.padding-10{class: klass}
-          %td.padding-10{class: klass, colspan: 5}
+          %td.padding-10
+          %td.padding-10{colspan: 5}
             = link_to view.board.name, board_path(view.board)
-          %td{class: klass}= check_box_tag :"unhide_boards[]", view.board_id, params[:unhide_boards].try(:include?, view.board_id.to_s), class: 'no-margin'
+          %td= check_box_tag :"unhide_boards[]", view.board_id, params[:unhide_boards].try(:include?, view.board_id.to_s), class: 'no-margin'
       - if @hidden_boardviews.empty?
-        %td.padding-10.centered{class: cycle('even', 'odd'), colspan: 7} — No continuities hidden —
+        %td.padding-10.centered{colspan: 7} — No continuities hidden —
+    %tbody
       %tr
         %th.subber{colspan: 7} Posts
-      = render partial: 'posts/list_item', collection: @hidden_posts, as: :post, locals: {check_box_name: 'unhide_posts[]'}
+    = render partial: 'posts/list_item', collection: @hidden_posts, as: :post, locals: {check_box_name: 'unhide_posts[]'}
+    %tbody.alternating
       - if @hidden_posts.empty?
-        %td.padding-10.centered{class: cycle('even', 'odd'), colspan: 7} — No posts hidden —
+        %td.padding-10.centered{colspan: 7} — No posts hidden —
     - if @hidden_posts.present? || @hidden_boardviews.present?
       %tfoot
         %tr
-          %td.right-align.padding-5{class: cycle('even', 'odd'), colspan: 7}
+          %td.post-list-buttons{colspan: 7}
             = submit_tag "Show in Unread", class: 'button'
       - if @hidden_posts.methods.include?(:total_pages) && @hidden_posts.total_pages > 1
         %tr

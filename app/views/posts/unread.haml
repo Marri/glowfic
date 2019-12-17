@@ -18,7 +18,7 @@
   - unless @posts.empty?
     %table
       %tr
-        %td.right-align.padding-5{colspan: 8, class: cycle('even', 'odd')}
+        %td.post-list-buttons{colspan: 8}
           = submit_tag "Hide from Unread", class: 'button'
           = submit_tag "Mark Read", class: 'button'
 %br
@@ -28,9 +28,9 @@
     %thead
       %tr
         %th.table-title Mark Entire Continuity
-    %tbody
+    %tbody.alternating
       %tr
-        %td.even.padding-5.centered
+        %td.padding-5.centered
           = select_tag :board_id,
                        options_from_collection_for_select(Board.where(id: params[:board_id]), :id, :name, params[:board_id]),
                        {class: 'chosen-select', prompt: '— Choose Continuity —'}

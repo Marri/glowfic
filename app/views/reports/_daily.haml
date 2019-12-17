@@ -1,6 +1,6 @@
 %span.time-loaded{style: 'font-size: 10px; position: absolute; top: 2px; right: 20px;'}= pretty_time(DateTime.now.in_time_zone)
 
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: 7}
@@ -23,9 +23,8 @@
     %tbody
       - @posts.each do |post|
         %tr
-          - klass = [cycle('even', 'odd')]
-          - klass << 'post-ignored' if ignored?(post)
-          %td.vtop.post-completed{class: klass.dup.push(post.completed? ? 'post-complete' : 'post-incomplete')}
+          - klass = ignored?(post) ? 'post-ignored' : ''
+          %td.vtop.post-completed{class: klass + (post.completed? ? ' post-complete' : ' post-incomplete')}
             - if post.completed?
               = image_tag "icons/book.png", class: 'vmid', title: "Thread Complete"
             - if post.on_hiatus?
@@ -57,4 +56,4 @@
         %td{colspan: 7}= render 'posts/paginator', paginated: @posts
   - else
     %tr
-      %td.centered.even{colspan: 7} — No posts yet —
+      %td.centered{colspan: 7} — No posts yet —

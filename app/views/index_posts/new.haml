@@ -7,19 +7,19 @@
 
 
 = form_for @index_post, url: index_posts_path, method: :post do |f|
-  %table.form-table
+  %table.form-table.alternating
     %thead
       %tr
         %th.editor-title{colspan: 2} Add Post to Index
     %tbody
       %tr
         %th.sub Index
-        %td.even
+        %td
           = f.hidden_field :index_id
           = link_to @index_post.index.name, @index_post.index
       %tr
         %th.sub Index Section
-        %td.odd
+        %td
           = f.hidden_field :index_section_id
           - if @index_post.index_section.present?
             = link_to @index_post.index_section.name, @index_post.index_section
@@ -27,10 +27,10 @@
             [None]
       %tr
         %th.sub Post
-        %td.even= f.select :post_id, options_from_collection_for_select([], :id, :subject, @index_post.post_id)
+        %td= f.select :post_id, options_from_collection_for_select([], :id, :subject, @index_post.post_id)
       %tr
         %th.sub.vtop Description
-        %td.odd= f.text_area :description
+        %td= f.text_area :description
     %tfoot
       %tr
         %th.form-table-ender{colspan: 2}= submit_tag "Save", class: 'button'

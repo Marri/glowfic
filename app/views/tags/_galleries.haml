@@ -1,4 +1,4 @@
-%table.tag-right-content-box
+%table.alternating-doubles.tag-right-content-box
   %thead
     %tr
       %th.table-title{colspan: 4} Galleries Tagged: #{@tag.name}
@@ -6,4 +6,5 @@
     - if @galleries.present?
       = render partial: 'galleries/expandable', collection: @galleries, as: :gallery, locals: {tag: @tag}
     - else
-      %td.centered.padding-5{class: cycle('even', 'odd'), colspan: 4} — No galleries yet —
+      %tr
+        %td.centered.padding-5{colspan: 4} — No galleries yet —

@@ -13,42 +13,42 @@
         %td.icons-box#user-avatar
           = link_to icon_path(@user.avatar) do
             = icon_tag @user.avatar
-  %tbody
+  %tbody.alternating
     - if logged_in? && @user.id != current_user.id
       %tr
-        %td.centered{class: cycle('even', 'odd')}
+        %td.centered
           = link_to new_message_path(recipient_id: @user.id) do
             = image_tag "icons/email.png", class: 'vmid'
             Send Message
     %tr
-      %td.centered{class: cycle('even', 'odd')}
+      %td.centered
         = link_to user_characters_path(@user), class: 'user-characters' do
           = image_tag "icons/group.png", class: 'vmid'
           Characters
     %tr
-      %td.centered{class: cycle('even', 'odd')}
+      %td.centered
         = link_to user_galleries_path(@user), class: 'user-galleries' do
           = image_tag "icons/photos.png", class: 'vmid'
           Galleries
     -# TODO tags
     %tr
-      %td.centered{class: cycle('even', 'odd')}
+      %td.centered
         = link_to user_boards_path(@user) do
           = image_tag "icons/table.png", class: 'vmid'
           Continuities
     %tr
-      %td.centered{class: cycle('even', 'odd')}
+      %td.centered
         = link_to search_posts_path(author_id: [@user.id], commit: 'Search'), rel: 'nofollow' do
           = image_tag "icons/book_open.png", class: 'vmid'
           All Posts
     %tr
-      %td.centered{class: cycle('even', 'odd')}
+      %td.centered
         = link_to search_posts_path(author_id: [@user.id], commit: 'Search', completed: true), rel: 'nofollow' do
           = image_tag "icons/book.png", class: 'vmid'
           Completed Posts
     - if logged_in? && @user.id != current_user.id
       %tr
-        %td.centered{class: cycle('even', 'odd')}
+        %td.centered
           - if (fav = Favorite.between(current_user, @user))
             = link_to favorite_path(fav), method: :delete do
               = image_tag "icons/star_delete.png", class: 'vmid'

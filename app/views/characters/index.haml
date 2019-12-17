@@ -75,7 +75,7 @@
             %td{colspan: colspan}= render 'posts/paginator', paginated: templates
     - else
       %tr
-        %td.centered.padding-5{class: cycle('even', 'odd'), colspan: colspan} — No characters yet —
+        %td.even.centered.padding-5{colspan: colspan} — No characters yet —
   - else
     - characters = @user.characters.includes(:template).ordered
     - if page_view == 'list' && character_split == 'none'

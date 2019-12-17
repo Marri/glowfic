@@ -2,12 +2,11 @@
   = icon_tag f.object, id: "icon-#{f.object.id}"
   = f.hidden_field :id
   = loading_tag class: 'hidden', id: "loading-#{f.object.id}"
-%table.form-table.icon-edit-table
+%table.form-table.alternating.icon-edit-table
   %tbody
     %tr.gallery-icon-url{id: "icon-row-#{f.object.id}"}
-      - klass = cycle('even', 'odd')
-      %td.centered{class: klass} URL
-      %td{class: klass}
+      %td.centered URL
+      %td
         .icon_conf{class: ('hidden' unless f.object.uploaded?)}
           = image_tag "icons/accept.png", class: 'vmid'
           Uploaded to site
@@ -15,25 +14,22 @@
           = f.text_field :url, placeholder: "URL", class: 'text'
         = f.hidden_field :s3_key
     %tr.gallery-icon-upload
-      - klass = cycle('even', 'odd')
       - file_id = "icon_files_#{f.object.id}"
-      %td.centered{class: klass} Upload
-      %td{class: klass}= file_field_tag file_id, id: file_id, class: 'icon_files', data: {icon_id: f.object.id}
+      %td.centered Upload
+      %td= file_field_tag file_id, id: file_id, class: 'icon_files', data: {icon_id: f.object.id}
     %tr.gallery-icon-keyword
-      - klass = cycle('even', 'odd')
-      %td.centered{class: klass} Keyword
-      %td{class: klass}= f.text_field :keyword, :placeholder => "Keyword", :class => 'text'
+      %td.centered Keyword
+      %td= f.text_field :keyword, :placeholder => "Keyword", :class => 'text'
     %tr.gallery-icon-credit
-      - klass = cycle('even', 'odd')
-      %td.centered{class: klass} Credit
-      %td{class: klass}= f.text_field :credit, :placeholder => "Credit", :class => 'text'
+      %td.centered Credit
+      %td= f.text_field :credit, :placeholder => "Credit", :class => 'text'
     - if gif.present?
       %tr.gallery-icon-remove
-        %td{class: cycle('even', 'odd'), colspan: 2}
+        %td{colspan: 2}
           = gif.check_box :_destroy
           = gif.label :_destroy, 'Remove from Gallery'
     %tr.gallery-icon-destroy
-      %td{class: cycle('even', 'odd'), colspan: 2}
+      %td{colspan: 2}
         = f.check_box :_destroy
         = f.label :_destroy, 'Delete Icon'
   %tfoot

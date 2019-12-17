@@ -1,15 +1,15 @@
 .content-header Edit History (Oldest to Newest)
 %table
-  %tbody
+  %thead
     - audits = audited.audits.paginate(per_page: 25, page: page)
     - if audits.total_pages > 1
       %tr
         %td{colspan: 2}= render 'posts/paginator', paginated: audits
 
-    - audits.each do |audit|
-      - cur = audited.revision(audit.version)
-      - cur.id = nil # hides the permalink buttons
-      - reset_cycle
+  - audits.each do |audit|
+    - cur = audited.revision(audit.version)
+    - cur.id = nil # hides the permalink buttons
+    %tbody
       %tr.bg.spacer{style: 'height:20px;'}
       %tr
         %th.table-title{colspan: 2} Version: #{audit.version}
@@ -22,20 +22,21 @@
               = user_link(audit.user)
             = surround '"' do
               = audit.comment
+    %tbody.alternating
       %tr
         %th.sub.history-header Fields Changed
-        %td{class: cycle('even', 'odd')}
+        %td
           - if audit.version == 1
             (Original)
           - else
             = audit.audited_changes.keys.map(&:humanize).join(', ').capitalize
       %tr
         %th.sub Updated
-        %td{class: cycle('even', 'odd')}= pretty_time(audit.created_at)
+        %td= pretty_time(audit.created_at)
       - if audit.version > 1 && audit.audited_changes.key?('board_id')
         %tr
           %th.sub Continuity
-          %td{class: cycle('even', 'odd')}
+          %td
             Changed from
             - if (board = Board.find_by_id(audit.audited_changes['board_id'][0]))
               %b= link_to board.name, board_path(board)
@@ -49,7 +50,7 @@
       - if audit.version > 1 && audit.audited_changes.key?('privacy')
         %tr
           %th.sub Privacy
-          %td{colspan: 3, class: cycle('even', 'odd')}
+          %td{colspan: 3}
             Changed from
             %b= privacy_state(audit.audited_changes['privacy'][0])
             to
@@ -57,7 +58,7 @@
       - if audit.version == 1 || (audit.audited_changes.keys & %w(character_alias_id character_id content description icon_id subject)).present?
         %tr
           %th.sub.vtop Content
-          %td{class: cycle('even', 'odd')}
+          %td
             - if audited.is_a?(Post)
               .content-header= cur.subject
               - if cur.description.present?

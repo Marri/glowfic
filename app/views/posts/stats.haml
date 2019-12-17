@@ -10,7 +10,7 @@
   &raquo;
   %b Metadata
 
-%table#stats
+%table.alternating#stats
   %thead
     %tr
       %th.table-title{colspan: 2}
@@ -27,7 +27,7 @@
   %tbody
     %tr
       %th.sub.width-150 Status
-      %td{class: cycle('odd', 'even')}
+      %td
         - case @post.status
         - when Post::STATUS_ACTIVE
           = image_tag "icons/book_open.png", class: 'vmid', title: "In Progress"
@@ -43,14 +43,14 @@
           Abandoned
     %tr
       %th.sub.width-150 Audience
-      %td{class: cycle('odd', 'even')}
+      %td
         = privacy_state(@post.privacy)
         - if @post.access_list?
           \-
           = safe_join(@post.post_viewers.map(&:user).map{ |u| user_link(u) }, ', ')
     %tr
       %th.sub.width-150 Authors
-      %td{class: cycle('odd', 'even')}
+      %td
         - post_authors = @post.post_authors.joins(:user).order(Arel.sql('LOWER(users.username) asc'))
         %ul
           - post_authors.each do |post_author|
@@ -60,7 +60,7 @@
                 (invited)
     %tr
       %th.sub.width-150.vtop Characters
-      %td{class: cycle('odd', 'even')}
+      %td
         %ul
           - @post.character_appearance_counts.each do |character, count|
             %li
@@ -72,20 +72,20 @@
       %tr
         %th.sub.width-150 Setting
         - setting_links = @post.settings.ordered_by_post_tag.map { |tag| link_to tag.name, tag_path(tag) }
-        %td{class: cycle('odd', 'even')}= safe_join(setting_links, ', ')
+        %td= safe_join(setting_links, ', ')
     - if @post.content_warnings.present?
       %tr
         %th.sub.width-150 Content Warnings
         - warning_links = @post.content_warnings.ordered_by_post_tag.map { |tag| link_to tag.name, tag_path(tag) }
-        %td{class: cycle('odd', 'even')}= safe_join(warning_links, ', ')
+        %td= safe_join(warning_links, ', ')
     - if @post.labels.present?
       %tr
         %th.sub.width-150 Labels
         - label_links = @post.labels.ordered_by_post_tag.map { |tag| link_to tag.name, tag_path(tag) }
-        %td{class: cycle('odd', 'even')}= safe_join(label_links, ', ')
+        %td= safe_join(label_links, ', ')
     %tr
       %th.sub.width-150.vtop Word Count
-      %td{class: cycle('odd', 'even')}
+      %td
         = number_with_delimiter(@post.total_word_count)
         - if @post.joined_authors.count > 1
           %ul
@@ -95,7 +95,7 @@
                 = number_with_delimiter(count)
     %tr
       %th.sub.width-150 Time Begun
-      %td{class: cycle('odd', 'even')}= pretty_time(@post.created_at)
+      %td= pretty_time(@post.created_at)
     %tr
       %th.sub.width-150 Time Last Updated
-      %td{class: cycle('odd', 'even')}= pretty_time(@post.tagged_at)
+      %td= pretty_time(@post.tagged_at)

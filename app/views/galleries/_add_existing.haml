@@ -7,34 +7,38 @@
         = image_tag "icons/list.png", class: 'list-view', alt: ''
         Add New Icons &raquo;
   %table
-    %tr
-      %th.form-table-ender Click icons to select, then press Add Icons to Gallery at the bottom.
-    %tr
-      %th.sub Galleryless Icons
-    %tr
-      %td.even.padding-5#icons-0
-        = check_box_tag :select_all, 0, false, class: 'select-all'
-        Select all icons
-        %br
-        - @unassigned.each do |icon|
-          .gallery-icon
-            = icon_tag icon, class: 'add-gallery-icon', :'data-id' => icon.id
-            %br
-            %span.icon-keyword= icon.keyword
-    %tr
-      %td.form-table-ender.padding-5
-        = submit_tag "Add Icons to Gallery", class: 'button'
-    - current_user.galleries.ordered_by_name.each do |gallery|
-      - next if gallery.id == @gallery.id
+    %thead
       %tr
-        %th.sub.gallery-minmax{data: {id: gallery.id}}
-          = gallery.name
-          .float-right.gallery-box{id: "minmax-#{gallery.id}"} +
+        %th.form-table-ender Click icons to select, then press Add Icons to Gallery at the bottom.
       %tr
-        %td.padding-5.hidden{class: cycle('even', 'odd'), id: "icons-#{gallery.id}"}
-          = check_box_tag :select_all, gallery.id, false, class: 'select-all', id: nil
+        %th.sub Galleryless Icons
+    %tbody
+      %tr
+        %td.even.padding-5#icons-0
+          = check_box_tag :select_all, 0, false, class: 'select-all'
           Select all icons
           %br
-    %tr
-      %td.form-table-ender.padding-5
-        = submit_tag "Add Icons to Gallery", class: 'button'
+          - @unassigned.each do |icon|
+            .gallery-icon
+              = icon_tag icon, class: 'add-gallery-icon', :'data-id' => icon.id
+              %br
+              %span.icon-keyword= icon.keyword
+      %tr
+        %td.form-table-ender.padding-5
+          = submit_tag "Add Icons to Gallery", class: 'button'
+    %tbody.alternating-doubles
+      - current_user.galleries.ordered_by_name.each do |gallery|
+        - next if gallery.id == @gallery.id
+        %tr
+          %th.sub.gallery-minmax{data: {id: gallery.id}}
+            = gallery.name
+            .float-right.gallery-box{id: "minmax-#{gallery.id}"} +
+        %tr
+          %td.padding-5.hidden{id: "icons-#{gallery.id}"}
+            = check_box_tag :select_all, gallery.id, false, class: 'select-all', id: nil
+            Select all icons
+            %br
+    %tfoot
+      %tr
+        %td.form-table-ender.padding-5
+          = submit_tag "Add Icons to Gallery", class: 'button'

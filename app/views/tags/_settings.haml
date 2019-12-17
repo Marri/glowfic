@@ -1,8 +1,8 @@
-%table.tag-right-content-box
+%table.alternating.tag-right-content-box
   %thead
     %tr
       %th.table-title{colspan: 6} Settings Tagged: #{@tag.name}
   %tbody
     - @tag.child_settings.each do |setting|
       %tr
-        %td{class: cycle('even', 'odd')}= link_to setting.name, tag_path(setting)
+        %td= link_to setting.name, tag_path(setting)

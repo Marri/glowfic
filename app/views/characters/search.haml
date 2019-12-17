@@ -46,32 +46,30 @@
               %td.centered{colspan: 2}= submit_tag "Search", class: 'button'
       %td.vtop
         - if @search_results.present?
-          %table
-            %thead
+          %table.alternating
+            %tbody
               %tr
-                - klass = cycle('even'.freeze, 'odd'.freeze)
-                %td.padding-5{class: klass}
+                %td.padding-5
                   %b Name
-                %td.padding-5{class: klass}
+                %td.padding-5
                   %b Nickname
-                %td.padding-5{class: klass}
+                %td.padding-5
                   %b Screenname
-                %td.padding-5{class: klass}
+                %td.padding-5
                   %b Facecast
-                %td.padding-5{class: klass}
+                %td.padding-5
                   %b User
                 - if false # TODO once setting is fixed for characters
-                  %td.padding-5{class: klass}
+                  %td.padding-5
                     %b Setting
             %tbody
               - @search_results.each do |character|
-                - klass = cycle('even'.freeze, 'odd'.freeze)
                 %tr
-                  %td.padding-5{class: klass}= link_to character.name, character_path(character)
-                  %td.padding-5{class: klass, style: 'width:15%'}= character.template_name
-                  %td.padding-5{class: klass, style: 'width:15%'}= breakable_text(character.screenname)
-                  %td.padding-5{class: klass, style: 'width:25%'}= character.pb
-                  %td.padding-5{class: klass, style: 'width:15%'}= user_link(character.user)
+                  %td.padding-5= link_to character.name, character_path(character)
+                  %td.padding-5{style: 'width:15%'}= character.template_name
+                  %td.padding-5{style: 'width:15%'}= breakable_text(character.screenname)
+                  %td.padding-5{style: 'width:25%'}= character.pb
+                  %td.padding-5{style: 'width:15%'}= user_link(character.user)
 
   - if @search_results && @search_results.total_pages > 1
     %tfoot

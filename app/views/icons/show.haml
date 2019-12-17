@@ -21,59 +21,61 @@
   - else
     %b Stats
 
-%table.left-info-box.icon-info-box
-  %tr
-    %th.info-box-header.icon-keyword= @icon.keyword
-  %tr
-    %td.icons-box.centered.icon-icon= icon_tag @icon
-  - if @icon.credit
+%table.alternating.left-info-box.icon-info-box
+  %thead
     %tr
-      %td.icon-credit
-        .details= sanitize_simple_link_text(@icon.credit)
-  %tr
-    %td.centered{class: cycle('even', 'odd')}
-      = link_to icon_path(@icon, view: 'stats') do
-        = image_tag "icons/chart_bar.png"
-        Stats
-  %tr
-    %td.centered{class: cycle('even', 'odd')}
-      = link_to icon_path(@icon, view: 'galleries') do
-        = image_tag "icons/photos.png"
-        &nbsp;Galleries
-  %tr
-    %td.centered{class: cycle('even', 'odd')}
-      = link_to icon_path(@icon, view: 'posts') do
-        = image_tag "icons/book_open.png"
-        Posts
-  %tr
-    %td.centered{class: cycle('even', 'odd')}
-      = link_to search_replies_path(commit: true, icon_id: @icon.id) do
-        = image_tag "icons/table_multiple.png"
-        Replies
-  - if @icon.user_id == current_user.try(:id)
+      %th.info-box-header.icon-keyword= @icon.keyword
     %tr
-      %td.centered{class: cycle('even', 'odd')}
-        = link_to edit_icon_path(@icon) do
-          = image_tag "icons/pencil.png"
-          Edit Icon
+      %td.icons-box.centered.icon-icon= icon_tag @icon
+    - if @icon.credit
+      %tr
+        %td.icon-credit
+          .details= sanitize_simple_link_text(@icon.credit)
+  %tbody
     %tr
-      %td.centered{class: cycle('even', 'odd')}
-        = link_to avatar_icon_path(@icon), method: :post do
-          = image_tag "icons/status_online.png"
-          Make Avatar
+      %td.centered
+        = link_to icon_path(@icon, view: 'stats') do
+          = image_tag "icons/chart_bar.png"
+          Stats
     %tr
-      %td.centered{class: cycle('even', 'odd')}
-        = link_to replace_icon_path(@icon) do
-          = image_tag "icons/swap.png", style: 'width: 16px;'
-          Replace Icon
+      %td.centered
+        = link_to icon_path(@icon, view: 'galleries') do
+          = image_tag "icons/photos.png"
+          &nbsp;Galleries
     %tr
-      %td.centered{class: cycle('even', 'odd')}
-        = link_to icon_path(@icon), method: :delete, data: { confirm: 'Are you sure you want to delete this icon?' } do
-          = image_tag "icons/cross.png"
-          Delete Icon
+      %td.centered
+        = link_to icon_path(@icon, view: 'posts') do
+          = image_tag "icons/book_open.png"
+          Posts
+    %tr
+      %td.centered
+        = link_to search_replies_path(commit: true, icon_id: @icon.id) do
+          = image_tag "icons/table_multiple.png"
+          Replies
+    - if @icon.user_id == current_user.try(:id)
+      %tr
+        %td.centered
+          = link_to edit_icon_path(@icon) do
+            = image_tag "icons/pencil.png"
+            Edit Icon
+      %tr
+        %td.centered
+          = link_to avatar_icon_path(@icon), method: :post do
+            = image_tag "icons/status_online.png"
+            Make Avatar
+      %tr
+        %td.centered
+          = link_to replace_icon_path(@icon) do
+            = image_tag "icons/swap.png", style: 'width: 16px;'
+            Replace Icon
+      %tr
+        %td.centered
+          = link_to icon_path(@icon), method: :delete, data: { confirm: 'Are you sure you want to delete this icon?' } do
+            = image_tag "icons/cross.png"
+            Delete Icon
 
 - if params[:view] == 'galleries'
-  %table.icon-right-content-box
+  %table.alternating-double.icon-right-content-box
     %thead
       %tr
         %th.table-title Galleries
@@ -82,20 +84,20 @@
     - else
       %tbody
         %tr
-          %td.even.centered — No galleries yet —
+          %td.centered — No galleries yet —
 - elsif params[:view] == 'posts'
   - content_for :posts_title do
     Posts Containing Icon
   = render 'posts/list', posts: @posts, table_class: 'icon-right-content-box'
 - else
-  %table.icon-right-content-box
+  %table.alternating.icon-right-content-box
     %thead
       %tr
         %th.table-title{colspan: 2} Stats
     %tbody
       %tr
         %th.sub.width-150 Times Used
-        %td.even= @times_used.to_s
+        %td= @times_used.to_s
       %tr
         %th.sub.width-150 Posts In
-        %td.even= @posts_used
+        %td= @posts_used

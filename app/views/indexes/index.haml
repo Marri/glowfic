@@ -1,4 +1,4 @@
-%table
+%table.alternating
   %thead
     %tr
       %th.table-title{colspan: 3}
@@ -12,11 +12,10 @@
       %th.sub
   %tbody
     - @indexes.each do |index|
-      - klass = cycle('even', 'odd')
       %tr
-        %td{class: klass}= link_to index.name, index_path(index)
-        %td{class: klass}= index.posts.count
-        %td.width-70.right-align{class: klass}
+        %td= link_to index.name, index_path(index)
+        %td= index.posts.count
+        %td.width-70.right-align
           - if index.editable_by?(current_user)
             = link_to edit_index_path(index) do
               = image_tag "icons/pencil.png"

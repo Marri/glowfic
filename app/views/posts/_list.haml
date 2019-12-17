@@ -6,7 +6,7 @@
 
 %span.time-loaded= pretty_time(DateTime.now.in_time_zone)
 
-%table{class: local_assigns[:table_class].to_s}
+%table.alternating{class: local_assigns[:table_class].to_s}
   %thead
     %tr
       %th.table-title{colspan: col_count}= content_for :posts_title
@@ -31,7 +31,7 @@
     = render partial: 'posts/list_item', collection: posts, as: :post, locals: post_args
     - if posts.empty?
       %tr
-        %td.centered.padding-10.no-posts{ class: cycle('even', 'odd'), colspan: col_count } — No posts yet —
+        %td.centered.padding-10.no-posts{colspan: col_count} — No posts yet —
   - if posts.methods.include?(:total_pages) && posts.total_pages > 1
     %tfoot
       %tr

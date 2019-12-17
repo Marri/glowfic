@@ -1,19 +1,19 @@
 = form_tag login_path, method: :post do
-  %table.form-table
+  %table.form-table.alternating
     %thead
       %tr
         %th.table-title{colspan: 2} Sign In
     %tbody
       %tr#username-row
         %th.sub.vtop Username
-        %td.even= text_field_tag :username, params[:username], placeholder: "Username"
+        %td= text_field_tag :username, params[:username], placeholder: "Username"
       %tr#password-row
         %th.sub.vtop Password
-        %td.odd
+        %td
           = password_field_tag :password, params[:password], placeholder: "Password"
           #remember-link= link_to "Forgot Password?", new_password_reset_path
       %tr#remember-me
         %th.sub.vtop Remember me
-        %td.even= check_box_tag :remember_me
+        %td= check_box_tag :remember_me
     %tr
       %th.form-table-ender{colspan: 2}= submit_tag "Sign In", class: 'button'

@@ -27,9 +27,10 @@
       %tr
         %td.odd.centered{colspan: 2}
           .details *If none are selected, replaces all uses*
+  %tbody.alternating
     - @posts.each do |post|
       %tr
-        %td{colspan: 2, class: cycle('even', 'odd')}
+        %td{colspan: 2}
           = check_box_tag :'post_ids[]', post.id, false, id: nil
           = link_to post.subject, post_path(post)
   %tfoot

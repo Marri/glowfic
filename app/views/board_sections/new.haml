@@ -1,5 +1,6 @@
 = form_for @board_section, url: board_sections_path, method: :post do |f|
   %table.form-table
-    %tr
-      %th.editor-title{colspan: 2} Create #{@board_section&.board&.name} Section
+    %thead
+      %tr
+        %th.editor-title{colspan: 2} Create #{@board_section&.board&.name} Section
     = render 'editor', f: f

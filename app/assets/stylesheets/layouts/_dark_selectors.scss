@@ -79,20 +79,38 @@ a:hover { color: $font_color_link_hover; }
 }
 
 /* - content */
-.even, .post-post, .post-reply:nth-child(even), #post-editor {
+.even {
   background-color: $bg_color_even;
+  blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2); }
+}
 
-  blockquote {
-    background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2);
+.odd {
+  background-color: $bg_color_odd;
+  blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, 0.2); }
+}
+
+@mixin alternating($type, $subtype: '') {
+  #{$type}:nth-child(2n) #{$subtype} { background-color: $bg_color_odd; }
+  #{$type}:nth-child(2n+1) #{$subtype} { background-color: $bg_color_even; }
+}
+
+ul.alternating { @include alternating('li') }
+table.alternating tbody, tbody.alternating { @include alternating('tr', 'td') }
+
+table.alternating-doubles tbody, tbody.alternating-doubles {
+  tr:nth-child(4n+1), tr:nth-child(4n+2) {
+    td { background-color: $bg_color_even; }
+  }
+
+  tr:nth-child(4n), tr:nth-child(4n+3) {
+    td { background-color: $bg_color_odd; }
   }
 }
 
-.odd, .post-reply:nth-child(odd), .post-post + #post-editor, .post-post + a + #post-editor {
-  background-color: $bg_color_odd;
-
-  blockquote {
-    background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, 0.2);
-  }
+div.alternating {
+  @include alternating('.post-container')
+  .post-container:nth-child(2n) blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, 0.2); }
+  .post-container:nth-child(2n+1) blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2); }
 }
 
 .post-subheader {
@@ -135,6 +153,11 @@ a:hover { color: $font_color_link_hover; }
 #post-menu-box { color: $font_color_post_menu; }
 
 table { border-color: #555555; } // TODO: what does this style
+
+td.post-list-buttons {
+  background-color: $bg_color_subber;
+  color: $font_color_subber;
+}
 
 // TODO: Check pagination displays fine in this theme
 
