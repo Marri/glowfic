@@ -18,3 +18,8 @@
   max-height: 20px;
   left: 55px;
 }
+
+@media (max-width: 600px) {
+  .post-character { background-color: $bg_color_post_character_narrow; }
+  .post-author { background-color: $bg_color_post_author_narrow; }
+}

@@ -218,11 +218,6 @@ span.badge {
   background-color: rgba($font_color_char_switcher_alpha, 0.3);
 }
 
-@media (max-width: 600px) {
-  .post-character { background-color: $bg_color_post_character_narrow; }
-  .post-author { background-color: $bg_color_post_author_narrow; }
-}
-
 .pagination {
   .current { background-color: $bg_color_paginate_current_page; }
   .disabled { color: $font_color_paginate_link_disabled; }
