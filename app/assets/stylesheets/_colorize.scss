@@ -219,15 +219,17 @@ span.badge {
 }
 
 .pagination {
-  .current { background-color: $bg_color_paginate_current_page; }
-  .disabled { color: $font_color_paginate_link_disabled; }
+  .normal-pagination, .mobile-pagination {
+    .current { background-color: $bg_color_paginate_current_page; }
+    .disabled { color: $font_color_paginate_link_disabled; }
 
-  a { color: $font_color_paginate_link; }
-  a:visited { color: $font_color_paginate_link_visited; }
+    a { color: $font_color_paginate_link; }
+    a:visited { color: $font_color_paginate_link_visited; }
 
-  a:hover {
-    background-color: $bg_color_paginate_link_hover;
-    color: $font_color_link_hover;
+    a:hover {
+      background-color: $bg_color_paginate_link_hover;
+      color: $font_color_link_hover;
+    }
   }
 }
 
