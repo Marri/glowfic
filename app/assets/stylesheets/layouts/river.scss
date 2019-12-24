@@ -41,7 +41,7 @@ $bg_color_icon_selector: $colors_hit_gray;
 $bg_color_post_character: #929292;
 $bg_color_post_screenname: #A5A5A5;
 $bg_color_post_author: $colors_silver_again;
-$font_color_post_info: #B3D3FF;
+$font_color_post_character_link: #B3D3FF;
 
 // icons
 $bg_color_icon: $colors_hit_gray;
@@ -77,4 +77,4 @@ $bg_color_linkbox_dismiss: $colors_rock;
 
 .post-footer { color: $font_color_reply_footer; }
 
-.post-character a, .post-character a:visited { color: $font_color_post_info; }
+.post-character a, .post-character a:visited { color: $font_color_post_character_link; }
