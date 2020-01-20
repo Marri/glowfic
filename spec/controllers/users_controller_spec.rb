@@ -21,7 +21,7 @@ RSpec.describe UsersController do
       expect(assigns(:users)).not_to include(user)
     end
 
-    context "with moieties" do
+    context "with moieties", bullet: true do
       render_views
 
       it "displays the name" do
@@ -246,7 +246,7 @@ RSpec.describe UsersController do
       expect(response.status).to eq(200)
     end
 
-    context "with views" do
+    context "with views", bullet: true do
       render_views
 
       it "displays options" do

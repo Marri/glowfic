@@ -82,4 +82,10 @@ Rails.application.configure do
   # enable Resque logging
   Resque.logger       = Logger.new(STDOUT)
   Resque.logger.level = Logger::INFO
+
+  # warn on n+1 queries
+  Bullet.enable = true
+  Bullet.rails_logger = true
+  Bullet.console = true
+  Bullet.bullet_logger = true
 end

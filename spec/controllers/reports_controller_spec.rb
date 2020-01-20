@@ -101,7 +101,7 @@ RSpec.describe ReportsController do
       expect(invalid_report.last_user_deleted).to eq(true)
     end
 
-    context "with views" do
+    context "with views", bullet: true do
       render_views
 
       it "works" do

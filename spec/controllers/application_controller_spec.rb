@@ -351,7 +351,7 @@ RSpec.describe ApplicationController do
     end
   end
 
-  describe "#check_tos" do
+  describe "#check_tos", bullet: true do
     render_views
 
     it "shows TOS prompt to logged in users" do

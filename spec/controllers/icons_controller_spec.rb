@@ -245,7 +245,7 @@ RSpec.describe IconsController do
       end
     end
 
-    context "galleries view" do
+    context "galleries view", bullet: true do
       render_views
       let(:gallery) { create(:gallery) }
       let(:icon) { create(:icon, galleries: [gallery], user: gallery.user) }

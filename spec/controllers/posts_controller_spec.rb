@@ -43,7 +43,7 @@ RSpec.describe PostsController do
       expect(ids_fetched).to eq([post5.id, post4.id, post3.id, post2.id, post1.id])
     end
 
-    context "with views" do
+    context "with views", bullet: true do
       render_views
 
       it "sanitizes post descriptions" do
@@ -862,7 +862,7 @@ RSpec.describe PostsController do
       expect(response).to render_template(:show)
     end
 
-    context "with render_views" do
+    context "with render_views", bullet: true do
       render_views
 
       it "renders HAML with additional attributes" do
@@ -2490,7 +2490,7 @@ RSpec.describe PostsController do
       expect(assigns(:page_title)).to eq('Replies Owed')
     end
 
-    context "with views" do
+    context "with views", bullet: true do
       render_views
 
       def create_owed(user)
