@@ -19,5 +19,5 @@
   = form_for current_user, url: user_path(current_user), method: :put, name: :tos_form do
     = content_for :tos_form
 - else
-  = form_tag confirm_tos_path, method: :patch do
+  = form_tag confirm_tos_path, method: :patch, id: :tos_form do
     = content_for :tos_form

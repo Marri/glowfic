@@ -25,6 +25,13 @@ $(document).ready(function() {
     }
   }
 
+  var oldPath = localStorage.getItem("tos.old_path");
+  if (oldPath && location.pathname === oldPath && !location.hash) {
+    location.hash = localStorage.getItem("tos.old_fragment");
+    localStorage.removeItem("tos.old_path");
+    localStorage.removeItem("tos.old_fragment");
+  }
+
   // Watch for login status change
   // Display warning prompting user to reload when it occurs
   window.addEventListener('storage', function(e) {

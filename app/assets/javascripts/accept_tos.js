@@ -5,4 +5,11 @@ $(document).ready(function() {
     $("#content").hide();
     $("#tos").show();
   }
+  $("#tos_form").submit(function() {
+    /* save fragment (e.g. #reply-1234) for redirect */
+    if (location.hash) {
+      localStorage.setItem("tos.old_path", location.pathname);
+      localStorage.setItem("tos.old_fragment", location.hash);
+    }
+  });
 });
