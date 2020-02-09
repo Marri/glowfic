@@ -293,6 +293,16 @@ td, .table-list li { font-size: $font_size_small; }
   &-container {
     margin: 3px 0;
     color: $font_color_select2_container;
+
+    &--open {
+      // overriding native properties to make it display inline well
+      // sass-lint:disable no-important
+      display: block;
+      position: relative !important;
+      top: 0px !important;
+      left: -1px !important;
+      // sass-lint:enable no-important
+    }
   }
 
   &, &-dropdown { font-size: $font_size_smallerish; }
