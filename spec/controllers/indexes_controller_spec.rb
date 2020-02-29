@@ -54,6 +54,8 @@ RSpec.describe IndexesController do
   end
 
   describe "GET show" do
+    let(:index) { create(:index) }
+
     it "requires valid index" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(indexes_url)
@@ -68,7 +70,6 @@ RSpec.describe IndexesController do
     end
 
     it "works logged out" do
-      index = create(:index)
       get :show, params: { id: index.id }
       expect(response).to have_http_status(200)
       expect(assigns(:page_title)).to eq(index.name)
@@ -82,7 +83,6 @@ RSpec.describe IndexesController do
     end
 
     it "orders sectionless posts correctly" do
-      index = create(:index)
       post1 = create(:index_post, index: index)
       post2 = create(:index_post, index: index)
       post3 = create(:index_post, index: index)
@@ -95,6 +95,8 @@ RSpec.describe IndexesController do
   end
 
   describe "GET edit" do
+    let(:index) { create(:index) }
+
     it "requires login" do
       get :edit, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -110,14 +112,12 @@ RSpec.describe IndexesController do
 
     it "requires permission" do
       login
-      index = create(:index)
       get :edit, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
       expect(flash[:error]).to eq('You do not have permission to edit this index.')
     end
 
     it "works" do
-      index = create(:index)
       login_as(index.user)
       get :edit, params: { id: index.id }
       expect(response).to have_http_status(200)
@@ -126,6 +126,9 @@ RSpec.describe IndexesController do
   end
 
   describe "PUT update" do
+    let(:user) { create(:user) }
+    let(:index) { create(:index, user: user) }
+
     it "requires login" do
       put :update, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -141,15 +144,13 @@ RSpec.describe IndexesController do
 
     it "requires permission" do
       login
-      index = create(:index)
       put :update, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
       expect(flash[:error]).to eq('You do not have permission to edit this index.')
     end
 
     it "requires valid index params" do
-      index = create(:index)
-      login_as(index.user)
+      login_as(user)
       put :update, params: { id: index.id, index: {name: ''} }
       expect(response).to have_http_status(200)
       expect(response).to render_template(:edit)
@@ -157,8 +158,7 @@ RSpec.describe IndexesController do
     end
 
     it "succeeds" do
-      index = create(:index)
-      login_as(index.user)
+      login_as(user)
       name = 'ValidSection' + index.name
       put :update, params: { id: index.id, index: {name: name} }
       expect(response).to redirect_to(index_url(index))
@@ -168,6 +168,9 @@ RSpec.describe IndexesController do
   end
 
   describe "DELETE destroy" do
+    let(:user) { create(:user) }
+    let(:index) { create(:index, user: user) }
+
     it "requires login" do
       delete :destroy, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -183,15 +186,13 @@ RSpec.describe IndexesController do
 
     it "requires permission" do
       login
-      index = create(:index)
       delete :destroy, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
       expect(flash[:error]).to eq('You do not have permission to edit this index.')
     end
 
     it "works" do
-      index = create(:index)
-      login_as(index.user)
+      login_as(user)
       delete :destroy, params: { id: index.id }
       expect(response).to redirect_to(indexes_url)
       expect(flash[:success]).to eq("Index deleted.")
@@ -199,9 +200,8 @@ RSpec.describe IndexesController do
     end
 
     it "handles destroy failure" do
-      index = create(:index)
       section = create(:index_section, index: index)
-      login_as(index.user)
+      login_as(user)
       expect_any_instance_of(Index).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))

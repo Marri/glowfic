@@ -8,10 +8,13 @@ RSpec.describe MessagesController do
 
     context "with views" do
       render_views
+
+      let(:user) { create(:user) }
+
+      before(:each) { login_as(user) }
+
       it "assigns correct inbox variables" do
-        user = create(:user)
-        login_as(user)
-        messages = Array.new(4) { create(:message, recipient: user) }
+        messages = create_list(:message, 4, recipient: user)
         deleted = create(:message, recipient: user)
         deleted.sender.archive
         get :index
@@ -22,9 +25,7 @@ RSpec.describe MessagesController do
       end
 
       it "assigns correct outbox variables" do
-        user = create(:user)
-        login_as(user)
-        messages = Array.new(4) { create(:message, sender: user) }
+        messages = create_list(:message, 4, sender: user)
         deleted = create(:message, sender: user)
         deleted.recipient.archive
         get :index, params: { view: 'outbox' }
@@ -35,8 +36,6 @@ RSpec.describe MessagesController do
       end
 
       it "includes site messages" do
-        user = create(:user)
-        login_as(user)
         message = create(:message, sender_id: 0, recipient: user)
         get :index, params: { view: 'inbox' }
         expect(response).to have_http_status(200)
@@ -44,37 +43,47 @@ RSpec.describe MessagesController do
       end
     end
 
-    context "blocking" do
-      let(:m1) { create(:message) }
-      let(:m2) { create(:message, sender: m1.sender, recipient: m1.recipient, unread: false) }
-      let(:m3) { create(:message, sender: m1.recipient, recipient: m1.sender, thread_id: m2.id) }
-      let(:m4) { create(:message, recipient: m1.sender, sender: m1.recipient) }
-      let(:m5) { create(:message, recipient: m1.sender, sender: m1.recipient, unread: false) }
-      let(:m6) { create(:message, recipient: m1.recipient, sender: m1.sender, thread_id: m5.id) }
-      let(:m7) { create(:message, sender: m1.sender, recipient: m1.recipient, unread: false) }
-      let(:m8) { create(:message, sender: m1.recipient, recipient: m1.sender, thread_id: m7.id, unread: false) }
-      let(:m9) { create(:message, sender: m1.sender, recipient: m1.recipient, thread_id: m7.id) }
+    context "threaded messages" do
+      let(:user1) { create(:user) }
+      let(:user2) { create(:user) }
+      let!(:root1) { create(:message, sender: user2, recipient: user1) }
+      let!(:root2) { create(:message, sender: user2, recipient: user1, unread: false) }
+      let!(:root3) { create(:message, recipient: user2, sender: user1) }
+      let!(:root4) { create(:message, recipient: user2, sender: user1, unread: false) }
+      let!(:root5) { create(:message, sender: user2, recipient: user1, unread: false) }
 
-      before(:each) { [m1, m2, m3, m4, m5, m6, m7, m8, m9] }
-
-      it "excludes blocked messages in inbox" do
-        login_as(m1.recipient)
-        get :index
-        expect(assigns(:messages).count).to eq(4)
-        expect(assigns(:messages).map(&:thread_id)).to match_array([m1.id, m2.id, m5.id, m7.id])
-        create(:block, blocking_user: m1.recipient, blocked_user: m1.sender)
-        get :index
-        expect(assigns(:messages).count).to eq(0)
+      before(:each) do
+        create(:message, sender: user1, recipient: user2, thread_id: root2.id) # m3
+        create(:message, recipient: user1, sender: user2, thread_id: root4.id) # m6
+        create(:message, sender: user1, recipient: user2, thread_id: root5.id, unread: false) # m8
+        create(:message, sender: user2, recipient: user1, thread_id: root5.id) # m9
+        login_as(user1)
       end
 
-      it "excludes blocked messages in outbox" do
-        login_as(m1.recipient)
+      it "display correctly in inbox" do
+        get :index
+        expect(assigns(:messages).count).to eq(4)
+        expect(assigns(:messages).map(&:thread_id)).to match_array([root1.id, root2.id, root4.id, root5.id])
+      end
+
+      it "display correctly in outbox" do
         get :index, params: { view: 'outbox' }
-        expect(assigns(:messages).count).to eq(4) # m2/3, m4, m5/6, m7/8/9
-        expect(assigns(:messages).map(&:thread_id)).to match_array([m2.id, m4.id, m5.id, m7.id])
-        create(:block, blocking_user: m1.recipient, blocked_user: m1.sender)
-        get :index, params: { view: 'outbox' }
-        expect(assigns(:messages).count).to eq(0)
+        expect(assigns(:messages).count).to eq(4)
+        expect(assigns(:messages).map(&:thread_id)).to match_array([root2.id, root3.id, root4.id, root5.id])
+      end
+
+      context "excludes blocked messages" do
+        before(:each) { create(:block, blocking_user: user1, blocked_user: user2) }
+
+        it "in inbox" do
+          get :index
+          expect(assigns(:messages).count).to eq(0)
+        end
+
+        it "in outbox" do
+          get :index, params: { view: 'outbox' }
+          expect(assigns(:messages).count).to eq(0)
+        end
       end
     end
 
@@ -84,6 +93,8 @@ RSpec.describe MessagesController do
   end
 
   describe "GET new" do
+    let(:user) { create(:user) }
+
     it "requires login" do
       get :new
       expect(response).to redirect_to(root_url)
@@ -99,38 +110,41 @@ RSpec.describe MessagesController do
 
     it "handles provided valid recipient" do
       login
-      recipient = create(:user)
-      get :new, params: { recipient_id: recipient.id }
+      get :new, params: { recipient_id: user.id }
       expect(response.status).to eq(200)
       expect(assigns(:message).recipient_id).to eq(recipient.id)
     end
 
-    it "handles provided blocked user" do
-      block = create(:block)
-      login_as(block.blocking_user)
-      get :new, params: { recipient_id: block.blocked_user_id }
-      expect(response.status).to eq(200)
-      expect(assigns(:message).recipient_id).to be_nil
-    end
+    context "with blocks" do
+      let(:blocker) { create(:user) }
+      let(:blocked) { create(:user) }
+      let(:block) { create(:blocker, blocking_user: blocker, blocked_user: blocked) }
 
-    it "handles provided blocking user" do
-      block = create(:block)
-      login_as(block.blocked_user)
-      get :new, params: { recipient_id: block.blocking_user_id }
-      expect(response.status).to eq(200)
-      expect(assigns(:message).recipient_id).to be(block.blocking_user_id)
-    end
+      it "handles provided blocked user" do
+        login_as(blocker)
+        get :new, params: { recipient_id: blocked }
+        expect(response.status).to eq(200)
+        expect(assigns(:message).recipient_id).to be_nil
+      end
 
-    it "hides blocked users" do
-      user = create(:user)
-      login_as(user)
-      blocking_users = create_list(:block, 2, blocked_user: user)
-      create_list(:block, 2, blocking_user: user)
-      other_users = create_list(:user, 2) + blocking_users.map(&:blocking_user)
-      other_users = other_users.sort_by!(&:username).pluck(:username, :id)
-      get :new
-      expect(response.status).to eq(200)
-      expect(assigns(:select_items)).to eq(Users: other_users)
+      it "handles provided blocking user" do
+        login_as(blocked)
+        get :new, params: { recipient_id: blocker }
+        expect(response.status).to eq(200)
+        expect(assigns(:message).recipient_id).to be(blocker)
+      end
+
+      it "hides blocked users" do
+        user = create(:user)
+        login_as(user)
+        blocking_users = create_list(:block, 2, blocked_user: user)
+        create_list(:block, 2, blocking_user: user)
+        other_users = create_list(:user, 2) + blocking_users.map(&:blocking_user)
+        other_users = other_users.sort_by!(&:username).pluck(:username, :id)
+        get :new
+        expect(response.status).to eq(200)
+        expect(assigns(:select_items)).to eq(Users: other_users)
+      end
     end
 
     context "with views" do
