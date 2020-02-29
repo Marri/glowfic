@@ -2,6 +2,8 @@ RSpec.describe BoardsController do
   include ActiveJob::TestHelper
 
   describe "GET index" do
+    let(:user) { create(:user) }
+
     context "without a user_id" do
       it "succeeds when logged out" do
         get :index
@@ -15,19 +17,16 @@ RSpec.describe BoardsController do
       end
 
       it "sets correct variables" do
-        user = create(:user)
-        board1 = create(:board, creator_id: user.id)
-        board2 = create(:board, creator_id: user.id)
+        boards = create_list(:board, 2, creator: user)
 
         get :index
-        expect(assigns(:boards)).to match_array([board1, board2])
+        expect(assigns(:boards)).to match_array(boards)
         expect(assigns(:page_title)).to eq('Continuities')
       end
     end
 
     context "with a user_id" do
       it "does not require login" do
-        user = create(:user)
         get :index, params: { user_id: user.id }
         expect(response.status).to eq(200)
         expect(assigns(:user)).to eq(user)
@@ -55,8 +54,7 @@ RSpec.describe BoardsController do
       end
 
       it "sets correct variables" do
-        user = create(:user)
-        owned_board = create(:board, creator_id: user.id)
+        owned_board = create(:board, creator: user)
 
         get :index, params: { user_id: user.id }
         expect(assigns(:boards)).to match_array([owned_board])
@@ -71,9 +69,8 @@ RSpec.describe BoardsController do
       end
 
       it "orders boards correctly" do
-        user = create(:user)
-        owned_board1 = create(:board, creator_id: user.id, name: 'da')
-        owned_board2 = create(:board, creator_id: user.id, name: 'ba')
+        owned_board1 = create(:board, creator: user, name: 'da')
+        owned_board2 = create(:board, creator: user, name: 'ba')
         author_board1 = create(:board, writers: [user], name: 'aa')
         author_board2 = create(:board, writers: [user], name: 'ca')
         cameo_board1 = create(:board, cameos: [user], name: 'bb')
@@ -101,30 +98,32 @@ RSpec.describe BoardsController do
     end
 
     it "sets correct variables" do
-      user_id = login
-      current_user = User.find(user_id)
-      other_users = Array.new(3) { create(:user) }
+      user = create(:user)
+      login_as(user)
+      other_users = create_list(:user, 3)
 
       get :new
 
       expect(assigns(:board)).to be_an_instance_of(Board)
       expect(assigns(:board)).to be_a_new_record
-      expect(assigns(:board).creator_id).to eq(user_id)
+      expect(assigns(:board).creator_id).to eq(user.id)
       expect(assigns(:page_title)).to eq("New Continuity")
 
       expect(assigns(:coauthors).size).to eq(3)
       expect(assigns(:coauthors)).to match_array(other_users)
-      expect(assigns(:coauthors)).not_to include(current_user)
+      expect(assigns(:coauthors)).not_to include(user)
       expect(assigns(:coauthors).sort_by(&:username)).to eq(assigns(:coauthors))
 
       expect(assigns(:cameos).size).to eq(3)
       expect(assigns(:cameos)).to match_array(other_users)
-      expect(assigns(:cameos)).not_to include(current_user)
+      expect(assigns(:cameos)).not_to include(user)
       expect(assigns(:cameos).sort_by(&:username)).to eq(assigns(:cameos))
     end
   end
 
   describe "POST create" do
+    let(:user) { create(:user) }
+
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -141,32 +140,31 @@ RSpec.describe BoardsController do
     end
 
     it "sets correct variables on failure" do
-      login
-      other_users = Array.new(3) { create(:user) }
+      login_as(user)
+      other_users = create_list(:user, 3)
 
       post :create
 
       expect(assigns(:board)).to be_an_instance_of(Board)
       expect(assigns(:board)).to be_a_new_record
       expect(assigns(:board)).not_to be_valid
-      expect(assigns(:board).creator).to eq(assigns(:current_user))
+      expect(assigns(:board).creator).to eq(user)
       expect(assigns(:page_title)).to eq("New Continuity")
 
       expect(assigns(:coauthors).size).to eq(3)
       expect(assigns(:coauthors)).to match_array(other_users)
-      expect(assigns(:coauthors)).not_to include(assigns(:current_user))
+      expect(assigns(:coauthors)).not_to include(user)
       expect(assigns(:coauthors).sort_by(&:username)).to eq(assigns(:coauthors))
 
       expect(assigns(:cameos).size).to eq(3)
       expect(assigns(:cameos)).to match_array(other_users)
-      expect(assigns(:cameos)).not_to include(assigns(:current_user))
+      expect(assigns(:cameos)).not_to include(user)
       expect(assigns(:cameos).sort_by(&:username)).to eq(assigns(:cameos))
     end
 
     it "successfully makes a board" do
       expect(Board.count).to eq(0)
-      creator = create(:user)
-      login_as(creator)
+      login_as(user)
       user2 = create(:user)
       user3 = create(:user)
 
@@ -184,14 +182,16 @@ RSpec.describe BoardsController do
 
       board = Board.first
       expect(board.name).to eq('TestCreateBoard')
-      expect(board.creator).to eq(creator)
+      expect(board.creator).to eq(user)
       expect(board.description).to eq('Test description')
-      expect(board.writers).to match_array([creator, user2])
+      expect(board.writers).to match_array([user, user2])
       expect(board.cameos).to match_array([user3])
     end
   end
 
   describe "GET show" do
+    let(:board) { create(:board) }
+
     it "requires valid board" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(continuities_url)
@@ -199,34 +199,29 @@ RSpec.describe BoardsController do
     end
 
     it "succeeds with valid board" do
-      board = create(:board)
       get :show, params: { id: board.id }
       expect(response.status).to eq(200)
     end
 
     it "succeeds for logged in users with valid board" do
       login
-      board = create(:board)
       get :show, params: { id: board.id }
       expect(response.status).to eq(200)
     end
 
     it "only fetches the board's first 25 posts" do
-      board = create(:board)
       create_list(:post, 26, board: board)
       get :show, params: { id: board.id }
       expect(assigns(:posts).size).to eq(25)
     end
 
     it "orders the posts by tagged_at in unordered boards" do
-      board = create(:board)
       Array.new(3) { create(:post, board: board, tagged_at: Time.zone.now + rand(5..30).hours) }
       get :show, params: { id: board.id }
       expect(assigns(:posts)).to eq(assigns(:posts).sort_by(&:tagged_at).reverse)
     end
 
     it "orders the posts correctly in ordered boards" do
-      board = create(:board)
       section2 = create(:board_section, board: board)
       section1 = create(:board_section, board: board)
       section1.update!(section_order: 0)
@@ -268,6 +263,8 @@ RSpec.describe BoardsController do
   end
 
   describe "GET edit" do
+    let(:board) { create(:board) }
+
     it "requires login" do
       get :edit, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -282,17 +279,13 @@ RSpec.describe BoardsController do
     end
 
     it "requires board permission" do
-      user = create(:user)
-      login_as(user)
-      board = create(:board)
-      expect(board).not_to be_editable_by(user)
+      login
       get :edit, params: { id: board.id }
       expect(response).to redirect_to(continuity_url(board))
       expect(flash[:error]).to eq("You do not have permission to edit that continuity.")
     end
 
     it "succeeds with valid board" do
-      board = create(:board)
       login_as(board.creator)
       get :edit, params: { id: board.id }
       expect(response.status).to eq(200)
@@ -313,6 +306,9 @@ RSpec.describe BoardsController do
   end
 
   describe "PUT update" do
+    let(:user) { create(:user) }
+    let(:board) { create(:board, creator: user) }
+
     it "requires login" do
       put :update, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -327,18 +323,13 @@ RSpec.describe BoardsController do
     end
 
     it "requires board permission" do
-      user = create(:user)
-      login_as(user)
-      board = create(:board)
-      expect(board).not_to be_editable_by(user)
+      login
       put :update, params: { id: board.id }
       expect(response).to redirect_to(continuity_url(board))
       expect(flash[:error]).to eq("You do not have permission to edit that continuity.")
     end
 
     it "requires valid params" do
-      user = create(:user)
-      board = create(:board, creator: user)
       login_as(user)
       put :update, params: { id: board.id, board: {name: ''} }
       expect(response).to render_template('edit')
@@ -347,8 +338,6 @@ RSpec.describe BoardsController do
     end
 
     it "succeeds" do
-      user = create(:user)
-      board = create(:board, creator: user)
       name = board.name
       login_as(user)
       user2 = create(:user)
@@ -373,6 +362,9 @@ RSpec.describe BoardsController do
   end
 
   describe "DELETE destroy" do
+    let(:user) { create(:user) }
+    let(:board) { create(:board, creator: user) }
+
     it "requires login" do
       delete :destroy, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -387,29 +379,24 @@ RSpec.describe BoardsController do
     end
 
     it "requires board permission" do
-      user = create(:user)
-      login_as(user)
-      board = create(:board)
-      expect(board).not_to be_editable_by(user)
+      login
       delete :destroy, params: { id: board.id }
       expect(response).to redirect_to(continuity_url(board))
       expect(flash[:error]).to eq("You do not have permission to edit that continuity.")
     end
 
     it "succeeds" do
-      board = create(:board)
-      login_as(board.creator)
+      login_as(user)
       delete :destroy, params: { id: board.id }
       expect(response).to redirect_to(continuities_url)
       expect(flash[:success]).to eq("Continuity deleted.")
     end
 
     it "moves posts to sandboxes" do
-      board = create(:board)
       create(:board, id: Board::ID_SANDBOX)
       section = create(:board_section, board: board)
       post = create(:post, board: board, section: section)
-      login_as(board.creator)
+      login_as(user)
       perform_enqueued_jobs(only: UpdateModelJob) do
         delete :destroy, params: { id: board.id }
       end
@@ -422,9 +409,8 @@ RSpec.describe BoardsController do
     end
 
     it "handles destroy failure" do
-      board = create(:board)
-      post = create(:post, user: board.creator, board: board)
-      login_as(board.creator)
+      post = create(:post, user: user, board: board)
+      login_as(user)
       expect_any_instance_of(Board).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: board.id }
       expect(response).to redirect_to(continuity_url(board))
@@ -461,48 +447,46 @@ RSpec.describe BoardsController do
       expect(flash[:error]).to eq("Please choose a valid action.")
     end
 
-    it "successfully marks board read" do
-      board = create(:board)
-      user = create(:user)
-      login_as(user)
-      now = Time.zone.now
-      expect(board.last_read(user)).to be_nil
-      post :mark, params: { board_id: board.id, commit: "Mark Read" }
-      expect(Board.find(board.id).last_read(user)).to be >= now # reload to reset cached @view
-      expect(response).to redirect_to(unread_posts_url)
-      expect(flash[:success]).to eq("#{board.name} marked as read.")
-    end
+    context "successfully" do
+      let(:board) { create(:board) }
+      let(:user) { create(:user) }
+      let(:now) { Time.zone.now }
 
-    it "marks extant post views read" do
-      now = Time.zone.now
-      board = create(:board)
-      user = create(:user)
-      read_post = create(:post, user: user, board: board)
-      read_post.mark_read(user, at_time: now - 1.day, force: true)
-      unread_post = create(:post, user: user, board: board)
-      unread_post.mark_read(create(:user), at_time: now - 1.day, force: true)
+      before(:each) { login_as(user) }
 
-      expect(Board.find(board.id).last_read(user)).to be_nil # reload to reset cached @view
-      expect(Post.find(read_post.id).last_read(user)).to be_the_same_time_as(now - 1.day)
-      expect(Post.find(unread_post.id).last_read(user)).to be_nil
+      it "marks board read" do
+        now
+        expect(board.last_read(user)).to be_nil
+        post :mark, params: { board_id: board.id, commit: "Mark Read" }
+        expect(board.reload.last_read(user)).to be >= now # reload to reset cached @view
+        expect(response).to redirect_to(unread_posts_url)
+        expect(flash[:success]).to eq("#{board.name} marked as read.")
+      end
 
-      login_as(user)
-      post :mark, params: { board_id: board.id, commit: "Mark Read" }
+      it "marks extant post views read" do
+        read_post = create(:post, user: user, board: board)
+        read_post.mark_read(user, at_time: now - 1.day, force: true)
+        unread_post = create(:post, user: user, board: board)
+        unread_post.mark_read(create(:user), at_time: now - 1.day, force: true)
 
-      expect(Board.find(board.id).last_read(user)).to be >= now # reload to reset cached @view
-      expect(Post.find(read_post.id).last_read(user)).to be >= now
-      expect(Post.find(unread_post.id).last_read(user)).to be_nil
-    end
+        expect(board.reload.last_read(user)).to be_nil
+        expect(read_post.reload.last_read(user)).to be_the_same_time_as(now - 1.day)
+        expect(unread_post.reload.last_read(user)).to be_nil
 
-    it "successfully ignores board" do
-      board = create(:board)
-      user = create(:user)
-      login_as(user)
-      expect(board).not_to be_ignored_by(user)
-      post :mark, params: { board_id: board.id, commit: "Hide from Unread" }
-      expect(Board.find(board.id)).to be_ignored_by(user) # reload to reset cached @view
-      expect(response).to redirect_to(unread_posts_url)
-      expect(flash[:success]).to eq("#{board.name} hidden from this page.")
+        post :mark, params: { board_id: board.id, commit: "Mark Read" }
+
+        expect(board.reload.last_read(user)).to be >= now
+        expect(read_post.reload.last_read(user)).to be >= now
+        expect(unread_post.reload.last_read(user)).to be_nil
+      end
+
+      it "ignores board" do
+        expect(board).not_to be_ignored_by(user)
+        post :mark, params: { board_id: board.id, commit: "Hide from Unread" }
+        expect(board.reload).to be_ignored_by(user)
+        expect(response).to redirect_to(unread_posts_url)
+        expect(flash[:success]).to eq("#{board.name} hidden from this page.")
+      end
     end
   end
 
@@ -574,14 +558,14 @@ RSpec.describe BoardsController do
   describe "#editor_setup" do
     it "gets the correct set of available cowriters" do
       login
-      users = Array.new(3) { create(:user) }
+      users = create_list(:user, 3)
       controller.send(:editor_setup)
       expect(assigns(:cameos)).to match_array(users)
       expect(assigns(:coauthors)).to match_array(users)
     end
 
     it "gets the correct set of available cowriters on an existing board" do
-      users = Array.new(3) { create(:user) }
+      users = create_list(:user, 3)
       coauthors = [create(:user)]
       cameos = [create(:user), create(:user)]
       board = create(:board, writers: coauthors, cameos: cameos)

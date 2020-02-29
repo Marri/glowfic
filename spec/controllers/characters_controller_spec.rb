@@ -2,6 +2,8 @@ RSpec.describe CharactersController do
   include ActiveJob::TestHelper
 
   describe "GET index" do
+    let(:user) { create(:user) }
+
     it "requires login without an id" do
       get :index
       expect(response).to redirect_to(root_url)
@@ -15,7 +17,6 @@ RSpec.describe CharactersController do
     end
 
     it "succeeds with an id" do
-      user = create(:user)
       get :index, params: { user_id: user.id }
       expect(response.status).to eq(200)
     end
@@ -27,7 +28,6 @@ RSpec.describe CharactersController do
     end
 
     it "succeeds with an id when logged in" do
-      user = create(:user)
       login
       get :index, params: { user_id: user.id }
       expect(response.status).to eq(200)
@@ -39,18 +39,18 @@ RSpec.describe CharactersController do
 
     context "with render_views" do
       render_views
+      before(:each) do
+        create(:character, user: user)
+        create(:template_character, user: user)
+      end
 
       it "successfully renders the page in template group" do
-        character = create(:character)
-        create(:template_character, user: character.user) # character2
-        get :index, params: { user_id: character.user_id, character_split: 'template' }
+        get :index, params: { user_id: user.id, character_split: 'template' }
         expect(response.status).to eq(200)
       end
 
       it "successfully renders the page with no group" do
-        character = create(:character)
-        create(:template_character, user: character.user) # character2
-        get :index, params: { user_id: character.user_id, character_split: 'none' }
+        get :index, params: { user_id: user.id, character_split: 'none' }
         expect(response.status).to eq(200)
       end
 
@@ -65,6 +65,9 @@ RSpec.describe CharactersController do
   end
 
   describe "GET new" do
+    let(:user) { create(:user) }
+    let(:template) { create(:template, user: user) }
+
     it "requires login" do
       get :new
       expect(response).to redirect_to(root_url)
@@ -78,8 +81,7 @@ RSpec.describe CharactersController do
     end
 
     it "sets correct variables with template_id" do
-      template = create(:template)
-      login_as(template.user)
+      login_as(user)
       get :new, params: { template_id: template.id }
       expect(response.status).to eq(200)
       expect(assigns(:character).template).to eq(template)
@@ -88,8 +90,7 @@ RSpec.describe CharactersController do
     context "with views" do
       render_views
       it "sets correct variables" do
-        user = create(:user)
-        templates = Array.new(2) { create(:template, user: user) }
+        templates = create_list(:template, 2, user: user)
         create(:template)
 
         login_as(user)
@@ -106,6 +107,9 @@ RSpec.describe CharactersController do
   end
 
   describe "POST create" do
+    let(:user) { create(:user) }
+    let(:gallery) { create(:gallery, user: user) }
+
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -129,9 +133,7 @@ RSpec.describe CharactersController do
     it "succeeds when valid" do
       expect(Character.count).to eq(0)
       test_name = 'Test character'
-      user = create(:user)
       template = create(:template, user: user)
-      gallery = create(:gallery, user: user)
       setting = create(:setting, user: user, name: 'A World')
 
       login_as(user)
@@ -182,11 +184,9 @@ RSpec.describe CharactersController do
     context "with views" do
       render_views
       it "sets correct variables when invalid" do
-        user = create(:user)
-        gallery = create(:gallery, user: user)
         group = create(:gallery_group)
         group_gallery = create(:gallery, user: user, gallery_groups: [group])
-        templates = Array.new(2) { create(:template, user: user) }
+        templates = create_list(:template, 2, user: user)
         create(:template)
 
         login_as(user)
@@ -207,6 +207,9 @@ RSpec.describe CharactersController do
   end
 
   describe "GET show" do
+    let(:user) { create(:user) }
+    let(:character) { create(:character, user: user) }
+
     it "requires valid character logged out" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -214,28 +217,25 @@ RSpec.describe CharactersController do
     end
 
     it "requires valid character logged in" do
-      user_id = login
+      login_as(user)
       get :show, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq("Character could not be found.")
     end
 
     it "should succeed when logged out" do
-      character = create(:character)
       get :show, params: { id: character.id }
       expect(response.status).to eq(200)
     end
 
     it "should succeed when logged in" do
-      character = create(:character)
       login
       get :show, params: { id: character.id }
       expect(response.status).to eq(200)
     end
 
     it "should set correct variables" do
-      character = create(:character)
-      Array.new(26) { create(:post, character: character, user: character.user) }
+      create_list(:post, 26, character: character, user: user)
       get :show, params: { id: character.id }
       expect(response.status).to eq(200)
       expect(assigns(:page_title)).to eq(character.name)
@@ -244,21 +244,19 @@ RSpec.describe CharactersController do
     end
 
     it "should only show visible posts" do
-      character = create(:character)
       create(:post, character: character, user: character.user, privacy: :private)
       get :show, params: { id: character.id }
       expect(assigns(:posts)).to be_blank
     end
 
     it "orders recent posts" do
-      character = create(:character)
       post3 = create(:post)
-      post1 = create(:post, user: character.user, character: character)
-      post4 = create(:post, user: character.user, character: character)
+      post1 = create(:post, user: user, character: character)
+      post4 = create(:post, user: user, character: character)
       post2 = create(:post)
       create(:reply, post: post4)
-      create(:reply, post: post3, user: character.user, character: character)
-      create(:reply, post: post2, user: character.user, character: character)
+      create(:reply, post: post3, user: user, character: character)
+      create(:reply, post: post2, user: user, character: character)
       create(:reply, post: post1)
       get :show, params: { id: character.id }
       expect(assigns(:posts)).to eq([post1, post2, post3, post4])
@@ -316,6 +314,9 @@ RSpec.describe CharactersController do
   end
 
   describe "GET edit" do
+    let(:user) { create(:user) }
+    let(:character) { create(:character, user: user) }
+
     it "requires login" do
       get :edit, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -323,22 +324,21 @@ RSpec.describe CharactersController do
     end
 
     it "requires valid character id" do
-      user_id = login
+      login_as(user)
       get :edit, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq("Character could not be found.")
     end
 
     it "requires character with permissions" do
-      user_id = login
+      login_as(user)
       get :edit, params: { id: create(:character).id }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq("You do not have permission to edit that character.")
     end
 
     it "succeeds when logged in" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       get :edit, params: { id: character.id }
       expect(response.status).to eq(200)
     end
@@ -346,7 +346,6 @@ RSpec.describe CharactersController do
     context "with views" do
       render_views
       it "sets correct variables" do
-        user = create(:user)
         group = create(:gallery_group)
         gallery = create(:gallery, user: user, gallery_groups: [group])
         character = create(:character, user: user, gallery_groups: [group])
@@ -367,37 +366,38 @@ RSpec.describe CharactersController do
         expect(assigns(:aliases)).to match_array([calias])
       end
 
-      it "works for moderator with untemplated character" do
-        user = create(:mod_user)
-        login_as(user)
-        character = create(:character)
-        template = create(:template, user: character.user)
+      context "works for moderator" do
+        let!(:template) { create(:template, user: user) }
 
-        get :edit, params: { id: character.id }
+        before(:each) { login_as(create(:mod_user)) }
 
-        expect(assigns(:page_title)).to eq("Edit Character: #{character.name}")
-        expect(controller.gon.character_id).to eq(character.id)
-        expect(controller.gon.user_id).to eq(character.user.id)
-        expect(assigns(:templates)).to match_array([template])
-      end
+        it "works for moderator with untemplated character" do
+          get :edit, params: { id: character.id }
 
-      it "works for moderator with templated character" do
-        user = create(:mod_user)
-        login_as(user)
-        character = create(:template_character)
-        template = create(:template, user: character.user)
+          expect(assigns(:page_title)).to eq("Edit Character: #{character.name}")
+          expect(controller.gon.character_id).to eq(character.id)
+          expect(controller.gon.user_id).to eq(user.id)
+          expect(assigns(:templates)).to match_array([template])
+        end
 
-        get :edit, params: { id: character.id }
+        it "works for moderator with templated character" do
+          character = create(:template_character, user: user)
 
-        expect(assigns(:page_title)).to eq("Edit Character: #{character.name}")
-        expect(controller.gon.character_id).to eq(character.id)
-        expect(controller.gon.user_id).to eq(character.user.id)
-        expect(assigns(:templates)).to match_array([character.template, template])
+          get :edit, params: { id: character.id }
+
+          expect(assigns(:page_title)).to eq("Edit Character: #{character.name}")
+          expect(controller.gon.character_id).to eq(character.id)
+          expect(controller.gon.user_id).to eq(user.id)
+          expect(assigns(:templates)).to match_array([character.template, template])
+        end
       end
     end
   end
 
   describe "PUT update" do
+    let(:user) { create(:user) }
+    let(:character) { create(:character, user: user) }
+
     it "requires login" do
       put :update, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -405,30 +405,28 @@ RSpec.describe CharactersController do
     end
 
     it "requires valid character id" do
-      user_id = login
+      login_as(user)
       put :update, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq("Character could not be found.")
     end
 
     it "requires character with permissions" do
-      user_id = login
+      login_as(user)
       put :update, params: { id: create(:character).id }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq("You do not have permission to edit that character.")
     end
 
     it "fails with invalid params" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       put :update, params: { id: character.id, character: {name: ''} }
       expect(response.status).to eq(200)
       expect(flash[:error][:message]).to eq("Your character could not be saved.")
     end
 
     it "fails with invalid template params" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       new_name = character.name + 'aaa'
       put :update, params: {
         id: character.id,
@@ -444,7 +442,6 @@ RSpec.describe CharactersController do
     end
 
     it "requires notes from moderators" do
-      character = create(:character, name: 'a')
       login_as(create(:mod_user))
       put :update, params: { id: character.id, character: { name: 'b' } }
       expect(response).to render_template(:edit)
@@ -453,9 +450,7 @@ RSpec.describe CharactersController do
 
     it "stores note from moderators" do
       Character.auditing_enabled = true
-      character = create(:character, name: 'a')
-      admin = create(:admin_user)
-      login_as(admin)
+      login_as(create(:admin_user))
       put :update, params: { id: character.id, character: { name: 'b', audit_comment: 'note' } }
       expect(flash[:success]).to eq("Character saved successfully.")
       expect(character.reload.name).to eq('b')
@@ -463,208 +458,186 @@ RSpec.describe CharactersController do
       Character.auditing_enabled = false
     end
 
-    it "succeeds when valid" do
-      character = create(:character)
-      user = character.user
-      login_as(user)
-      new_name = character.name + 'aaa'
-      template = create(:template, user: user)
-      gallery = create(:gallery, user: user)
-      setting = create(:setting, name: 'Another World')
-      put :update, params: {
-        id: character.id,
-        character: {
-          name: new_name,
-          nickname: 'TemplateName',
-          screenname: 'a-new-test',
-          setting_ids: [setting.id],
-          template_id: template.id,
-          pb: 'Actor',
-          description: 'Description',
-          ungrouped_gallery_ids: [gallery.id]
+    context "complex characters" do
+      let(:template) { create(:template, user: user) }
+      let(:gallery) { create(:gallery, user: user) }
+      let(:setting) { create(:setting, name: 'Another World') }
+      let(:params) do
+        {
+          id: character.id,
+          character: {
+            nickname: 'TemplateName',
+            screenname: 'a-new-test',
+            setting_ids: [setting.id],
+            template_id: template.id,
+            pb: 'Actor',
+            description: 'Description',
+            ungrouped_gallery_ids: [gallery.id]
+          }
         }
-      }
+      end
 
-      expect(response).to redirect_to(assigns(:character))
-      expect(flash[:success]).to eq("Character saved successfully.")
-      character.reload
-      expect(character.name).to eq(new_name)
-      expect(character.nickname).to eq('TemplateName')
-      expect(character.screenname).to eq('a-new-test')
-      expect(character.settings.pluck(:name)).to eq(['Another World'])
-      expect(character.template).to eq(template)
-      expect(character.pb).to eq('Actor')
-      expect(character.description).to eq('Description')
-      expect(character.galleries).to match_array([gallery])
-    end
+      before(:each) { login_as(user) }
 
-    it "does not persist values when invalid" do
-      character = create(:character)
-      user = character.user
-      login_as(user)
-      old_name = character.name
-      template = create(:template, user: user)
-      gallery = create(:gallery, user: user)
-      setting = create(:setting, name: 'Another World')
+      it "succeeds when valid" do
+        new_name = character.name + 'aaa'
+        params[:character][:name] = new_name
 
-      put :update, params: {
-        id: character.id,
-        character: {
-          name: '',
-          nickname: 'TemplateName',
-          screenname: 'a-new-test',
-          setting_ids: [setting.id],
-          template_id: template.id,
-          pb: 'Actor',
-          description: 'Description',
-          ungrouped_gallery_ids: [gallery.id]
-        }
-      }
+        put :update, params: params
 
-      expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Your character could not be saved.")
-      character.reload
-      expect(character.name).to eq(old_name)
-      expect(character.nickname).to be_nil
-      expect(character.screenname).to be_nil
-      expect(character.settings).to be_blank
-      expect(character.template).to be_blank
-      expect(character.pb).to be_nil
-      expect(character.description).to be_nil
-      expect(character.galleries).to be_blank
-    end
+        expect(response).to redirect_to(assigns(:character))
+        expect(flash[:success]).to eq("Character saved successfully.")
+        character.reload
+        expect(character.name).to eq(new_name)
+        expect(character.nickname).to eq('TemplateName')
+        expect(character.screenname).to eq('a-new-test')
+        expect(character.settings.pluck(:name)).to eq(['Another World'])
+        expect(character.template).to eq(template)
+        expect(character.pb).to eq('Actor')
+        expect(character.description).to eq('Description')
+        expect(character.galleries).to match_array([gallery])
+      end
 
-    it "adds galleries by groups" do
-      user = create(:user)
-      group = create(:gallery_group)
-      gallery = create(:gallery, gallery_groups: [group], user: user)
-      character = create(:character, user: user)
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group.id]} }
+      it "does not persist values when invalid" do
+        old_name = character.name
 
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to match_array([gallery])
-      expect(character.ungrouped_gallery_ids).to be_blank
-      expect(character.characters_galleries.first).to be_added_by_group
+        params[:character][:name] = ''
+
+        put :update, params: params
+
+        expect(response.status).to eq(200)
+        expect(flash[:error][:message]).to eq("Your character could not be saved.")
+        character.reload
+        expect(character.name).to eq(old_name)
+        expect(character.nickname).to be_nil
+        expect(character.screenname).to be_nil
+        expect(character.settings).to be_blank
+        expect(character.template).to be_blank
+        expect(character.pb).to be_nil
+        expect(character.description).to be_nil
+        expect(character.galleries).to be_blank
+      end
     end
 
     it "creates new templates when specified" do
       expect(Template.count).to eq(0)
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       put :update, params: { id: character.id, new_template: '1', character: {template_attributes: {name: 'Test'}} }
       expect(Template.count).to eq(1)
       expect(Template.first.name).to eq('Test')
       expect(character.reload.template_id).to eq(Template.first.id)
     end
 
-    it "removes gallery only if not shared between groups" do
-      user = create(:user)
-      group1 = create(:gallery_group) # gallery1
-      group2 = create(:gallery_group) # -> gallery1
-      group3 = create(:gallery_group) # gallery2 ->
-      group4 = create(:gallery_group) # gallery2
-      gallery1 = create(:gallery, gallery_groups: [group1, group2], user: user)
-      gallery2 = create(:gallery, gallery_groups: [group3, group4], user: user)
-      character = create(:character, gallery_groups: [group1, group3, group4], user: user)
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group2.id, group4.id]} }
+    context "with gallery groups" do
+      let(:group) { create(:gallery_group) }
+      let(:gallery) { create(:gallery, gallery_groups: [group], user: user) }
 
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group2, group4])
-      expect(character.galleries).to match_array([gallery1, gallery2])
-      expect(character.ungrouped_gallery_ids).to be_blank
-      expect(character.characters_galleries.map(&:added_by_group)).to eq([true, true])
-    end
+      before(:each) { login_as(user) }
 
-    it "does not remove gallery if tethered by group" do
-      user = create(:user)
-      group = create(:gallery_group)
-      gallery = create(:gallery, gallery_groups: [group], user: user)
-      character = create(:character, gallery_groups: [group], user: user)
-      character.ungrouped_gallery_ids = [gallery.id]
-      character.save!
-      expect(character.characters_galleries.first).not_to be_added_by_group
+      it "adds galleries by groups" do
+        gallery
 
-      login_as(user)
-      put :update, params: {
-        id: character.id,
-        character: {
-          ungrouped_gallery_ids: [''],
-          gallery_group_ids: [group.id]
+        put :update, params: { id: character.id, character: {gallery_group_ids: [group.id]} }
+
+        expect(flash[:success]).to eq('Character saved successfully.')
+        character.reload
+        expect(character.gallery_groups).to match_array([group])
+        expect(character.galleries).to match_array([gallery])
+        expect(character.ungrouped_gallery_ids).to be_blank
+        expect(character.characters_galleries.first).to be_added_by_group
+      end
+
+      it "removes gallery only if not shared between groups" do
+        group1 = create(:gallery_group)
+        group2 = create(:gallery_group)
+        group3 = create(:gallery_group)
+        group4 = create(:gallery_group)
+        gallery1 = create(:gallery, gallery_groups: [group1, group2], user: user)
+        gallery2 = create(:gallery, gallery_groups: [group3, group4], user: user)
+        character = create(:character, gallery_groups: [group1, group3, group4], user: user)
+
+        put :update, params: { id: character.id, character: {gallery_group_ids: [group2.id, group4.id]} }
+
+        expect(flash[:success]).to eq('Character saved successfully.')
+        character.reload
+        expect(character.gallery_groups).to match_array([group2, group4])
+        expect(character.galleries).to match_array([gallery1, gallery2])
+        expect(character.ungrouped_gallery_ids).to be_blank
+        expect(character.characters_galleries.map(&:added_by_group)).to eq([true, true])
+      end
+
+      it "does not remove gallery if tethered by group" do
+        gallery
+        character = create(:character, gallery_groups: [group], ungrouped_gallery_ids: [gallery.id], user: user)
+        expect(character.characters_galleries.first).not_to be_added_by_group
+
+        put :update, params: {
+          id: character.id,
+          character: {
+            ungrouped_gallery_ids: [''],
+            gallery_group_ids: [group.id]
+          }
         }
-      }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to match_array([gallery])
-      expect(character.ungrouped_gallery_ids).to be_blank
-      expect(character.characters_galleries.first).to be_added_by_group
-    end
+        expect(flash[:success]).to eq('Character saved successfully.')
+        character.reload
+        expect(character.gallery_groups).to match_array([group])
+        expect(character.galleries).to match_array([gallery])
+        expect(character.ungrouped_gallery_ids).to be_blank
+        expect(character.characters_galleries.first).to be_added_by_group
+      end
 
-    it "works when adding both group and gallery" do
-      user = create(:user)
-      group = create(:gallery_group)
-      gallery = create(:gallery, gallery_groups: [group], user: user)
-      character = create(:character, user: user)
-
-      login_as(user)
-      put :update, params: {
-        id: character.id,
-        character: {
-          gallery_group_ids: [group.id],
-          ungrouped_gallery_ids: [gallery.id]
+      it "works when adding both group and gallery" do
+        put :update, params: {
+          id: character.id,
+          character: {
+            gallery_group_ids: [group.id],
+            ungrouped_gallery_ids: [gallery.id]
+          }
         }
-      }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to match_array([gallery])
-      expect(character.ungrouped_gallery_ids).to eq([gallery.id])
-      expect(character.characters_galleries.first).not_to be_added_by_group
-    end
 
-    it "does not add another user's galleries" do
-      group = create(:gallery_group)
-      create(:gallery, gallery_groups: [group]) # gallery
-      character = create(:character)
+        expect(flash[:success]).to eq('Character saved successfully.')
+        character.reload
+        expect(character.gallery_groups).to match_array([group])
+        expect(character.galleries).to match_array([gallery])
+        expect(character.ungrouped_gallery_ids).to eq([gallery.id])
+        expect(character.characters_galleries.first).not_to be_added_by_group
+      end
 
-      login_as(character.user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: [group.id]} }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to match_array([group])
-      expect(character.galleries).to be_blank
-    end
+      it "does not add another user's galleries" do
+        create(:gallery, gallery_groups: [group])
 
-    it "removes untethered galleries when group goes" do
-      user = create(:user)
-      group = create(:gallery_group)
-      create(:gallery, gallery_groups: [group], user: user) # gallery
-      character = create(:character, gallery_groups: [group], user: user)
+        put :update, params: { id: character.id, character: {gallery_group_ids: [group.id]} }
+        expect(flash[:success]).to eq('Character saved successfully.')
+        character.reload
+        expect(character.gallery_groups).to match_array([group])
+        expect(character.galleries).to be_blank
+      end
 
-      login_as(user)
-      put :update, params: { id: character.id, character: {gallery_group_ids: ['']} }
-      expect(flash[:success]).to eq('Character saved successfully.')
-      character.reload
-      expect(character.gallery_groups).to eq([])
-      expect(character.galleries).to eq([])
+      it "removes untethered galleries when group goes" do
+        gallery
+        character = create(:character, gallery_groups: [group], user: user)
+
+        login_as(user)
+        put :update, params: { id: character.id, character: {gallery_group_ids: ['']} }
+        expect(flash[:success]).to eq('Character saved successfully.')
+        character.reload
+        expect(character.gallery_groups).to eq([])
+        expect(character.galleries).to eq([])
+      end
     end
 
     context "with views" do
       render_views
+
+      before(:each) { login_as(user) }
+
       it "sets correct variables when invalid" do
-        user = create(:user)
         group = create(:gallery_group)
         gallery = create(:gallery, user: user, gallery_groups: [group])
         character = create(:character, user: user, gallery_groups: [group])
         templates = Array.new(2) { create(:template, user: user) }
         create(:template)
 
-        login_as(user)
         put :update, params: { id: character.id, character: {name: '', gallery_group_ids: [group.id]} }
 
         expect(response).to render_template(:edit)
@@ -678,17 +651,16 @@ RSpec.describe CharactersController do
     end
 
     it "reorders galleries as necessary" do
-      character = create(:character)
-      g1 = create(:gallery, user: character.user)
-      g2 = create(:gallery, user: character.user)
+      g1 = create(:gallery, user: user)
+      g2 = create(:gallery, user: user)
       character.galleries << g1
       character.galleries << g2
-      g1_cg = CharactersGallery.where(gallery_id: g1.id).first
-      g2_cg = CharactersGallery.where(gallery_id: g2.id).first
+      g1_cg = CharactersGallery.find_by(gallery_id: g1.id)
+      g2_cg = CharactersGallery.find_by(gallery_id: g2.id)
       expect(g1_cg.section_order).to eq(0)
       expect(g2_cg.section_order).to eq(1)
+      login_as(user)
 
-      login_as(character.user)
       put :update, params: { id: character.id, character: {ungrouped_gallery_ids: [g2.id.to_s]} }
 
       expect(character.reload.galleries.pluck(:id)).to eq([g2.id])
@@ -696,37 +668,40 @@ RSpec.describe CharactersController do
     end
 
     it "orders settings by default" do
-      char = create(:character)
-      login_as(char.user)
+      login_as(user)
       setting1 = create(:setting)
       setting3 = create(:setting)
       setting2 = create(:setting)
+
       put :update, params: {
-        id: char.id,
+        id: character.id,
         character: {setting_ids: [setting1, setting2, setting3].map(&:id)}
       }
+
       expect(flash[:success]).to eq('Character saved successfully.')
-      expect(char.settings).to eq([setting1, setting2, setting3])
+      expect(character.settings).to eq([setting1, setting2, setting3])
     end
 
     it "orders gallery groups by default" do
-      user = create(:user)
       login_as(user)
-      char = create(:character, user: user)
       group4 = create(:gallery_group, user: user)
       group1 = create(:gallery_group, user: user)
       group3 = create(:gallery_group, user: user)
       group2 = create(:gallery_group, user: user)
       put :update, params: {
-        id: char.id,
+        id: character.id,
         character: {gallery_group_ids: [group1, group2, group3, group4].map(&:id)}
       }
       expect(flash[:success]).to eq('Character saved successfully.')
-      expect(char.gallery_groups).to eq([group1, group2, group3, group4])
+      expect(character.gallery_groups).to eq([group1, group2, group3, group4])
     end
   end
 
   describe "GET facecasts" do
+    let(:chars) { Array.new(3) { create(:character, pb: SecureRandom.urlsafe_base64) } }
+    let(:temp_chars) { Array.new(3) { create(:template_character, pb: SecureRandom.urlsafe_base64) } }
+    let(:all_chars) { chars + temp_chars }
+
     it "does not require login" do
       get :facecasts
       expect(response.status).to eq(200)
@@ -734,44 +709,45 @@ RSpec.describe CharactersController do
     end
 
     it "sets correct variables for facecast name sort" do
-      chars = Array.new(3) { create(:character, pb: SecureRandom.urlsafe_base64) }
+      chars
       get :facecasts
       pbs = assigns(:pbs).map(&:pb)
       expect(pbs).to match_array(chars.map(&:pb))
     end
 
     it "sets correct variables for character name sort: character only" do
-      chars = Array.new(3) { create(:character, pb: SecureRandom.urlsafe_base64) }
+      chars
       get :facecasts, params: { sort: 'name' }
       names = assigns(:pbs).map(&:item_name)
       expect(names).to match_array(chars.map(&:name))
     end
 
     it "sets correct variables for character name sort: template only" do
-      chars = Array.new(3) { create(:template_character, pb: SecureRandom.urlsafe_base64) }
+      temp_chars
       get :facecasts, params: { sort: 'name' }
       names = assigns(:pbs).map(&:item_name)
-      expect(names).to match_array(chars.map(&:template).map(&:name))
+      expect(names).to match_array(temp_chars.map(&:template).map(&:name))
     end
 
     it "sets correct variables for character name sort: character and template mixed" do
-      chars = Array.new(3) { create(:template_character, pb: SecureRandom.urlsafe_base64) }
-      chars += Array.new(3) { create(:character, pb: SecureRandom.urlsafe_base64) }
+      all_chars
       get :facecasts, params: { sort: 'name' }
       names = assigns(:pbs).map(&:item_name)
-      expect(names).to match_array(chars.map { |c| (c.template || c).name })
+      expect(names).to match_array(all_chars.map { |c| (c.template || c).name })
     end
 
     it "sets correct variables for writer sort" do
-      chars = Array.new(3) { create(:template_character, pb: SecureRandom.urlsafe_base64) }
-      chars += Array.new(3) { create(:character, pb: SecureRandom.urlsafe_base64) }
+      all_chars
       get :facecasts, params: { sort: 'writer' }
       user_ids = assigns(:pbs).map(&:user_id)
-      expect(user_ids).to match_array(chars.map(&:user).map(&:id))
+      expect(user_ids).to match_array(all_chars.map(&:user).map(&:id))
     end
   end
 
   describe "DELETE destroy" do
+    let(:user) { create(:user) }
+    let(:character) { create(:character, user: user)}
+
     it "requires login" do
       delete :destroy, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -779,35 +755,30 @@ RSpec.describe CharactersController do
     end
 
     it "requires valid character" do
-      user_id = login
+      login_as(user)
       delete :destroy, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq("Character could not be found.")
     end
 
     it "requires permission" do
-      user = create(:user)
       login_as(user)
-      character = create(:character)
-      expect(character.user_id).not_to eq(user.id)
-      delete :destroy, params: { id: character.id }
+      delete :destroy, params: { id: create(:character).id }
       expect(response).to redirect_to(user_characters_url(user.id))
       expect(flash[:error]).to eq("You do not have permission to edit that character.")
     end
 
     it "succeeds" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       delete :destroy, params: { id: character.id }
-      expect(response).to redirect_to(user_characters_url(character.user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:success]).to eq("Character deleted successfully.")
       expect(Character.find_by_id(character.id)).to be_nil
     end
 
     it "handles destroy failure" do
-      character = create(:character)
-      post = create(:post, user: character.user, character: character)
-      login_as(character.user)
+      post = create(:post, user: user, character: character)
+      login_as(user)
       expect_any_instance_of(Character).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: character.id }
       expect(response).to redirect_to(character_url(character))
@@ -817,39 +788,37 @@ RSpec.describe CharactersController do
   end
 
   describe "GET replace" do
+    let(:user) { create(:user) }
+    let(:character) { create(:character, user: user) }
+
     it "requires login" do
-      character = create(:character)
       get :replace, params: { id: character.id }
       expect(response).to redirect_to(root_url)
       expect(flash[:error]).to eq('You must be logged in to view that page.')
     end
 
     it "requires valid character" do
-      user_id = login
+      login_as(user)
       get :replace, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq('Character could not be found.')
     end
 
     it "requires own character" do
-      character = create(:character)
-      user_id = login
-      get :replace, params: { id: character.id }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      login_as(user)
+      get :replace, params: { id: create(:character).id }
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq('You do not have permission to edit that character.')
     end
 
     it "sets correct variables" do
-      user = create(:user)
-      character = create(:character, user: user)
-      other_char = create(:character, user: user)
-      other_char.default_icon = create(:icon, user: user)
-      other_char.save!
+      default_icon = create(:icon, user: user)
+      other_char = create(:character, user: user, default_icon: default_icon)
       calias = create(:alias, character: other_char)
       char_post = create(:post, user: user, character: character)
-      create(:reply, user: user, post: char_post, character: character) # reply
-      create(:post) # other post
-      char_reply2 = create(:reply, user: user, character: character) # other reply
+      create(:reply, user: user, post: char_post, character: character)
+      create(:post)
+      char_reply2 = create(:reply, user: user, character: character)
 
       login_as(user)
       get :replace, params: { id: character.id }
@@ -862,14 +831,17 @@ RSpec.describe CharactersController do
     end
 
     context "with template" do
-      it "sets alts correctly" do
-        user = create(:user)
-        template = create(:template, user: user)
-        character = create(:character, user: user, template: template)
-        alts = Array.new(5) { create(:character, user: user, template: template) }
-        create(:character, user: user) # other character
+      let(:template) { create(:template, user: user) }
+      let(:character) { create(:character, template: template, user: user) }
 
+      before(:each) do
         login_as(user)
+        create(:character, user: user)
+      end
+
+      it "sets alts correctly" do
+        alts = create_list(:character, 5, user: user, template: template)
+
         get :replace, params: { id: character.id }
         expect(response).to have_http_status(200)
         expect(assigns(:page_title)).to eq('Replace Character: ' + character.name)
@@ -878,12 +850,6 @@ RSpec.describe CharactersController do
       end
 
       it "includes character if no others in template" do
-        user = create(:user)
-        template = create(:template, user: user)
-        character = create(:character, user: user, template: template)
-        create(:character, user: user) # other character
-
-        login_as(user)
         get :replace, params: { id: character.id }
         expect(response).to have_http_status(200)
         expect(assigns(:alts)).to match_array([character])
@@ -891,14 +857,14 @@ RSpec.describe CharactersController do
     end
 
     context "without template" do
-      it "sets alts correctly" do
-        user = create(:user)
-        character = create(:character, user: user)
-        alts = Array.new(5) { create(:character, user: user) }
-        template = create(:template, user: user)
-        create(:character, user: user, template: template) # other character
-
+      before(:each) do
+        create(:template_character, user: user)
         login_as(user)
+      end
+
+      it "sets alts correctly" do
+        alts = create_list(:character, 5, user: user)
+
         get :replace, params: { id: character.id }
         expect(response).to have_http_status(200)
         expect(assigns(:page_title)).to eq('Replace Character: ' + character.name)
@@ -907,11 +873,6 @@ RSpec.describe CharactersController do
       end
 
       it "includes character if no others in template" do
-        user = create(:user)
-        template = create(:template, user: user)
-        character = create(:character, user: user)
-        create(:character, user: user, template: template) # other character
-
         login_as(user)
         get :replace, params: { id: character.id }
         expect(response).to have_http_status(200)
@@ -921,222 +882,185 @@ RSpec.describe CharactersController do
   end
 
   describe "POST do_replace" do
+    let(:user) { create(:user) }
+    let(:character) { create(:character, user: user) }
+    let(:other_char) { create(:character, user: user) }
+
     it "requires login" do
-      character = create(:character)
       post :do_replace, params: { id: character.id }
       expect(response).to redirect_to(root_url)
       expect(flash[:error]).to eq('You must be logged in to view that page.')
     end
 
     it "requires valid character" do
-      user_id = login
+      login_as(user)
       post :do_replace, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq('Character could not be found.')
     end
 
     it "requires own character" do
-      character = create(:character)
-      user_id = login
-      post :do_replace, params: { id: character.id }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      login_as(user)
+      post :do_replace, params: { id: create(:character).id }
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq('You do not have permission to edit that character.')
     end
 
     it "requires valid other character" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       post :do_replace, params: { id: character.id, icon_dropdown: -1 }
       expect(response).to redirect_to(replace_character_path(character))
       expect(flash[:error]).to eq('Character could not be found.')
     end
 
     it "requires other character to be yours if present" do
-      character = create(:character)
       other_char = create(:character)
-      login_as(character.user)
+      login_as(user)
       post :do_replace, params: { id: character.id, icon_dropdown: other_char.id }
       expect(response).to redirect_to(replace_character_path(character))
       expect(flash[:error]).to eq('That is not your character.')
     end
 
     it "requires valid new alias if parameter provided" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       post :do_replace, params: { id: character.id, alias_dropdown: -1 }
       expect(response).to redirect_to(replace_character_path(character))
       expect(flash[:error]).to eq('Invalid new alias.')
     end
 
     it "requires matching new alias if parameter provided" do
-      character = create(:character)
-      other_char = create(:character, user: character.user)
       calias = create(:alias)
-      login_as(character.user)
+      login_as(user)
       post :do_replace, params: { id: character.id, alias_dropdown: calias.id, icon_dropdown: other_char.id }
       expect(response).to redirect_to(replace_character_path(character))
       expect(flash[:error]).to eq('Invalid new alias.')
     end
 
     it "requires valid old alias if parameter provided" do
-      character = create(:character)
-      login_as(character.user)
+      login_as(user)
       post :do_replace, params: { id: character.id, orig_alias: -1 }
       expect(response).to redirect_to(replace_character_path(character))
       expect(flash[:error]).to eq('Invalid old alias.')
     end
 
     it "requires matching old alias if parameter provided" do
-      character = create(:character)
       calias = create(:alias)
-      login_as(character.user)
+      login_as(user)
       post :do_replace, params: { id: character.id, orig_alias: calias.id }
       expect(response).to redirect_to(replace_character_path(character))
       expect(flash[:error]).to eq('Invalid old alias.')
     end
 
-    context "with audits enabled" do
-      before(:each) { Reply.auditing_enabled = true }
-      after(:each) { Reply.auditing_enabled = false }
+    context "with content" do
+      let!(:char_post) { create(:post, user: user, character: character) }
+      let!(:reply) { create(:reply, user: user, character: character) }
+      let(:calias) { create(:alias, character: character) }
 
-      it "succeeds with valid other character" do
-        user = create(:user)
-        character = create(:character, user: user)
-        other_char = create(:character, user: user)
-        char_post = create(:post, user: user, character: character)
-        reply = create(:reply, user: user, character: character)
-        reply_post_char = reply.post.character_id
+      before(:each) { login_as(user) }
 
-        login_as(user)
+      context "with audits enabled" do
+        before(:each) { Reply.auditing_enabled = true }
+        after(:each) { Reply.auditing_enabled = false }
+
+        it "succeeds with valid other character" do
+          reply_post_char = reply.post.character_id
+
+          perform_enqueued_jobs(only: UpdateModelJob) do
+            post :do_replace, params: { id: character.id, icon_dropdown: other_char.id }
+          end
+          expect(response).to redirect_to(character_path(character))
+          expect(flash[:success]).to eq('All uses of this character will be replaced.')
+
+          expect(char_post.reload.character_id).to eq(other_char.id)
+          expect(reply.reload.character_id).to eq(other_char.id)
+          expect(reply.post.reload.character_id).to eq(reply_post_char) # check it doesn't replace all replies in a post
+
+          audit = reply.audits.where(action: 'update').first
+          expect(audit).not_to be(nil)
+          expect(audit.user).to eq(user)
+        end
+
+      it "succeeds with no other character" do
         perform_enqueued_jobs(only: UpdateModelJob) do
-          post :do_replace, params: { id: character.id, icon_dropdown: other_char.id }
+          post :do_replace, params: { id: character.id }
         end
         expect(response).to redirect_to(character_path(character))
         expect(flash[:success]).to eq('All uses of this character will be replaced.')
 
+        expect(char_post.reload.character_id).to be_nil
+        expect(reply.reload.character_id).to be_nil
+      end
+
+      it "succeeds with alias" do
+        calias = create(:alias, character: other_char)
+
+        login_as(user)
+        perform_enqueued_jobs(only: UpdateModelJob) do
+          post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, alias_dropdown: calias.id }
+        end
+
         expect(char_post.reload.character_id).to eq(other_char.id)
         expect(reply.reload.character_id).to eq(other_char.id)
-        expect(reply.post.reload.character_id).to eq(reply_post_char) # check it doesn't replace all replies in a post
-
-        audit = reply.audits.where(action: 'update').first
-        expect(audit).not_to be(nil)
-        expect(audit.user).to eq(user)
-      end
-    end
-
-    it "succeeds with no other character" do
-      user = create(:user)
-      character = create(:character, user: user)
-      char_post = create(:post, user: user, character: character)
-      reply = create(:reply, user: user, character: character)
-
-      login_as(user)
-      perform_enqueued_jobs(only: UpdateModelJob) do
-        post :do_replace, params: { id: character.id }
-      end
-      expect(response).to redirect_to(character_path(character))
-      expect(flash[:success]).to eq('All uses of this character will be replaced.')
-
-      expect(char_post.reload.character_id).to be_nil
-      expect(reply.reload.character_id).to be_nil
-    end
-
-    it "succeeds with alias" do
-      user = create(:user)
-      character = create(:character, user: user)
-      other_char = create(:character, user: user)
-      calias = create(:alias, character: other_char)
-      char_post = create(:post, user: user, character: character)
-      reply = create(:reply, user: user, character: character)
-
-      login_as(user)
-      perform_enqueued_jobs(only: UpdateModelJob) do
-        post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, alias_dropdown: calias.id }
+        expect(char_post.reload.character_alias_id).to eq(calias.id)
+        expect(reply.reload.character_alias_id).to eq(calias.id)
       end
 
-      expect(char_post.reload.character_id).to eq(other_char.id)
-      expect(reply.reload.character_id).to eq(other_char.id)
-      expect(char_post.reload.character_alias_id).to eq(calias.id)
-      expect(reply.reload.character_alias_id).to eq(calias.id)
-    end
+      it "filters to selected posts if given" do
+        other_post = create(:post, user: user, character: character)
 
-    it "filters to selected posts if given" do
-      user = create(:user)
-      character = create(:character, user: user)
-      other_char = create(:character, user: user)
-      char_post = create(:post, user: user, character: character)
-      char_reply = create(:reply, user: user, character: character)
-      other_post = create(:post, user: user, character: character)
+        perform_enqueued_jobs(only: UpdateModelJob) do
+          post :do_replace, params: {
+            id: character.id,
+            icon_dropdown: other_char.id,
+            post_ids: [char_post.id, reply.post.id]
+          }
+        end
+        expect(response).to redirect_to(character_path(character))
+        expect(flash[:success]).to eq('All uses of this character in the specified posts will be replaced.')
 
-      login_as(user)
-      perform_enqueued_jobs(only: UpdateModelJob) do
-        post :do_replace, params: {
-          id: character.id,
-          icon_dropdown: other_char.id,
-          post_ids: [char_post.id, char_reply.post.id]
-        }
-      end
-      expect(response).to redirect_to(character_path(character))
-      expect(flash[:success]).to eq('All uses of this character in the specified posts will be replaced.')
-
-      expect(char_post.reload.character_id).to eq(other_char.id)
-      expect(char_reply.reload.character_id).to eq(other_char.id)
-      expect(other_post.reload.character_id).to eq(character.id)
-    end
-
-    it "filters to alias if given" do
-      user = create(:user)
-      character = create(:character, user: user)
-      other_char = create(:character, user: user)
-      calias = create(:alias, character: character)
-      char_post = create(:post, user: user, character: character)
-      char_reply = create(:reply, user: user, character: character, character_alias_id: calias.id)
-
-      login_as(user)
-      perform_enqueued_jobs(only: UpdateModelJob) do
-        post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, orig_alias: calias.id }
+        expect(char_post.reload.character_id).to eq(other_char.id)
+        expect(reply.reload.character_id).to eq(other_char.id)
+        expect(other_post.reload.character_id).to eq(character.id)
       end
 
-      expect(char_post.reload.character_id).to eq(character.id)
-      expect(char_reply.reload.character_id).to eq(other_char.id)
-    end
+      it "filters to alias if given" do
+        char_reply = create(:reply, user: user, character: character, character_alias_id: calias.id)
 
-    it "filters to nil if given" do
-      user = create(:user)
-      character = create(:character, user: user)
-      other_char = create(:character, user: user)
-      calias = create(:alias, character: character)
-      char_post = create(:post, user: user, character: character)
-      char_reply = create(:reply, user: user, character: character, character_alias_id: calias.id)
+        perform_enqueued_jobs(only: UpdateModelJob) do
+          post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, orig_alias: calias.id }
+        end
 
-      login_as(user)
-      perform_enqueued_jobs(only: UpdateModelJob) do
-        post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, orig_alias: '' }
+        expect(char_post.reload.character_id).to eq(character.id)
+        expect(char_reply.reload.character_id).to eq(other_char.id)
       end
 
-      expect(char_post.reload.character_id).to eq(other_char.id)
-      expect(char_reply.reload.character_id).to eq(character.id)
-    end
+      it "filters to nil if given" do
+        char_reply = create(:reply, user: user, character: character, character_alias_id: calias.id)
 
-    it "does not filter if all given" do
-      user = create(:user)
-      character = create(:character, user: user)
-      other_char = create(:character, user: user)
-      calias = create(:alias, character: character)
-      char_post = create(:post, user: user, character: character)
-      char_reply = create(:reply, user: user, character: character, character_alias_id: calias.id)
+        perform_enqueued_jobs(only: UpdateModelJob) do
+          post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, orig_alias: '' }
+        end
 
-      login_as(user)
-      perform_enqueued_jobs(only: UpdateModelJob) do
-        post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, orig_alias: 'all' }
+        expect(char_post.reload.character_id).to eq(other_char.id)
+        expect(char_reply.reload.character_id).to eq(character.id)
       end
 
-      expect(char_post.reload.character_id).to eq(other_char.id)
-      expect(char_reply.reload.character_id).to eq(other_char.id)
+      it "does not filter if all given" do
+        char_reply = create(:reply, user: user, character: character, character_alias_id: calias.id)
+
+        perform_enqueued_jobs(only: UpdateModelJob) do
+          post :do_replace, params: { id: character.id, icon_dropdown: other_char.id, orig_alias: 'all' }
+        end
+
+        expect(char_post.reload.character_id).to eq(other_char.id)
+        expect(char_reply.reload.character_id).to eq(other_char.id)
+      end
     end
   end
 
   describe "GET search" do
+    let(:author) { create(:user) }
+
     it 'works logged in' do
       login
       get :search
@@ -1152,7 +1076,6 @@ RSpec.describe CharactersController do
     end
 
     it 'searches author' do
-      author = create(:user)
       found = create(:character, user: author)
       create(:character) # notfound
       get :search, params: { commit: true, author_id: author.id }
@@ -1171,7 +1094,6 @@ RSpec.describe CharactersController do
     end
 
     it "sets templates by author" do
-      author = create(:user)
       template2 = create(:template, user: author, name: 'b')
       template = create(:template, user: author, name: 'a')
       template3 = create(:template, user: author, name: 'c')
@@ -1200,7 +1122,6 @@ RSpec.describe CharactersController do
     end
 
     it 'searches template' do
-      author = create(:user)
       template = create(:template, user: author)
       found = create(:character, user: author, template: template)
       create(:character, user: author, template: create(:template, user: author)) # notfound
@@ -1282,6 +1203,8 @@ RSpec.describe CharactersController do
   end
 
   describe "POST duplicate" do
+    let(:user) { create(:user) }
+
     it "requires login" do
       post :duplicate, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -1289,21 +1212,20 @@ RSpec.describe CharactersController do
     end
 
     it "requires valid character id" do
-      user_id = login
+      login_as(user)
       post :duplicate, params: { id: -1 }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq('Character could not be found.')
     end
 
     it "requires character with permissions" do
-      user_id = login
+      login_as(user)
       post :duplicate, params: { id: create(:character).id }
-      expect(response).to redirect_to(user_characters_url(user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:error]).to eq('You do not have permission to edit that character.')
     end
 
     it "succeeds" do
-      user = create(:user)
       template = create(:template, user: user)
       icon = create(:icon, user: user)
       gallery = create(:gallery, icons: [icon], user: user)
@@ -1323,11 +1245,11 @@ RSpec.describe CharactersController do
       expect(character.gallery_groups).to match_array([group])
 
       login_as(user)
-      expect do
-        post :duplicate, params: { id: character.id }
-      end.to not_change {
-        [Template.count, Gallery.count, Icon.count, Reply.count, Post.count, Tag.count]
-      }.and change { Character.count }.by(1).and change { CharactersGallery.count }.by(3).and change { CharacterTag.count }.by(2)
+      expect { post :duplicate, params: { id: character.id } }
+        .to not_change { [Template.count, Gallery.count, Icon.count, Reply.count, Post.count, Tag.count] }
+        .and change { Character.count }.by(1)
+        .and change { CharactersGallery.count }.by(3)
+        .and change { CharacterTag.count }.by(2)
 
       dupe = Character.last
       character.reload
@@ -1371,8 +1293,8 @@ RSpec.describe CharactersController do
     end
 
     it "handles unexpected failure" do
-      character = create(:character)
-      login_as(character.user)
+      character = create(:character, user: user)
+      login_as(user)
       character.update_columns(default_icon_id: create(:icon).id) # rubocop:disable Rails/SkipsModelValidations
       expect(character).not_to be_valid
       expect{ post :duplicate, params: { id: character.id } }.to not_change { Character.count }
