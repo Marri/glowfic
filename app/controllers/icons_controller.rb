@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 class IconsController < UploadingController
-  before_action :login_required, except: :show
-  before_action :find_icon, except: :delete_multiple
-  before_action :require_own_icon, only: [:edit, :update, :replace, :do_replace, :destroy, :avatar]
-  before_action :set_s3_url, only: :edit
+  before_action(only: [:replace, :do_replace, :avatar, :delete_multiple]) { login_required }
+  before_action(only: [:replace, :do_replace, :avatar]) { find_model }
+  before_action(only: [:replace, :do_replace, :avatar]) { require_edit_permission }
 
   def delete_multiple
     gallery = Gallery.find_by_id(params[:gallery_id])
@@ -20,7 +19,7 @@ class IconsController < UploadingController
       end
 
       unless gallery.user_id == current_user.id
-        flash[:error] = "That is not your gallery."
+        flash[:error] = "You do not have permission to modify this gallery."
         redirect_to user_galleries_path(current_user) and return
       end
 
@@ -60,27 +59,12 @@ class IconsController < UploadingController
 
   def edit
     @page_title = 'Edit Icon: ' + @icon.keyword
-    use_javascript('galleries/update_existing')
-    use_javascript('galleries/uploader')
+    super
   end
 
   def update
-    begin
-      @icon.update!(icon_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Your icon could not be saved due to the following problems:",
-        array: @icon.errors.full_messages
-      }
-      @page_title = 'Edit icon: ' + @icon.keyword_was
-      use_javascript('galleries/update_existing')
-      use_javascript('galleries/uploader')
-      set_s3_url
-      render :edit
-    else
-      flash[:success] = "Icon updated."
-      redirect_to icon_path(@icon)
-    end
+    @page_title = 'Edit icon: ' + @icon.keyword
+    super
   end
 
   def replace
@@ -107,7 +91,7 @@ class IconsController < UploadingController
     end
 
     if new_icon && new_icon.user_id != current_user.id
-      flash[:error] = "That is not your icon."
+      flash[:error] = "You do not have permission to modify this icon."
       redirect_to replace_icon_path(@icon) and return
     end
 
@@ -123,46 +107,33 @@ class IconsController < UploadingController
 
   def destroy
     gallery = @icon.galleries.first if @icon.galleries.count == 1
-    begin
-      @icon.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Icon could not be deleted.",
-        array: @icon.errors.full_messages
-      }
-      redirect_to icon_path(@icon)
-    else
-      flash[:success] = "Icon deleted successfully."
-      redirect_to gallery_path(gallery) and return if gallery
-      redirect_to user_galleries_path(current_user)
-    end
+    @destroy_redirect = gallery ? gallery_path(gallery) : user_galleries_path(current_user)
+    super
   end
 
   def avatar
     if current_user.update(avatar: @icon)
-      flash[:success] = "Avatar has been set!"
+      flash[:success] = "Avatar set."
     else
-      flash[:error] = "Something went wrong."
+      @icon.errors.merge!(current_user.errors)
+      render_errors(@icon, action: 'set', class_name: 'Avatar')
     end
     redirect_to icon_path(@icon)
   end
 
   private
 
-  def find_icon
-    unless (@icon = Icon.find_by_id(params[:id]))
-      flash[:error] = "Icon could not be found."
-      if logged_in?
-        redirect_to user_galleries_path(current_user)
-      else
-        redirect_to root_path
-      end
+  def editor_setup
+    if @icon.present?
+      use_javascript('galleries/update_existing')
+      use_javascript('galleries/uploader')
+      set_s3_url
     end
   end
 
-  def require_own_icon
+  def require_edit_permission
     if @icon.user_id != current_user.id
-      flash[:error] = "That is not your icon."
+      flash[:error] = "You do not have permission to modify this icon."
       redirect_to user_galleries_path(current_user)
     end
   end
@@ -199,7 +170,11 @@ class IconsController < UploadingController
     }
   end
 
-  def icon_params
+  def permitted_params
     params.fetch(:icon, {}).permit(:url, :keyword, :credit, :s3_key)
+  end
+
+  def invalid_redirect
+    logged_in? ? user_galleries_path(current_user) : root_path
   end
 end

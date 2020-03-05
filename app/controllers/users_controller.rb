@@ -1,11 +1,11 @@
 # frozen_string_literal: true
-class UsersController < ApplicationController
+class UsersController < GenericController
   include DateSelectable
 
+  prepend_before_action :login_required, only: [:edit, :update, :password, :output]
   before_action :signup_prep, :only => :new
-  before_action :login_required, :except => [:index, :show, :new, :create, :search]
   before_action :logout_required, only: [:new, :create]
-  before_action :require_own_user, only: [:edit, :update, :password]
+  before_action(only: [:password]) { require_edit_permission }
 
   def index
     @page_title = 'Users'
@@ -13,11 +13,6 @@ class UsersController < ApplicationController
   end
 
   def show
-    unless (@user = User.active.find_by_id(params[:id]))
-      flash[:error] = "User could not be found."
-      redirect_to users_path and return
-    end
-
     ids = PostAuthor.where(user_id: @user.id, joined: true).pluck(:post_id)
     @posts = posts_from_relation(Post.where(id: ids).ordered)
     @page_title = @user.username
@@ -29,7 +24,7 @@ class UsersController < ApplicationController
   end
 
   def create
-    @user = User.new(user_params)
+    @user = User.new(permitted_params)
     @user.validate_password = true
 
     unless params[:tos].present?
@@ -47,12 +42,13 @@ class UsersController < ApplicationController
 
     begin
       @user.save!
-    rescue ActiveRecord::RecordInvalid
+    rescue ActiveRecord::RecordInvalid => e
       signup_prep
       flash.now[:error] = {
         message: "There was a problem completing your sign up.",
         array: @user.errors.full_messages
       }
+      log_error(e) unless @user.errors.present?
       render :new
     else
       flash[:success] = "User created! You have been logged in."
@@ -63,8 +59,8 @@ class UsersController < ApplicationController
   end
 
   def edit
-    use_javascript('users/edit')
     @page_title = 'Edit Account'
+    use_javascript('users/edit')
   end
 
   def update
@@ -73,17 +69,16 @@ class UsersController < ApplicationController
     params[:user][:per_page] = -1 if params[:user].try(:[], :per_page) == 'all'
 
     begin
-      current_user.update!(user_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "There was a problem updating your account.",
-        array: current_user.errors.full_messages
-      }
+      current_user.update!(permitted_params)
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(current_user, action: 'saved', now: true, class_name: 'Changes')
+      log_error(e) unless current_user.errors.present?
+
       use_javascript('users/edit')
       @page_title = 'Edit Account'
       render :edit
     else
-      flash[:success] = "Changes saved successfully."
+      flash[:success] = "Changes saved."
       redirect_to edit_user_path(current_user)
     end
   end
@@ -98,7 +93,7 @@ class UsersController < ApplicationController
     current_user.validate_password = true
 
     begin
-      current_user.update!(user_params)
+      current_user.update!(permitted_params)
     rescue ActiveRecord::RecordInvalid
       flash.now[:error] = {
         message: "There was a problem with your changes.",
@@ -107,7 +102,7 @@ class UsersController < ApplicationController
       @page_title = 'Edit Account'
       render :edit
     else
-      flash[:success] = "Changes saved successfully."
+      flash[:success] = "Changes saved."
       redirect_to edit_user_path(current_user)
     end
   end
@@ -140,9 +135,9 @@ class UsersController < ApplicationController
 
   private
 
-  def require_own_user
+  def require_edit_permission
     unless params[:id] == current_user.id.to_s
-      flash[:error] = "You do not have permission to edit that user."
+      flash[:error] = "You do not have permission to modify this user."
       redirect_to(boards_path)
     end
   end
@@ -178,7 +173,14 @@ class UsersController < ApplicationController
     data
   end
 
-  def user_params
+  def find_model
+    unless (@user = User.active.find_by_id(params[:id]))
+      flash[:error] = "User could not be found."
+      redirect_to users_path and return
+    end
+  end
+
+  def permitted_params
     params.fetch(:user, {}).permit(
       :username,
       :email,
@@ -216,7 +218,7 @@ class UsersController < ApplicationController
       }
       render 'about/accept_tos'
     else
-      flash[:success] = "Acceptance saved successfully. Thank you!"
+      flash[:success] = "Acceptance saved. Thank you."
       redirect_to session[:previous_url] || root_url
     end
   end

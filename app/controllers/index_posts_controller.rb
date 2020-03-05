@@ -1,44 +1,18 @@
 # frozen_string_literal: true
-class IndexPostsController < ApplicationController
-  before_action :login_required
-  before_action :find_index_post, only: [:edit, :update, :destroy]
+class IndexPostsController < GenericController
+  before_action :find_index, only: [:new, :create]
+  before_action(only: [:new, :create]) { require_edit_permission }
 
   def new
-    unless (index = Index.find_by_id(params[:index_id]))
-      flash[:error] = "Index could not be found."
-      redirect_to indexes_path and return
-    end
-
-    unless index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(index) and return
-    end
-
-    @index_post = IndexPost.new(index: index, index_section_id: params[:index_section_id])
+    @index_post = IndexPost.new(index: @index, index_section_id: params[:index_section_id])
     @page_title = "Add Posts to Index"
-    use_javascript('posts/index_post_new')
   end
 
   def create
-    @index_post = IndexPost.new(index_params)
-
-    if @index_post.index && !@index_post.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(@index_post.index) and return
-    end
-
-    unless @index_post.save
-      flash.now[:error] = {
-        message: "Post could not be added to index.",
-        array: @index_post.errors.full_messages
-      }
-      @page_title = 'Add Posts to Index'
-      use_javascript('posts/index_post_new')
-      render :new and return
-    end
-
-    flash[:success] = "Post added to index!"
-    redirect_to index_path(@index_post.index)
+    @csm = "Post added to index."
+    @cfm = "Post could not be added to index"
+    @create_redirect = index_path(@index)
+    super
   end
 
   def edit
@@ -46,47 +20,57 @@ class IndexPostsController < ApplicationController
   end
 
   def update
-    unless @index_post.update(index_params)
-      flash.now[:error] = {}
-      flash.now[:error][:message] = "Index could not be saved"
-      flash.now[:error][:array] = @index_post.errors.full_messages
-      @page_title = "Edit Post in Index"
-      render action: :edit and return
-    end
-
-    flash[:success] = "Index post has been updated."
-    redirect_to index_path(@index_post.index)
+    @update_redirect = index_path(@index_post.index)
+    @ufm = "Index could not be updated"
+    @page_title = "Edit Post in Index"
+    super
   end
 
   def destroy
-    begin
-      @index_post.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Post could not be removed from index.",
-        array: @index_post.errors.full_messages
-      }
-    else
-      flash[:success] = "Post removed from index."
-    end
-    redirect_to index_path(@index_post.index)
+    @dsm = "Post removed from index."
+    @dfm = "Post could not be removed from index"
+    @destroy_redirect = @destroy_failure_redirect = index_path(@index_post.index)
+    super
   end
 
   private
 
-  def index_params
+  def find_index
+    id = params[:index_id] || permitted_params[:index_id]
+    @index = find_parent(Index, id: id, redirect: indexes_path)
+  end
+
+  def permitted_params
     params.fetch(:index_post, {}).permit(:description, :index_id, :index_section_id, :post_id)
   end
 
-  def find_index_post
-    unless (@index_post = IndexPost.find_by_id(params[:id]))
-      flash[:error] = "Index post could not be found."
-      redirect_to indexes_path and return
-    end
-
-    unless @index_post.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(@index_post.index) and return
+  def require_edit_permission
+    index = @index || @index_post.index
+    unless index.editable_by?(current_user)
+      flash[:error] = "You do not have permission to modify this index."
+      redirect_to index_path(index)
     end
   end
+  alias_method :require_destroy_permission, :require_edit_permission
+
+  def editor_setup
+    use_javascript('posts/index_post_new')
+  end
+
+  def model_name
+    'Index post'
+  end
+
+  def model_class
+    IndexPost
+  end
+
+  def set_model
+    @index_post = @model
+  end
+
+  def models_path
+    indexes_path
+  end
+  alias_method :invalid_redirect, :models_path
 end

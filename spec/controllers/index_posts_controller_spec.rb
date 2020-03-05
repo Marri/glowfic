@@ -16,7 +16,7 @@ RSpec.describe IndexPostsController do
 
       get :new, params: { index_id: index.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq("You do not have permission to edit this index.")
+      expect(flash[:error]).to eq("You do not have permission to modify this index.")
     end
 
     it "requires index_id" do
@@ -49,7 +49,7 @@ RSpec.describe IndexPostsController do
 
       post :create, params: { index_post: {index_id: index.id} }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq("You do not have permission to edit this index.")
+      expect(flash[:error]).to eq("You do not have permission to modify this index.")
     end
 
     it "requires valid post" do
@@ -59,7 +59,7 @@ RSpec.describe IndexPostsController do
       post :create, params: { index_post: {index_id: index.id, index_section_id: section.id } }
       expect(response).to have_http_status(200)
       expect(response).to render_template(:new)
-      expect(flash[:error][:message]).to eq("Post could not be added to index.")
+      expect(flash[:error][:message]).to eq("Post could not be added to index because of the following problems:")
     end
 
     it "succeeds" do
@@ -68,7 +68,7 @@ RSpec.describe IndexPostsController do
       login_as(index.user)
       post :create, params: { index_post: { index_id: index.id, post_id: add_post.id } }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:success]).to eq("Post added to index!")
+      expect(flash[:success]).to eq("Post added to index.")
     end
   end
 
@@ -92,7 +92,7 @@ RSpec.describe IndexPostsController do
       login
       get :edit, params: { id: index.index_posts.first.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq("You do not have permission to edit this index.")
+      expect(flash[:error]).to eq("You do not have permission to modify this index.")
     end
 
     it "works" do
@@ -125,7 +125,7 @@ RSpec.describe IndexPostsController do
       login
       patch :update, params: { id: index.index_posts.first.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq("You do not have permission to edit this index.")
+      expect(flash[:error]).to eq("You do not have permission to modify this index.")
     end
 
     it "requires valid params" do
@@ -135,7 +135,7 @@ RSpec.describe IndexPostsController do
       patch :update, params: { id: index.index_posts.first.id, index_post: {post_id: nil} }
       expect(response).to have_http_status(200)
       expect(assigns(:page_title)).to eq("Edit Post in Index")
-      expect(flash[:error][:message]).to eq("Index could not be saved")
+      expect(flash[:error][:message]).to eq("Index could not be updated because of the following problems:")
     end
 
     it "works" do
@@ -145,7 +145,7 @@ RSpec.describe IndexPostsController do
       expect(index.index_posts.first.description).to be_nil
       patch :update, params: { id: index.index_posts.first.id, index_post: {description: 'some text'} }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:success]).to eq("Index post has been updated.")
+      expect(flash[:success]).to eq("Index post updated.")
       expect(index.index_posts.first.description).to eq('some text')
     end
   end
@@ -170,7 +170,7 @@ RSpec.describe IndexPostsController do
       login
       delete :destroy, params: { id: index.index_posts.first.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq("You do not have permission to edit this index.")
+      expect(flash[:error]).to eq("You do not have permission to modify this index.")
     end
 
     it "works" do
@@ -192,7 +192,7 @@ RSpec.describe IndexPostsController do
       index_post = index.index_posts.first
       delete :destroy, params: { id: index_post.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq({message: "Post could not be removed from index.", array: []})
+      expect(flash[:error]).to eq("Post could not be removed from index.")
       expect(index.reload.index_posts).to eq([index_post])
     end
   end

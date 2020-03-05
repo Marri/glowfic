@@ -55,7 +55,7 @@ RSpec.describe RepliesController do
         expect(draft.character).to eq(char1)
         expect(draft.icon).to eq(icon)
         expect(draft.character_alias).to eq(calias)
-        expect(flash[:success]).to eq('Draft saved!')
+        expect(flash[:success]).to eq('Draft saved.')
 
         # build_template_groups:
         expect(controller.gon.editor_user[:username]).to eq(user.username)
@@ -95,7 +95,7 @@ RSpec.describe RepliesController do
         draft = create(:reply_draft)
         login_as(draft.user)
         post :create, params: { button_draft: true, reply: {post_id: ''} }
-        expect(flash[:error][:message]).to eq("Your draft could not be saved because of the following problems:")
+        expect(flash[:error][:message]).to eq("Draft could not be saved because of the following problems:")
         expect(draft.reload.post_id).not_to be_nil
         expect(response).to redirect_to(posts_url)
       end
@@ -120,7 +120,7 @@ RSpec.describe RepliesController do
           }
         }
         expect(response).to redirect_to(post_url(reply_post, page: :unread, anchor: :unread))
-        expect(flash[:success]).to eq("Draft saved!")
+        expect(flash[:success]).to eq("Draft saved.")
         expect(ReplyDraft.count).to eq(1)
 
         draft = ReplyDraft.last
@@ -136,7 +136,7 @@ RSpec.describe RepliesController do
         draft = create(:reply_draft)
         login_as(draft.user)
         post :create, params: { button_draft: true, reply: {post_id: draft.post.id, content: 'new draft'} }
-        expect(flash[:success]).to eq("Draft saved!")
+        expect(flash[:success]).to eq("Draft saved.")
         expect(draft.reload.content).to eq('new draft')
         expect(ReplyDraft.count).to eq(1)
       end
@@ -146,7 +146,7 @@ RSpec.describe RepliesController do
       login
       post :create
       expect(response).to redirect_to(posts_url)
-      expect(flash[:error][:message]).to eq("Your reply could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Reply could not be created because of the following problems:")
     end
 
     it "requires post read" do
@@ -190,7 +190,7 @@ RSpec.describe RepliesController do
 
       post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id, content: dupe_reply.content}, allow_dupe: true }
       expect(response).to have_http_status(302)
-      expect(flash[:success]).to eq("Posted!")
+      expect(flash[:success]).to eq("Reply posted.")
     end
 
     it "requires valid params if read" do
@@ -203,7 +203,7 @@ RSpec.describe RepliesController do
       expect(character.user_id).not_to eq(user.id)
       post :create, params: { reply: {character_id: character.id, post_id: reply_post.id} }
       expect(response).to redirect_to(post_url(reply_post))
-      expect(flash[:error][:message]).to eq("Your reply could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Reply could not be created because of the following problems:")
     end
 
     it "saves a new reply successfully if read" do
@@ -230,7 +230,7 @@ RSpec.describe RepliesController do
       reply = Reply.order(:id).last
       expect(reply).not_to be_nil
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
-      expect(flash[:success]).to eq("Posted!")
+      expect(flash[:success]).to eq("Reply posted.")
       expect(reply.user).to eq(user)
       expect(reply.post).to eq(reply_post)
       expect(reply.content).to eq('test!')
@@ -252,7 +252,7 @@ RSpec.describe RepliesController do
       reply = Reply.order(:id).last
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
       expect(reply).not_to be_nil
-      expect(flash[:success]).to eq('Posted!')
+      expect(flash[:success]).to eq('Reply posted.')
       expect(reply.user).to eq(user)
       expect(reply.content).to eq('test content!')
     end
@@ -270,7 +270,7 @@ RSpec.describe RepliesController do
       reply = Reply.order(:id).last
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
       expect(reply).not_to be_nil
-      expect(flash[:success]).to eq('Posted!')
+      expect(flash[:success]).to eq('Reply posted.')
       expect(reply.user).to eq(user)
       expect(reply.content).to eq('test content again!')
     end
@@ -289,7 +289,7 @@ RSpec.describe RepliesController do
       reply = Reply.ordered.last
       expect(reply).not_to eq(reply_old)
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
-      expect(flash[:success]).to eq('Posted!')
+      expect(flash[:success]).to eq('Reply posted.')
       expect(reply.user).to eq(user)
       expect(reply.content).to eq('test content the third!')
     end
@@ -309,7 +309,7 @@ RSpec.describe RepliesController do
       reply = Reply.order(id: :desc).first
       expect(reply).not_to eq(reply_old)
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
-      expect(flash[:success]).to eq('Posted!')
+      expect(flash[:success]).to eq('Reply posted.')
       expect(reply.user).to eq(user)
       expect(reply.content).to eq('test content the third!')
     end
@@ -380,7 +380,7 @@ RSpec.describe RepliesController do
       reply_post = create(:post, authors_locked: true)
       reply_post.mark_read(user)
       post :create, params: { reply: {post_id: reply_post.id, content: 'test'} }
-      expect(flash[:error][:message]).to eq("Your reply could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Reply could not be created because of the following problems:")
       expect(flash[:error][:array]).to eq(["User #{user.username} cannot write in this post"])
     end
 
@@ -425,7 +425,7 @@ RSpec.describe RepliesController do
     it "requires valid reply" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq("Post could not be found.")
+      expect(flash[:error]).to eq("Reply could not be found.")
     end
 
     it "requires post access" do
@@ -486,7 +486,7 @@ RSpec.describe RepliesController do
     it "requires valid reply" do
       get :history, params: { id: -1 }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq("Post could not be found.")
+      expect(flash[:error]).to eq("Reply could not be found.")
     end
 
     it "requires post access" do
@@ -530,7 +530,7 @@ RSpec.describe RepliesController do
       login
       get :edit, params: { id: -1 }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq("Post could not be found.")
+      expect(flash[:error]).to eq("Reply could not be found.")
     end
 
     it "requires post access" do
@@ -554,7 +554,7 @@ RSpec.describe RepliesController do
       login
       get :edit, params: { id: reply.id }
       expect(response).to redirect_to(post_url(reply.post))
-      expect(flash[:error]).to eq("You do not have permission to modify this post.")
+      expect(flash[:error]).to eq("You do not have permission to modify this reply.")
     end
 
     it "works" do
@@ -596,7 +596,7 @@ RSpec.describe RepliesController do
       login
       put :update, params: { id: -1 }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq("Post could not be found.")
+      expect(flash[:error]).to eq("Reply could not be found.")
     end
 
     it "requires post access" do
@@ -620,7 +620,7 @@ RSpec.describe RepliesController do
       login
       put :update, params: { id: reply.id }
       expect(response).to redirect_to(post_url(reply.post))
-      expect(flash[:error]).to eq("You do not have permission to modify this post.")
+      expect(flash[:error]).to eq("You do not have permission to modify this reply.")
     end
 
     it "requires notes from moderators" do
@@ -658,7 +658,7 @@ RSpec.describe RepliesController do
       login_as(reply.user)
       put :update, params: { id: reply.id, reply: { post_id: nil } }
       expect(response).to render_template(:edit)
-      expect(flash[:error][:message]).to eq("Your reply could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Reply could not be updated because of the following problems:")
     end
 
     it "succeeds" do
@@ -797,7 +797,7 @@ RSpec.describe RepliesController do
       login
       delete :destroy, params: { id: -1 }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq("Post could not be found.")
+      expect(flash[:error]).to eq("Reply could not be found.")
     end
 
     it "requires post access" do
@@ -821,7 +821,7 @@ RSpec.describe RepliesController do
       login
       delete :destroy, params: { id: reply.id }
       expect(response).to redirect_to(post_url(reply.post))
-      expect(flash[:error]).to eq("You do not have permission to modify this post.")
+      expect(flash[:error]).to eq("You do not have permission to modify this reply.")
     end
 
     it "succeeds for reply creator" do
@@ -912,7 +912,7 @@ RSpec.describe RepliesController do
       expect_any_instance_of(Reply).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: reply.id }
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
-      expect(flash[:error]).to eq({message: "Reply could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Reply could not be deleted.")
       expect(post.reload.replies).to eq([reply])
     end
   end
@@ -952,7 +952,7 @@ RSpec.describe RepliesController do
       reply.destroy
       post :restore, params: { id: reply.id }
       expect(response).to redirect_to(post_url(rpost))
-      expect(flash[:error]).to eq('You do not have permission to modify this post.')
+      expect(flash[:error]).to eq('You do not have permission to modify this reply.')
     end
 
     it "handles mid reply deletion" do
@@ -1044,7 +1044,7 @@ RSpec.describe RepliesController do
       reply.destroy
       login_as(reply.user)
       post :restore, params: { id: reply.id }
-      expect(flash[:success]).to eq("Reply has been restored!")
+      expect(flash[:success]).to eq("Reply restored.")
       post :restore, params: { id: reply.id }
       expect(flash[:error]).to eq("Reply does not need restoring.")
       expect(response).to redirect_to(post_url(reply.post))
@@ -1055,7 +1055,7 @@ RSpec.describe RepliesController do
       reply.destroy
       login_as(reply.user)
       post :restore, params: { id: reply.id }
-      expect(flash[:success]).to eq("Reply has been restored!")
+      expect(flash[:success]).to eq("Reply restored.")
 
       reply = Reply.find(reply.id)
       reply.content = 'restored right'
@@ -1063,7 +1063,7 @@ RSpec.describe RepliesController do
       reply.destroy
 
       post :restore, params: { id: reply.id }
-      expect(flash[:success]).to eq("Reply has been restored!")
+      expect(flash[:success]).to eq("Reply restored.")
       reply = Reply.find(reply.id)
       expect(reply.content).to eq('restored right')
     end
@@ -1078,7 +1078,7 @@ RSpec.describe RepliesController do
       rpost.save
       login_as(rpost.user)
       post :restore, params: { id: reply.id }
-      expect(flash[:success]).to eq("Reply has been restored!")
+      expect(flash[:success]).to eq("Reply restored.")
       expect(Post.find(rpost.id).status).to eq(Post::STATUS_HIATUS)
     end
   end

@@ -1,101 +1,63 @@
 # frozen_string_literal: true
-class IndexSectionsController < ApplicationController
-  before_action :login_required, except: [:show]
-  before_action :find_index_section, except: [:new, :create]
-  before_action :permission_required, except: [:new, :create, :show]
+class IndexSectionsController < GenericController
+  before_action :find_index, only: [:new, :create]
+  before_action(only: [:new, :create]) { require_edit_permission }
 
   def new
-    unless (index = Index.find_by_id(params[:index_id]))
-      flash[:error] = "Index could not be found."
-      redirect_to indexes_path and return
-    end
-
-    unless index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(index) and return
-    end
-
-    @page_title = "New Index Section"
-    @section = IndexSection.new(index: index)
+    super
   end
 
   def create
-    @section = IndexSection.new(index_params)
-
-    if @section.index && !@section.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(@section.index) and return
-    end
-
-    begin
-      @section.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Index section could not be created.",
-        array: @section.errors.full_messages
-      }
-      @page_title = 'New Index Section'
-      render :new
-    else
-      flash[:success] = "New section, #{@section.name}, has successfully been created for #{@section.index.name}."
-      redirect_to index_path(@section.index)
-    end
-  end
-
-  def show
-    @page_title = @section.name
-  end
-
-  def edit
-    @page_title = "Edit Index Section: #{@section.name}"
+    section_name = params[:index_section].fetch(:name, nil)
+    @csm = "New section, #{section_name}, created for #{@index.name}."
+    @create_redirect = index_path(@index)
+    super
   end
 
   def update
-    begin
-      @section.update!(index_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Index section could not be saved because of the following problems:",
-        array: @section.errors.full_messages
-      }
-      @page_title = "Edit Index Section: #{@section.name}"
-      render :edit
-    else
-      flash[:success] = "Index section saved!"
-      redirect_to index_path(@section.index)
-    end
+    @update_redirect = index_path(@section.index)
+    super
   end
 
   def destroy
-    begin
-      @section.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {}
-      flash[:error][:message] = "Index section could not be deleted."
-      flash[:error][:array] = @section.errors.full_messages
-    else
-      flash[:success] = "Index section deleted."
-    end
-    redirect_to index_path(@section.index)
+    @destroy_redirect = @destroy_failure_redirect = index_path(@section.index)
+    super
   end
 
   private
 
-  def find_index_section
-    unless (@section = IndexSection.find_by_id(params[:id]))
-      flash[:error] = "Index section could not be found."
-      redirect_to indexes_path
-    end
+  def find_index
+    id = params[:index_id] || permitted_params[:index_id]
+    @index = find_parent(Index, id: id, redirect: indexes_path)
   end
 
-  def permission_required
-    unless @section.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(@section.index)
+  def require_edit_permission
+    index = @index || @section.index
+    unless index.editable_by?(current_user)
+      flash[:error] = "You do not have permission to modify this index."
+      redirect_to index_path(index)
     end
   end
+  alias_method :require_delete_permission, :require_edit_permission
 
-  def index_params
+  def permitted_params
     params.fetch(:index_section, {}).permit(:name, :description, :index_id)
   end
+
+  def set_model
+    @section = @model
+  end
+
+  def model_name
+    'Index section'
+  end
+
+  def model_class
+    IndexSection
+  end
+
+  def models_path
+    indexes_path
+  end
+  alias_method :invalid_redirect, :models_path
 end

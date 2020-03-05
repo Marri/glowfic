@@ -1,9 +1,6 @@
 # frozen_string_literal: true
-class BoardsController < ApplicationController
-  before_action :login_required, except: [:index, :show, :search]
-  before_action :find_board, only: [:show, :edit, :update, :destroy]
-  before_action :set_available_cowriters, only: [:new, :edit]
-  before_action :require_permission, only: [:edit, :update, :destroy]
+class BoardsController < GenericController
+  before_action(only: [:mark]) { login_required }
 
   def index
     if params[:user_id].present?
@@ -27,34 +24,8 @@ class BoardsController < ApplicationController
     end
   end
 
-  def new
-    @board = Board.new
-    @board.creator = current_user
-    @page_title = 'New Continuity'
-  end
-
-  def create
-    @board = Board.new(board_params)
-    @board.creator = current_user
-
-    begin
-      @board.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Continuity could not be created.",
-        array: @board.errors.full_messages
-      }
-      @page_title = 'New Continuity'
-      set_available_cowriters
-      render :new
-    else
-      flash[:success] = "Continuity created!"
-      redirect_to boards_path
-    end
-  end
-
   def show
-    @page_title = @board.name
+    super
     @board_sections = @board.board_sections.ordered
     board_posts = @board.posts.where(section_id: nil)
     if @board.ordered?
@@ -68,44 +39,13 @@ class BoardsController < ApplicationController
   end
 
   def edit
-    @page_title = 'Edit Continuity: ' + @board.name
+    super
     use_javascript('boards/edit')
-    @board_sections = @board.board_sections.ordered
     @unsectioned_posts = @board.posts.where(section_id: nil).ordered_in_section if @board.ordered?
   end
 
   def update
-    begin
-      @board.update!(board_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Continuity could not be created.",
-        array: @board.errors.full_messages
-      }
-      @page_title = 'Edit Continuity: ' + @board.name_was
-      set_available_cowriters
-      use_javascript('board_sections')
-      @board_sections = @board.board_sections.ordered
-      render :edit
-    else
-      flash[:success] = "Continuity saved!"
-      redirect_to board_path(@board)
-    end
-  end
-
-  def destroy
-    begin
-      @board.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Continuity could not be deleted.",
-        array: @board.errors.full_messages
-      }
-      redirect_to board_path(@board)
-    else
-      flash[:success] = "Continuity deleted."
-      redirect_to boards_path
-    end
+    super
   end
 
   def mark
@@ -142,32 +82,19 @@ class BoardsController < ApplicationController
 
   private
 
-  def set_available_cowriters
+  def editor_setup
     @coauthors = @cameos = User.active.ordered
     if @board
       @coauthors -= @board.cameos
       @cameos -= @board.writers
       @coauthors -= [@board.creator]
       @cameos -= [@board.creator]
+      @board_sections = @board.board_sections.ordered
     else
       @coauthors -= [current_user]
       @cameos -= [current_user]
     end
     use_javascript('boards/editor')
-  end
-
-  def find_board
-    unless (@board = Board.find_by_id(params[:id]))
-      flash[:error] = "Continuity could not be found."
-      redirect_to boards_path and return
-    end
-  end
-
-  def require_permission
-    unless @board.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit that continuity."
-      redirect_to board_path(@board) and return
-    end
   end
 
   def og_data
@@ -187,7 +114,19 @@ class BoardsController < ApplicationController
     }
   end
 
-  def board_params
+  def permitted_params
     params.fetch(:board, {}).permit(:name, :description, coauthor_ids: [], cameo_ids: [])
+  end
+
+  def set_params
+    @board.creator = current_user
+  end
+
+  def model_name
+    'Continuity'
+  end
+
+  def model_class
+    Board
   end
 end

@@ -2,11 +2,11 @@
 class GalleriesController < UploadingController
   include Taggable
 
-  before_action :login_required, except: [:index, :show, :search]
-  before_action :find_gallery, only: [:destroy, :edit, :update] # assumes login_required
+  prepend_before_action :find_model, only: [:edit, :update, :destroy, :add, :icon]
+  prepend_before_action :login_required, only: [:new, :create, :edit, :update, :destroy, :icon, :add]
+  before_action(only: [:add, :icon]) { require_edit_permission }
   before_action :setup_new_icons, only: [:add, :icon]
   before_action :set_s3_url, only: [:edit, :add, :icon]
-  before_action :setup_editor, only: [:new, :edit]
 
   def index
     if params[:user_id].present?
@@ -29,27 +29,25 @@ class GalleriesController < UploadingController
   end
 
   def new
-    @page_title = 'New Gallery'
-    @gallery = Gallery.new
+    super
   end
 
   def create
-    @gallery = Gallery.new(gallery_params)
+    @gallery = Gallery.new(permitted_params)
     @gallery.user = current_user
     @gallery.gallery_groups = process_tags(GalleryGroup, :gallery, :gallery_group_ids)
 
     begin
       @gallery.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Your gallery could not be saved because of the following problems:",
-        array: @gallery.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@gallery, action: 'created', now: true)
+      log_error(e) unless @gallery.errors.present?
+
       @page_title = 'New Gallery'
-      setup_editor
+      editor_setup
       render :new
     else
-      flash[:success] = "Gallery saved successfully."
+      flash[:success] = "Gallery created."
       redirect_to gallery_path(@gallery)
     end
   end
@@ -110,25 +108,25 @@ class GalleriesController < UploadingController
   end
 
   def update
-    @gallery.assign_attributes(gallery_params)
+    @gallery.assign_attributes(permitted_params)
 
     begin
       Gallery.transaction do
         @gallery.gallery_groups = process_tags(GalleryGroup, :gallery, :gallery_group_ids)
         @gallery.save!
       end
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {}
-      flash.now[:error][:message] = "Gallery could not be saved."
-      flash.now[:error][:array] = @gallery.errors.full_messages
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@gallery, action: 'updated', now: true)
+      log_error(e) unless @gallery.errors.present?
+
       @page_title = 'Edit Gallery: ' + @gallery.name_was
       use_javascript('galleries/uploader')
       use_javascript('galleries/edit')
-      setup_editor
+      editor_setup
       set_s3_url
       render :edit
     else
-      flash[:success] = "Gallery saved."
+      flash[:success] = "Gallery updated."
       redirect_to edit_gallery_path(@gallery)
     end
   end
@@ -147,7 +145,7 @@ class GalleriesController < UploadingController
         next unless icon.user_id == current_user.id
         @gallery.icons << icon
       end
-      flash[:success] = "Icons added to gallery successfully."
+      flash[:success] = "Icons added to gallery."
       redirect_to gallery_path(@gallery) and return
     end
 
@@ -181,7 +179,7 @@ class GalleriesController < UploadingController
       flash.now[:error] = "Your icons could not be saved."
       render :add
     elsif icons.all?(&:save)
-      flash[:success] = "Icons saved successfully."
+      flash[:success] = "Icons saved."
       if @gallery
         icons.each do |icon| @gallery.icons << icon end
         redirect_to gallery_path(@gallery) and return
@@ -194,17 +192,8 @@ class GalleriesController < UploadingController
   end
 
   def destroy
-    begin
-      @gallery.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {}
-      flash[:error][:message] = "Gallery could not be deleted."
-      flash[:error][:array] = @gallery.errors.full_messages
-      redirect_to gallery_path(@gallery)
-    else
-      flash[:success] = "Gallery deleted successfully."
-      redirect_to user_galleries_path(current_user)
-    end
+    @destroy_redirect = user_galleries_path(current_user)
+    super
   end
 
   def search
@@ -212,17 +201,14 @@ class GalleriesController < UploadingController
 
   private
 
-  def find_gallery
-    @gallery = Gallery.find_by_id(params[:id])
+  def find_model
+    super unless params[:id] == '0'
+  end
 
-    unless @gallery
-      flash[:error] = "Gallery could not be found."
-      redirect_to user_galleries_path(current_user) and return
-    end
-
-    unless @gallery.user_id == current_user.id
-      flash[:error] = "That is not your gallery."
-      redirect_to user_galleries_path(current_user) and return
+  def require_edit_permission
+    unless params[:id] == '0' || @gallery.user_id == current_user.id
+      flash[:error] = "You do not have permission to modify this gallery."
+      redirect_to user_galleries_path(current_user)
     end
   end
 
@@ -234,13 +220,12 @@ class GalleriesController < UploadingController
       use_javascript('galleries/uploader')
     end
     @icons = []
-    find_gallery unless params[:id] == '0'
     @unassigned = current_user.galleryless_icons
     @page_title = "Add Icons"
     @page_title += ": " + @gallery.name unless @gallery.nil?
   end
 
-  def setup_editor
+  def editor_setup
     use_javascript('galleries/editor')
     gon.user_id = current_user.id
   end
@@ -260,7 +245,7 @@ class GalleriesController < UploadingController
     }
   end
 
-  def gallery_params
+  def permitted_params
     params.fetch(:gallery, {}).permit(
       :name,
       galleries_icons_attributes: [
@@ -274,5 +259,9 @@ class GalleriesController < UploadingController
 
   def icon_params(paramset)
     paramset.permit(:url, :keyword, :credit, :s3_key)
+  end
+
+  def invalid_redirect
+    logged_in? ? user_galleries_path(current_user) : root_path
   end
 end

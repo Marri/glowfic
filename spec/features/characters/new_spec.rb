@@ -38,7 +38,7 @@ RSpec.feature "Creating a new character", :type => :feature do
 
     expect(page).to have_selector('.flash.error')
     within('.flash.error') do
-      expect(page).to have_text('Your character could not be saved.')
+      expect(page).to have_text('Character could not be created because of the following problems:')
       expect(page).to have_text('Name can\'t be blank')
     end
 
@@ -65,7 +65,7 @@ RSpec.feature "Creating a new character", :type => :feature do
     expect(page).to have_no_selector('.flash.error')
     expect(page).to have_selector('.flash.success')
     within('.flash.success') do
-      expect(page).to have_text('Character saved successfully.')
+      expect(page).to have_text('Character created.')
     end
   end
 
@@ -92,7 +92,7 @@ RSpec.feature "Creating a new character", :type => :feature do
     expect(page).to have_no_selector('.flash.error')
     expect(page).to have_selector('.flash.success')
     within('.flash.success') do
-      expect(page).to have_text('Character saved successfully.')
+      expect(page).to have_text('Character created.')
     end
 
     within('.character-info-box') do
@@ -126,7 +126,7 @@ RSpec.feature "Creating a new character", :type => :feature do
     expect(page).to have_no_selector('.flash.error')
     expect(page).to have_selector('.flash.success')
     within('.flash.success') do
-      expect(page).to have_text('Character saved successfully.')
+      expect(page).to have_text('Character created.')
     end
     expect(page).to have_selector('.character-template', text: 'Example template')
   end

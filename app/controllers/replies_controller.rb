@@ -2,10 +2,9 @@
 require 'will_paginate/array'
 
 class RepliesController < WritableController
-  before_action :login_required, except: [:search, :show, :history]
-  before_action :find_reply, only: [:show, :history, :edit, :update, :destroy]
-  before_action :editor_setup, only: [:edit]
-  before_action :require_permission, only: [:edit, :update]
+  before_action(only: [:restore]) { login_required }
+  before_action(only: [:history]) { find_model }
+  before_action :require_view_permission, only: [:show, :edit, :update, :destroy, :history]
 
   def search
     @page_title = 'Search Replies'
@@ -102,7 +101,7 @@ class RepliesController < WritableController
       preview(ReplyDraft.reply_from_draft(draft)) and return
     end
 
-    reply = Reply.new(reply_params)
+    reply = Reply.new(permitted_params)
     reply.user = current_user
 
     if reply.post.present?
@@ -135,15 +134,14 @@ class RepliesController < WritableController
 
     begin
       reply.save!
-    rescue ActiveRecord::RecordInvalid
-      flash[:error] = {
-        message: "Your reply could not be saved because of the following problems:",
-        array: reply.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(reply, action: 'created', now: true)
+      log_error(e) unless reply.errors.present?
+
       redirect_to posts_path and return unless reply.post
       redirect_to post_path(reply.post)
     else
-      flash[:success] = "Posted!"
+      flash[:success] = "Reply posted."
       redirect_to reply_path(reply, anchor: "reply-#{reply.id}")
     end
   end
@@ -162,7 +160,7 @@ class RepliesController < WritableController
   end
 
   def update
-    @reply.assign_attributes(reply_params)
+    @reply.assign_attributes(permitted_params)
     preview(@reply) and return if params[:button_preview]
 
     if current_user.id != @reply.user_id && @reply.audit_comment.blank?
@@ -173,11 +171,10 @@ class RepliesController < WritableController
 
     begin
       @reply.save!
-    rescue ActiveRecord::RecordInvalid
-      flash[:error] = {
-        message: "Your reply could not be saved because of the following problems:",
-        array: @reply.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@reply, action: 'updated', now: true)
+      log_error(e) unless @reply.errors.present?
+
       editor_setup
       render :edit
     else
@@ -187,27 +184,13 @@ class RepliesController < WritableController
   end
 
   def destroy
-    unless @reply.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to modify this post."
-      redirect_to post_path(@reply.post) and return
-    end
-
     previous_reply = @reply.send(:previous_reply)
     to_page = previous_reply.try(:post_page, per_page) || 1
 
     # to destroy subsequent replies, do @reply.destroy_subsequent_replies
-    begin
-      @reply.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Reply could not be deleted.",
-        array: @reply.errors.full_messages
-      }
-      redirect_to reply_path(@reply, anchor: "reply-#{@reply.id}")
-    else
-      flash[:success] = "Reply deleted."
-      redirect_to post_path(@reply.post, page: to_page)
-    end
+    @destroy_redirect = post_path(@reply.post, page: to_page)
+    @destroy_failure_redirect = reply_path(@reply, anchor: "reply-#{@reply.id}")
+    super
   end
 
   def restore
@@ -224,7 +207,7 @@ class RepliesController < WritableController
 
     new_reply = Reply.new(audit.audited_changes)
     unless new_reply.editable_by?(current_user)
-      flash[:error] = "You do not have permission to modify this post."
+      flash[:error] = "You do not have permission to modify this reply."
       redirect_to post_path(new_reply.post) and return
     end
 
@@ -241,34 +224,19 @@ class RepliesController < WritableController
       new_reply.save!
     end
 
-    flash[:success] = "Reply has been restored!"
+    flash[:success] = "Reply restored."
     redirect_to reply_path(new_reply)
   end
 
   private
 
-  def find_reply
-    @reply = Reply.find_by_id(params[:id])
-
-    unless @reply
-      flash[:error] = "Post could not be found."
-      redirect_to boards_path and return
-    end
-
+  def require_view_permission
     @post = @reply.post
     unless @post.visible_to?(current_user)
       flash[:error] = "You do not have permission to view this post."
       redirect_to boards_path and return
     end
-
     @page_title = @post.subject
-  end
-
-  def require_permission
-    unless @reply.editable_by?(current_user)
-      flash[:error] = "You do not have permission to modify this post."
-      redirect_to post_path(@reply.post)
-    end
   end
 
   def preview(written)
@@ -284,22 +252,28 @@ class RepliesController < WritableController
 
   def make_draft(show_message=true)
     if (draft = ReplyDraft.draft_for(params[:reply][:post_id], current_user.id))
-      draft.assign_attributes(reply_params)
+      draft.assign_attributes(permitted_params)
     else
-      draft = ReplyDraft.new(reply_params)
+      draft = ReplyDraft.new(permitted_params)
       draft.user = current_user
     end
 
     begin
       draft.save!
-    rescue ActiveRecord::RecordInvalid
-      flash[:error] = {
-        message: "Your draft could not be saved because of the following problems:",
-        array: draft.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(draft, action: 'saved', class_name: 'Draft')
+      log_errors(e) unless draft.errors.present?
     else
-      flash[:success] = "Draft saved!" if show_message
+      flash[:success] = "Draft saved." if show_message
     end
     draft
+  end
+
+  def uneditable_redirect
+    post_path(@reply.post)
+  end
+
+  def invalid_redirect
+    boards_path
   end
 end

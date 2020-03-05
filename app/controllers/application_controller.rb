@@ -206,4 +206,33 @@ class ApplicationController < ActionController::Base
   def standard_request?
     request.get? && !request.xhr?
   end
+
+  def render_errors(model, action:, now: false, class_name: nil, msg: nil)
+    class_name ||= model.class.name.underscore.humanize
+    msg ||= "#{class_name} could not be #{action}"
+    if model.errors.present?
+      msg = {
+        message: msg + " because of the following problems:",
+        array: model.errors.full_messages
+      }
+    else
+      msg += '.'
+    end
+
+    if now
+      flash.now[:error] = msg
+    else
+      flash[:error] = msg
+    end
+  end
+
+  def log_error(exception)
+    data = {
+      response_status: params[:response_status],
+      response_body: params[:response_body],
+      response_text: params[:response_text],
+      user_id: current_user.try(:id)
+    }
+    ExceptionNotifier.notify_exception(exception, data: data)
+  end
 end

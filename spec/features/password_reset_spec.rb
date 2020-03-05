@@ -18,7 +18,7 @@ RSpec.feature "Resetting password", :type => :feature do
     fill_in "New Password", with: 'anewpass'
     fill_in "Confirm Password", with: 'anewpass'
     click_button "Save"
-    expect(page).to have_selector('.success', exact_text: "Password successfully changed.")
+    expect(page).to have_selector('.success', exact_text: "Password changed.")
     expect(user.reload.authenticate('anewpass')).to be true
   end
 end

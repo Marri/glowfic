@@ -4,15 +4,16 @@ require 'will_paginate/array'
 class PostsController < WritableController
   include Taggable
 
-  before_action :login_required, except: [:index, :show, :history, :warnings, :search, :stats]
-  before_action :find_post, only: [:show, :history, :delete_history, :stats, :warnings, :edit, :update, :destroy]
-  before_action :require_permission, only: [:edit, :delete_history]
+  before_action(only: [:owed, :unread, :mark, :hidden, :unhide, :delete_history]) { login_required }
+  before_action(only: [:history, :delete_history, :stats, :warnings]) { find_model }
+  before_action(only: [:warnings]) { require_view_permission }
+  before_action :require_edit_permission, only: [:edit, :delete_history]
   before_action :require_import_permission, only: [:new, :create]
-  before_action :editor_setup, only: [:new, :edit]
+  before_action :set_title, only: [:show, :history, :stats, :edit, :warnings]
 
   def index
-    @posts = posts_from_relation(Post.ordered)
     @page_title = 'Recent Threads'
+    @posts = posts_from_relation(Post.ordered)
   end
 
   def owed
@@ -114,11 +115,11 @@ class PostsController < WritableController
   end
 
   def new
+    @page_title = 'New Post'
     @post = Post.new(character: current_user.active_character, user: current_user)
     @post.board_id = params[:board_id]
     @post.section_id = params[:section_id]
     @post.icon_id = (current_user.active_character ? current_user.active_character.default_icon.try(:id) : current_user.avatar_id)
-    @page_title = 'New Post'
 
     @permitted_authors -= [current_user]
     if @post.board&.authors_locked?
@@ -131,23 +132,22 @@ class PostsController < WritableController
     import_thread and return if params[:button_import].present?
     preview and return if params[:button_preview].present?
 
-    @post = current_user.posts.new(post_params)
+    @post = current_user.posts.new(permitted_params)
     @post.settings = process_tags(Setting, :post, :setting_ids)
     @post.content_warnings = process_tags(ContentWarning, :post, :content_warning_ids)
     @post.labels = process_tags(Label, :post, :label_ids)
 
     begin
       @post.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        array: @post.errors.full_messages,
-        message: "Your post could not be saved because of the following problems:"
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@post, action: 'created', now: true)
+      log_error(e) unless @post.errors.present?
+
       editor_setup
       @page_title = 'New Post'
       render :new
     else
-      flash[:success] = "You have successfully posted."
+      flash[:success] = "Post created."
       redirect_to post_path(@post)
     end
   end
@@ -185,14 +185,14 @@ class PostsController < WritableController
     mark_unread and return if params[:unread].present?
     mark_hidden and return if params[:hidden].present?
 
-    require_permission
+    require_edit_permission
     return if performed?
 
     change_status and return if params[:status].present?
     change_authors_locked and return if params[:authors_locked].present?
     preview and return if params[:button_preview].present?
 
-    @post.assign_attributes(post_params)
+    @post.assign_attributes(permitted_params)
     @post.board ||= Board.find(3)
     settings = process_tags(Setting, :post, :setting_ids)
     warnings = process_tags(ContentWarning, :post, :content_warning_ids)
@@ -213,37 +213,21 @@ class PostsController < WritableController
         @post.save!
         @post.author_for(current_user).update!(private_note: @post.private_note) if is_author
       end
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        array: @post.errors.full_messages,
-        message: "Your post could not be saved because of the following problems:"
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@post, action: 'updated', now: true)
+      log_error(e) unless @post.errors.present?
+
       editor_setup
       render :edit
     else
-      flash[:success] = "Your post has been updated."
+      flash[:success] = "Post updated."
       redirect_to post_path(@post)
     end
   end
 
   def destroy
-    unless @post.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to modify this post."
-      redirect_to post_path(@post) and return
-    end
-
-    begin
-      @post.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Post could not be deleted.",
-        array: @post.errors.full_messages
-      }
-      redirect_to post_path(@post)
-    else
-      flash[:success] = "Post deleted."
-      redirect_to boards_path
-    end
+    @destroy_redirect = boards_path
+    super
   end
 
   def search
@@ -304,7 +288,7 @@ class PostsController < WritableController
 
   def preview
     @post ||= Post.new(user: current_user)
-    @post.assign_attributes(post_params(false))
+    @post.assign_attributes(permitted_params(false))
     @post.board ||= Board.find_by_id(3)
 
     @author_ids = params.fetch(:post, {}).fetch(:unjoined_author_ids, [])
@@ -357,11 +341,9 @@ class PostsController < WritableController
           @post.save!
           @post.mark_read(current_user, @post.tagged_at)
         end
-      rescue ActiveRecord::RecordInvalid
-        flash[:error] = {
-          message: "Status could not be updated.",
-          array: @post.errors.full_messages
-        }
+      rescue ActiveRecord::RecordInvalid => e
+        render_errors(@post, action: 'updated', class_name: 'Status')
+        log_error(e) unless @post.errors.present?
       else
         flash[:success] = "Post has been marked #{params[:status]}."
       end
@@ -373,11 +355,9 @@ class PostsController < WritableController
     @post.authors_locked = (params[:authors_locked] == 'true')
     begin
       @post.save!
-    rescue ActiveRecord::RecordInvalid
-      flash[:error] = {
-        message: "Post could not be updated.",
-        array: @post.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@post, action: 'updated')
+      log_error(e) unless @post.errors.present?
     else
       flash[:success] = "Post has been #{@post.authors_locked? ? 'locked to' : 'unlocked from'} current authors."
     end
@@ -387,7 +367,7 @@ class PostsController < WritableController
   def editor_setup
     super
     @permitted_authors = User.active.ordered - (@post.try(:joined_authors) || [])
-    @author_ids = post_params[:unjoined_author_ids].reject(&:blank?).map(&:to_i) if post_params.key?(:unjoined_author_ids)
+    @author_ids = permitted_params[:unjoined_author_ids].reject(&:blank?).map(&:to_i) if permitted_params.key?(:unjoined_author_ids)
     @author_ids ||= @post.try(:unjoined_author_ids) || []
   end
 
@@ -406,28 +386,17 @@ class PostsController < WritableController
     end
   end
 
-  def find_post
-    @post = Post.find_by_id(params[:id])
-
-    unless @post
-      flash[:error] = "Post could not be found."
-      redirect_to boards_path and return
-    end
-
-    unless @post.visible_to?(current_user)
-      flash[:error] = "You do not have permission to view this post."
-      redirect_to boards_path and return
-    end
-
+  def set_title
     @page_title = @post.subject
   end
 
-  def require_permission
+  def require_edit_permission
     unless @post.editable_by?(current_user) || @post.metadata_editable_by?(current_user)
       flash[:error] = "You do not have permission to modify this post."
       redirect_to post_path(@post)
     end
   end
+  alias_method :require_delete_permission, :require_edit_permission
 
   def require_import_permission
     return unless params[:view] == 'import' || params[:button_import].present?
@@ -437,7 +406,7 @@ class PostsController < WritableController
     end
   end
 
-  def post_params(include_associations=true)
+  def permitted_params(include_associations=true)
     allowed_params = [
       :board_id,
       :section_id,
@@ -463,4 +432,9 @@ class PostsController < WritableController
 
     params.fetch(:post, {}).permit(allowed_params)
   end
+
+  def invalid_redirect
+    boards_path
+  end
+  alias_method :unviewable_redirect, :invalid_redirect
 end

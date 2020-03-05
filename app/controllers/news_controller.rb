@@ -1,9 +1,6 @@
 # frozen_string_literal: true
-class NewsController < ApplicationController
-  before_action :login_required, except: [:index, :show]
-  before_action :require_staff, except: [:index, :show]
-  before_action :find_news, only: [:show, :edit, :update, :destroy]
-  before_action :require_permission, only: [:edit, :update]
+class NewsController < GenericController
+  prepend_before_action :require_staff, :login_required, only: [:new, :create, :edit, :update, :destroy]
 
   def index
     @page_title = 'Site News'
@@ -13,26 +10,13 @@ class NewsController < ApplicationController
 
   def new
     @page_title = 'Create News Post'
-    @news = News.new
+    super
   end
 
   def create
-    @news = News.new(news_params)
-    @news.user = current_user
-
-    begin
-      @news.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "News post could not be created.",
-        array: @news.errors.full_messages
-      }
-      @page_title = 'Create News Post'
-      render :new
-    else
-      flash[:success] = "News post has successfully been created."
-      redirect_to news_index_path
-    end
+    @page_title = 'Create News Post'
+    @create_redirect = news_index_path
+    super
   end
 
   def show
@@ -40,69 +24,49 @@ class NewsController < ApplicationController
     redirect_to paged_news_url(@news)
   end
 
-  def edit
-    @page_title = 'Edit News Post'
-  end
-
   def update
-    begin
-      @news.update!(news_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "News post could not be saved because of the following problems:",
-        array: @news.errors.full_messages
-      }
-      @page_title = "Edit News Post"
-      render :edit
-    else
-      flash[:success] = "News post saved!"
-      redirect_to paged_news_url(@news)
-    end
+    @update_redirect = paged_news_url(@news)
+    super
   end
 
   def destroy
-    unless @news.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to edit that news post."
-      redirect_to news_index_path and return
-    end
-
-    begin
-      @news.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "News post could not be deleted.",
-        array: @news.errors.full_messages
-      }
-    else
-      flash[:success] = "News post deleted."
-    end
-    redirect_to news_index_path
+    @destroy_redirect = @destroy_failure_redirect = news_index_path
+    super
   end
 
   private
 
-  def find_news
-    unless (@news = News.find_by_id(params[:id]))
-      flash[:error] = "News post could not be found."
-      redirect_to news_index_path and return
-    end
+  def model_name
+    'News post'
   end
+
+  def model_class
+    News
+  end
+
+  def set_params
+    @news.user = current_user
+  end
+
+  def model_path
+    paged_news_url(@news)
+  end
+  alias_method :update_redirect, :model_path
+
+  def models_path
+    news_index_path
+  end
+  alias_method :invalid_redirect, :models_path
+  alias_method :uneditable_redirect, :models_path
 
   def require_staff
     unless current_user.admin? || current_user.mod?
       flash[:error] = "You do not have permission to manage news posts."
-      redirect_to news_index_path and return
+      redirect_to news_index_path
     end
   end
 
-  def require_permission
-    unless @news.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit that news post."
-      redirect_to news_index_path and return
-    end
-  end
-
-  def news_params
+  def permitted_params
     params.fetch(:news, {}).permit(:content)
   end
 

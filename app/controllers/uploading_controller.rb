@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class UploadingController < ApplicationController
+class UploadingController < GenericController
   protected
 
   def set_s3_url

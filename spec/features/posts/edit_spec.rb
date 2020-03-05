@@ -41,7 +41,7 @@ RSpec.feature "Editing posts", :type => :feature do
     click_button 'Save'
 
     expect(page).to have_no_selector('.error')
-    expect(page).to have_selector('.success', text: 'has been updated.')
+    expect(page).to have_selector('.success', exact_text: 'Post updated.')
     expect(page).to have_selector('.post-container', count: 1)
     expect(page).to have_selector('#post-title', exact_text: 'other subject')
 
@@ -86,7 +86,7 @@ RSpec.feature "Editing posts", :type => :feature do
     click_button 'Save'
 
     expect(page).to have_no_selector('.error')
-    expect(page).to have_selector('.success', text: 'has been updated.')
+    expect(page).to have_selector('.success', exact_text: 'Post updated.')
     expect(page).to have_selector('.post-container', count: 1)
     expect(page).to have_selector('#post-title', exact_text: 'third subject')
 
@@ -136,7 +136,7 @@ RSpec.feature "Editing posts", :type => :feature do
     click_button 'Save'
 
     expect(page).to have_no_selector('.error')
-    expect(page).to have_selector('.success', text: 'has been updated.')
+    expect(page).to have_selector('.success', exact_text: 'Post updated.')
     expect(page).to have_selector('.post-container', count: 1)
     expect(page).to have_selector('#post-title', exact_text: 'other subject')
 
@@ -188,7 +188,7 @@ RSpec.feature "Editing posts", :type => :feature do
     click_button 'Save'
 
     expect(page).to have_no_selector('.error')
-    expect(page).to have_selector('.success', text: 'has been updated.')
+    expect(page).to have_selector('.success', exact_text: 'Post updated.')
     expect(page).to have_selector('.post-container', count: 1)
     expect(page).to have_selector('#post-title', exact_text: 'third subject')
 
@@ -230,7 +230,7 @@ RSpec.feature "Editing posts", :type => :feature do
     click_button 'Save'
 
     expect(page).to have_no_selector('.error')
-    expect(page).to have_selector('.success', text: 'has been updated.')
+    expect(page).to have_selector('.success', exact_text: 'Post updated.')
     expect(page).to have_selector('.flash.breadcrumbs', exact_text: "Continuities » test board » test subject")
     expect(page).to have_selector('.post-container', count: 1)
     within('.post-container') do

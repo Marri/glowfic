@@ -237,7 +237,7 @@ RSpec.describe UsersController do
       login
       get :edit, params: { id: user.id }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq('You do not have permission to edit that user.')
+      expect(flash[:error]).to eq('You do not have permission to modify this user.')
     end
 
     it "succeeds" do
@@ -268,7 +268,7 @@ RSpec.describe UsersController do
       login_as(user)
       put :update, params: { id: user.id, user: {moiety: 'A'} }
       expect(response).to render_template(:edit)
-      expect(flash[:error][:message]).to eq('There was a problem updating your account.')
+      expect(flash[:error][:message]).to eq('Changes could not be saved because of the following problems:')
     end
 
     it "does not update another user" do
@@ -277,7 +277,7 @@ RSpec.describe UsersController do
       login_as(user1)
       put :update, params: { id: user2.id, user: {email: 'bademail@example.com'} }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq('You do not have permission to edit that user.')
+      expect(flash[:error]).to eq('You do not have permission to modify this user.')
       expect(user2.reload.email).not_to eq('bademail@example.com')
     end
 
@@ -302,7 +302,7 @@ RSpec.describe UsersController do
 
       put :update, params: { id: user.id, user: user_details }
       expect(response).to redirect_to(edit_user_url(user))
-      expect(flash[:success]).to eq('Changes saved successfully.')
+      expect(flash[:success]).to eq('Changes saved.')
 
       user.reload
       user_details.each do |key, value|
@@ -317,7 +317,7 @@ RSpec.describe UsersController do
       login_as(user)
       put :update, params: { id: user.id, user: {username: 'user124'} }
       expect(response).to redirect_to(edit_user_url(user))
-      expect(flash[:success]).to eq('Changes saved successfully.')
+      expect(flash[:success]).to eq('Changes saved.')
 
       user.reload
       expect(user.username).to eq('user124')
@@ -331,7 +331,7 @@ RSpec.describe UsersController do
         login_as(user)
         put :update, params: { id: user.id, tos_check: true }
         expect(user.reload.tos_version).to eq(User::CURRENT_TOS_VERSION)
-        expect(flash[:success]).to eq('Acceptance saved successfully. Thank you!')
+        expect(flash[:success]).to eq('Acceptance saved. Thank you.')
         expect(response).to redirect_to(root_url)
       end
 
@@ -360,7 +360,7 @@ RSpec.describe UsersController do
       login
       put :password, params: { id: user.id }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:error]).to eq('You do not have permission to edit that user.')
+      expect(flash[:error]).to eq('You do not have permission to modify this user.')
     end
 
     it "requires correct password" do
@@ -434,7 +434,7 @@ RSpec.describe UsersController do
       }
 
       expect(response).to redirect_to(edit_user_url(user))
-      expect(flash[:success]).to eq('Changes saved successfully.')
+      expect(flash[:success]).to eq('Changes saved.')
       user.reload
       expect(user.authenticate(pass)).not_to eq(true)
       expect(user.authenticate(newpass)).to eq(true)
