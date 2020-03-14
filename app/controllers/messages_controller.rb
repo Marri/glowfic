@@ -38,13 +38,13 @@ class MessagesController < ApplicationController
     end
 
     if flash.now[:error].nil? && @message.save
-      flash[:success] = "Message sent!"
+      flash[:success] = "Message sent."
       redirect_to messages_path(view: 'inbox') and return
     end
 
     cached_error = flash.now[:error] # preserves errors from setting an invalid parent
     flash.now[:error] = {
-      message: "Your message could not be sent because of the following problems:",
+      message: "Message could not be sent because of the following problems:",
       array: @message.errors.full_messages
     }
     flash.now[:error][:array] << cached_error if cached_error.present?
@@ -65,7 +65,7 @@ class MessagesController < ApplicationController
     end
 
     unless message.visible_to?(current_user)
-      flash[:error] = "That is not your message!"
+      flash[:error] = "You do not have permission to view that message."
       redirect_to messages_path(view: 'inbox') and return
     end
 
@@ -115,7 +115,7 @@ class MessagesController < ApplicationController
       redirect_to messages_path and return
     end
 
-    flash[:success] = "Messages updated"
+    flash[:success] = "Messages updated."
     redirect_to messages_path(view: box || 'inbox')
   end
 

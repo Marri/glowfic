@@ -137,7 +137,7 @@ RSpec.describe BoardsController do
       login
       post :create
       expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Continuity could not be created.")
+      expect(flash[:error][:message]).to eq("Continuity could not be created because of the following problems:")
       expect(flash[:error][:array]).to be_present
       expect(response).to render_template('new')
     end
@@ -181,7 +181,7 @@ RSpec.describe BoardsController do
         }
       }
       expect(response).to redirect_to(boards_url)
-      expect(flash[:success]).to eq("Continuity created!")
+      expect(flash[:success]).to eq("Continuity created.")
       expect(Board.count).to eq(1)
 
       board = Board.first
@@ -290,7 +290,7 @@ RSpec.describe BoardsController do
       expect(board).not_to be_editable_by(user)
       get :edit, params: { id: board.id }
       expect(response).to redirect_to(board_url(board))
-      expect(flash[:error]).to eq("You do not have permission to edit that continuity.")
+      expect(flash[:error]).to eq("You do not have permission to modify this continuity.")
     end
 
     it "succeeds with valid board" do
@@ -335,7 +335,7 @@ RSpec.describe BoardsController do
       expect(board).not_to be_editable_by(user)
       put :update, params: { id: board.id }
       expect(response).to redirect_to(board_url(board))
-      expect(flash[:error]).to eq("You do not have permission to edit that continuity.")
+      expect(flash[:error]).to eq("You do not have permission to modify this continuity.")
     end
 
     it "requires valid params" do
@@ -344,7 +344,7 @@ RSpec.describe BoardsController do
       login_as(user)
       put :update, params: { id: board.id, board: {name: ''} }
       expect(response).to render_template('edit')
-      expect(flash[:error][:message]).to eq("Continuity could not be created.")
+      expect(flash[:error][:message]).to eq("Continuity could not be updated because of the following problems:")
       expect(flash[:error][:array]).to be_present
     end
 
@@ -365,7 +365,7 @@ RSpec.describe BoardsController do
         }
       }
       expect(response).to redirect_to(board_url(board))
-      expect(flash[:success]).to eq("Continuity saved!")
+      expect(flash[:success]).to eq("Continuity updated.")
       board.reload
       expect(board.name).to eq(name + 'edit')
       expect(board.description).to eq('New description')
@@ -395,7 +395,7 @@ RSpec.describe BoardsController do
       expect(board).not_to be_editable_by(user)
       delete :destroy, params: { id: board.id }
       expect(response).to redirect_to(board_url(board))
-      expect(flash[:error]).to eq("You do not have permission to edit that continuity.")
+      expect(flash[:error]).to eq("You do not have permission to modify this continuity.")
     end
 
     it "succeeds" do
@@ -430,7 +430,7 @@ RSpec.describe BoardsController do
       expect_any_instance_of(Board).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: board.id }
       expect(response).to redirect_to(board_url(board))
-      expect(flash[:error]).to eq({message: "Continuity could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Continuity could not be deleted.")
       expect(post.reload.board).to eq(board)
     end
   end

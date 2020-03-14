@@ -11,7 +11,7 @@ class IndexSectionsController < ApplicationController
     end
 
     unless index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
+      flash[:error] = "You do not have permission to modify this index."
       redirect_to index_path(index) and return
     end
 
@@ -23,21 +23,20 @@ class IndexSectionsController < ApplicationController
     @section = IndexSection.new(index_params)
 
     if @section.index && !@section.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
+      flash[:error] = "You do not have permission to modify this index."
       redirect_to index_path(@section.index) and return
     end
 
     begin
       @section.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Index section could not be created.",
-        array: @section.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@section, action: 'created', now: true)
+      log_error(e) unless @section.errors.present?
+
       @page_title = 'New Index Section'
       render :new
     else
-      flash[:success] = "New section, #{@section.name}, has successfully been created for #{@section.index.name}."
+      flash[:success] = "New section, #{@section.name}, created for #{@section.index.name}."
       redirect_to index_path(@section.index)
     end
   end
@@ -53,15 +52,14 @@ class IndexSectionsController < ApplicationController
   def update
     begin
       @section.update!(index_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Index section could not be saved because of the following problems:",
-        array: @section.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@section, action: 'updated', now: true)
+      log_error(e) unless @section.errors.present?
+
       @page_title = "Edit Index Section: #{@section.name}"
       render :edit
     else
-      flash[:success] = "Index section saved!"
+      flash[:success] = "Index section updated."
       redirect_to index_path(@section.index)
     end
   end
@@ -69,10 +67,9 @@ class IndexSectionsController < ApplicationController
   def destroy
     begin
       @section.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {}
-      flash[:error][:message] = "Index section could not be deleted."
-      flash[:error][:array] = @section.errors.full_messages
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_errors(@section, action: 'deleted')
+      log_error(e) unless @section.errors.present?
     else
       flash[:success] = "Index section deleted."
     end
@@ -90,7 +87,7 @@ class IndexSectionsController < ApplicationController
 
   def permission_required
     unless @section.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
+      flash[:error] = "You do not have permission to modify this index."
       redirect_to index_path(@section.index)
     end
   end

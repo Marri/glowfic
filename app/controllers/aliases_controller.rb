@@ -15,11 +15,10 @@ class AliasesController < ApplicationController
 
     begin
       @alias.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Alias could not be created.",
-        array: @alias.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@alias, action: 'created', now: true, class_name: 'Alias')
+      log_error(e) unless @alias.errors.present?
+
       @page_title = "New Alias: " + @character.name
       render :new
     else
@@ -31,11 +30,9 @@ class AliasesController < ApplicationController
   def destroy
     begin
       @alias.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Alias could not be deleted.",
-        array: @alias.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_errors(@alias, action: 'deleted', class_name: 'Alias')
+      log_error(e) unless @alias.errors.present?
     else
       flash[:success] = "Alias removed."
     end
@@ -51,7 +48,7 @@ class AliasesController < ApplicationController
     end
 
     unless @character.user == current_user
-      flash[:error] = "That is not your character."
+      flash[:error] = "You do not have permission to modify this character."
       redirect_to user_characters_path(current_user) and return
     end
   end

@@ -12,21 +12,20 @@ class BoardSectionsController < ApplicationController
   def create
     @board_section = BoardSection.new(section_params)
     unless @board_section.board.nil? || @board_section.board.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this continuity."
+      flash[:error] = "You do not have permission to modify this continuity."
       redirect_to boards_path and return
     end
 
     begin
       @board_section.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Section could not be created.",
-        array: @board_section.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@board_section, action: 'created', now: true, class_name: 'Section')
+      log_error(e) unless @board_section.errors.present?
+
       @page_title = 'New Section'
       render :new
     else
-      flash[:success] = "New section, #{@board_section.name}, has successfully been created for #{@board_section.board.name}."
+      flash[:success] = "New section, #{@board_section.name}, created for #{@board_section.board.name}."
       redirect_to edit_board_path(@board_section.board)
     end
   end
@@ -50,17 +49,16 @@ class BoardSectionsController < ApplicationController
 
     begin
       @board_section.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Section could not be updated.",
-        array: @board_section.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@board_section, action: 'updated', now: true, class_name: 'Section')
+      log_error(e) unless @board_section.errors.present?
+
       @page_title = 'Edit ' + @board_section.name_was
       use_javascript('board_sections')
       gon.section_id = @board_section.id
       render :edit
     else
-      flash[:success] = "#{@board_section.name} has been successfully updated."
+      flash[:success] = "Section updated."
       redirect_to board_section_path(@board_section)
     end
   end
@@ -68,11 +66,9 @@ class BoardSectionsController < ApplicationController
   def destroy
     begin
       @board_section.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Section could not be deleted.",
-        array: @board_section.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_errors(@board_section, action: 'deleted', class_name: 'Section')
+      log_error(e) unless @board_section.errors.present?
       redirect_to board_section_path(@board_section)
     else
       flash[:success] = "Section deleted."
@@ -93,7 +89,7 @@ class BoardSectionsController < ApplicationController
   def require_permission
     board = @board_section.try(:board) || Board.find_by_id(params[:board_id])
     if board && !board.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this continuity."
+      flash[:error] = "You do not have permission to modify this continuity."
       redirect_to boards_path and return
     end
   end

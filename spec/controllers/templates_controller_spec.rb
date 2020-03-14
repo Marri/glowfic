@@ -28,7 +28,7 @@ RSpec.describe TemplatesController do
       login
       post :create
       expect(response).to render_template(:new)
-      expect(flash[:error][:message]).to eq("Your template could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Template could not be created because of the following problems:")
       expect(flash[:error][:array]).to eq(["Name can't be blank"])
       expect(assigns(:page_title)).to eq("New Template")
       expect(assigns(:template)).not_to be_valid
@@ -41,7 +41,7 @@ RSpec.describe TemplatesController do
       post :create, params: { template: {name: 'testtest', description: 'test desc', character_ids: [char.id]} }
       created = Template.last
       expect(response).to redirect_to(template_url(created))
-      expect(flash[:success]).to eq("Template saved successfully.")
+      expect(flash[:success]).to eq("Template created.")
       expect(created.name).to eq('testtest')
       expect(created.description).to eq('test desc')
       expect(created.characters).to match_array([char])
@@ -123,7 +123,7 @@ RSpec.describe TemplatesController do
       user_id = login
       get :edit, params: { id: template.id }
       expect(response).to redirect_to(user_characters_url(user_id))
-      expect(flash[:error]).to eq("That is not your template.")
+      expect(flash[:error]).to eq("You do not have permission to modify this template.")
     end
 
     it "works" do
@@ -155,7 +155,7 @@ RSpec.describe TemplatesController do
       user_id = login
       put :update, params: { id: template.id }
       expect(response).to redirect_to(user_characters_url(user_id))
-      expect(flash[:error]).to eq("That is not your template.")
+      expect(flash[:error]).to eq("You do not have permission to modify this template.")
     end
 
     it "requires valid params" do
@@ -164,7 +164,7 @@ RSpec.describe TemplatesController do
       put :update, params: { id: template.id, template: {name: ''} }
       expect(assigns(:template)).not_to be_valid
       expect(response).to render_template(:edit)
-      expect(flash[:error][:message]).to eq("Your template could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Template could not be updated because of the following problems:")
       expect(flash[:error][:array]).to eq(["Name can't be blank"])
     end
 
@@ -183,7 +183,7 @@ RSpec.describe TemplatesController do
         }
       }
       expect(response).to redirect_to(template_url(template))
-      expect(flash[:success]).to eq("Template saved successfully.")
+      expect(flash[:success]).to eq("Template updated.")
 
       template.reload
       expect(template.name).to eq(new_name)
@@ -212,7 +212,7 @@ RSpec.describe TemplatesController do
       template = create(:template)
       delete :destroy, params: { id: template.id }
       expect(response).to redirect_to(user_characters_url(user.id))
-      expect(flash[:error]).to eq("That is not your template.")
+      expect(flash[:error]).to eq("You do not have permission to modify this template.")
     end
 
     it "succeeds" do
@@ -220,7 +220,7 @@ RSpec.describe TemplatesController do
       login_as(template.user)
       delete :destroy, params: { id: template.id }
       expect(response).to redirect_to(user_characters_url(template.user_id))
-      expect(flash[:success]).to eq("Template deleted successfully.")
+      expect(flash[:success]).to eq("Template deleted.")
     end
 
     it "handles destroy failure" do
@@ -230,7 +230,7 @@ RSpec.describe TemplatesController do
       expect_any_instance_of(Template).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: template.id }
       expect(response).to redirect_to(template_url(template))
-      expect(flash[:error]).to eq({message: "Template could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Template could not be deleted.")
       expect(character.reload.template).to eq(template)
     end
   end

@@ -40,16 +40,15 @@ class GalleriesController < UploadingController
 
     begin
       @gallery.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Your gallery could not be saved because of the following problems:",
-        array: @gallery.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@gallery, action: 'created', now: true)
+      log_error(e) unless @gallery.errors.present?
+
       @page_title = 'New Gallery'
       setup_editor
       render :new
     else
-      flash[:success] = "Gallery saved successfully."
+      flash[:success] = "Gallery created."
       redirect_to gallery_path(@gallery)
     end
   end
@@ -117,10 +116,10 @@ class GalleriesController < UploadingController
         @gallery.gallery_groups = process_tags(GalleryGroup, :gallery, :gallery_group_ids)
         @gallery.save!
       end
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {}
-      flash.now[:error][:message] = "Gallery could not be saved."
-      flash.now[:error][:array] = @gallery.errors.full_messages
+    rescue ActiveRecord::RecordInvalid => e
+      render_errors(@gallery, action: 'updated', now: true)
+      log_error(e) unless @gallery.errors.present?
+
       @page_title = 'Edit Gallery: ' + @gallery.name_was
       use_javascript('galleries/uploader')
       use_javascript('galleries/edit')
@@ -128,7 +127,7 @@ class GalleriesController < UploadingController
       set_s3_url
       render :edit
     else
-      flash[:success] = "Gallery saved."
+      flash[:success] = "Gallery updated."
       redirect_to edit_gallery_path(@gallery)
     end
   end
@@ -147,7 +146,7 @@ class GalleriesController < UploadingController
         next unless icon.user_id == current_user.id
         @gallery.icons << icon
       end
-      flash[:success] = "Icons added to gallery successfully."
+      flash[:success] = "Icons added to gallery."
       redirect_to gallery_path(@gallery) and return
     end
 
@@ -181,7 +180,7 @@ class GalleriesController < UploadingController
       flash.now[:error] = "Your icons could not be saved."
       render :add
     elsif icons.all?(&:save)
-      flash[:success] = "Icons saved successfully."
+      flash[:success] = "Icons saved."
       if @gallery
         icons.each do |icon| @gallery.icons << icon end
         redirect_to gallery_path(@gallery) and return
@@ -196,13 +195,12 @@ class GalleriesController < UploadingController
   def destroy
     begin
       @gallery.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {}
-      flash[:error][:message] = "Gallery could not be deleted."
-      flash[:error][:array] = @gallery.errors.full_messages
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_errors(@gallery, action: 'deleted')
+      log_error(e) unless @gallery.errors.present?
       redirect_to gallery_path(@gallery)
     else
-      flash[:success] = "Gallery deleted successfully."
+      flash[:success] = "Gallery deleted."
       redirect_to user_galleries_path(current_user)
     end
   end
@@ -221,7 +219,7 @@ class GalleriesController < UploadingController
     end
 
     unless @gallery.user_id == current_user.id
-      flash[:error] = "That is not your gallery."
+      flash[:error] = "You do not have permission to modify this gallery."
       redirect_to user_galleries_path(current_user) and return
     end
   end

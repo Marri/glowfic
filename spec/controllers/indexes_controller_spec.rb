@@ -42,7 +42,7 @@ RSpec.describe IndexesController do
       post :create, params: { index: {} }
       expect(response).to have_http_status(200)
       expect(response).to render_template(:new)
-      expect(flash[:error][:message]).to eq("Index could not be created.")
+      expect(flash[:error][:message]).to eq("Index could not be created because of the following problems:")
     end
 
     it "succeeds" do
@@ -50,7 +50,7 @@ RSpec.describe IndexesController do
       name = 'ValidSection'
       post :create, params: { index: {name: name} }
       expect(response).to redirect_to(index_url(assigns(:index)))
-      expect(flash[:success]).to eq("Index created!")
+      expect(flash[:success]).to eq("Index created.")
       expect(assigns(:index).name).to eq(name)
     end
   end
@@ -115,7 +115,7 @@ RSpec.describe IndexesController do
       index = create(:index)
       get :edit, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq('You do not have permission to edit this index.')
+      expect(flash[:error]).to eq('You do not have permission to modify this index.')
     end
 
     it "works" do
@@ -146,7 +146,7 @@ RSpec.describe IndexesController do
       index = create(:index)
       put :update, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq('You do not have permission to edit this index.')
+      expect(flash[:error]).to eq('You do not have permission to modify this index.')
     end
 
     it "requires valid index params" do
@@ -155,7 +155,7 @@ RSpec.describe IndexesController do
       put :update, params: { id: index.id, index: {name: ''} }
       expect(response).to have_http_status(200)
       expect(response).to render_template(:edit)
-      expect(flash[:error][:message]).to eq("Index could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Index could not be updated because of the following problems:")
     end
 
     it "succeeds" do
@@ -164,7 +164,7 @@ RSpec.describe IndexesController do
       name = 'ValidSection' + index.name
       put :update, params: { id: index.id, index: {name: name} }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:success]).to eq("Index saved!")
+      expect(flash[:success]).to eq("Index updated.")
       expect(index.reload.name).to eq(name)
     end
   end
@@ -188,7 +188,7 @@ RSpec.describe IndexesController do
       index = create(:index)
       delete :destroy, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq('You do not have permission to edit this index.')
+      expect(flash[:error]).to eq('You do not have permission to modify this index.')
     end
 
     it "works" do
@@ -207,7 +207,7 @@ RSpec.describe IndexesController do
       expect_any_instance_of(Index).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: index.id }
       expect(response).to redirect_to(index_url(index))
-      expect(flash[:error]).to eq({message: "Index could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Index could not be deleted.")
       expect(section.reload.index).to eq(index)
     end
   end

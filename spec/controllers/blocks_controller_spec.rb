@@ -45,7 +45,7 @@ RSpec.describe BlocksController, type: :controller do
       login
       post :create
       expect(response).to render_template('new')
-      expect(flash[:error][:message]).to eq("User could not be blocked.")
+      expect(flash[:error][:message]).to eq("User could not be blocked because of the following problems:")
       expect(flash[:error][:array]).to include("Blocked user must exist")
     end
 
@@ -53,7 +53,7 @@ RSpec.describe BlocksController, type: :controller do
       login
       post :create, params: { block: { blocked_user_id: create(:user).id, hide_me: -1 } }
       expect(response).to render_template('new')
-      expect(flash[:error][:message]).to eq("User could not be blocked.")
+      expect(flash[:error][:message]).to eq("User could not be blocked because of the following problems:")
       expect(flash[:error][:array]).to include("Hide me is not included in the list")
     end
 
@@ -61,7 +61,7 @@ RSpec.describe BlocksController, type: :controller do
       login
       post :create, params: { block: { blocked_user_id: ([1] + User.order(id: :desc).limit(1).pluck(:id)).max + 1 } }
       expect(response).to render_template('new')
-      expect(flash[:error][:message]).to eq("User could not be blocked.")
+      expect(flash[:error][:message]).to eq("User could not be blocked because of the following problems:")
       expect(flash[:error][:array]).to include("Blocked user must exist")
       expect(assigns[:block].blocked_user).to be_nil
     end
@@ -71,7 +71,7 @@ RSpec.describe BlocksController, type: :controller do
       login_as(user)
       post :create, params: { block: { blocked_user_id: user.id } }
       expect(response).to render_template('new')
-      expect(flash[:error][:message]).to eq("User could not be blocked.")
+      expect(flash[:error][:message]).to eq("User could not be blocked because of the following problems:")
       expect(flash[:error][:array]).to include("User cannot block themself")
     end
 
@@ -90,7 +90,7 @@ RSpec.describe BlocksController, type: :controller do
         }
       }.to change { Block.count }.by(1)
       expect(response).to redirect_to(blocks_url)
-      expect(flash[:success]).to eq("User blocked!")
+      expect(flash[:success]).to eq("User blocked.")
       block = assigns(:block)
       expect(block).not_to be_nil
       expect(block.blocking_user).to eq(blocker)
@@ -146,7 +146,7 @@ RSpec.describe BlocksController, type: :controller do
       login_as(block.blocking_user)
       put :update, params: { id: block.id, block: { hide_them: -1 } }
       expect(response).to render_template('edit')
-      expect(flash[:error][:message]).to eq("Block could not be saved.")
+      expect(flash[:error][:message]).to eq("Block could not be updated because of the following problems:")
       expect(flash[:error][:array]).to include("Hide them is not included in the list")
     end
 
@@ -162,7 +162,7 @@ RSpec.describe BlocksController, type: :controller do
         }
       }
       expect(response).to redirect_to(blocks_url)
-      expect(flash[:success]).to eq("Block updated!")
+      expect(flash[:success]).to eq("Block updated.")
       new_block = block.reload
       expect(new_block).not_to be_nil
       expect(new_block.blocking_user).to eq(block.blocking_user)
@@ -204,7 +204,7 @@ RSpec.describe BlocksController, type: :controller do
       expect_any_instance_of(Block).to receive(:destroy).and_return(false)
       delete :destroy, params: {id: block.id}
       expect(response).to redirect_to(blocks_url)
-      expect(flash[:error][:message]).to eq("User could not be unblocked.")
+      expect(flash[:error]).to eq("User could not be unblocked.")
       expect(Block.find_by(id: block.id)).to eq(block)
     end
 
