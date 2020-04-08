@@ -10,7 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
+<<<<<<< HEAD
 ActiveRecord::Schema.define(version: 2020_04_16_173619) do
+=======
+ActiveRecord::Schema.define(version: 2020_04_08_132110) do
+>>>>>>> Begin notifications
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
@@ -265,6 +269,16 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.datetime "updated_at", null: false
     t.integer "news_id"
     t.index ["user_id"], name: "index_news_views_on_user_id"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "post_id"
+    t.boolean "unread", default: false, null: false
+    t.integer "notification_type", null: false
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "password_resets", id: :serial, force: :cascade do |t|

@@ -1,0 +1,6 @@
+%tr.message-row
+  - klass = cycle('even', 'odd')
+  - klass += ' bold' if notification.unread?
+  %td.padding-left-5{class: klass}= # just padding
+  %td{class: klass}= subject_for_type(notification.notification_type)
+  %td{class: klass}= pretty_time(notification.created_at)
