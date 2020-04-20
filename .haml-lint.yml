@@ -15,7 +15,9 @@ linters:
     enabled: false
 
   InlineStyles:
-    exclude: app/views/user_mailer/*
+    exclude:
+      - app/views/user_mailer/*
+      - app/views/layouts/mailer.haml
 
   InstanceVariables:
     enabled: false
