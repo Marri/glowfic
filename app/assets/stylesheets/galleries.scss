@@ -15,6 +15,9 @@
 
 /* Basic gallery and gallery icon formatting */
 .gallery { padding: 10px; }
+
+.gallery-expandable { padding: 0; }
+
 .gallery .icon { margin: 5px; }
 
 .gallery-icon, .character-icon-item {
@@ -157,3 +160,5 @@
 .gallery-new-with-icons {
   width: 100%;
 }
+
+.gallery-box .view-button { padding: 5px 7px; }
