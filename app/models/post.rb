@@ -256,6 +256,16 @@ class Post < ApplicationRecord
     last_user.deleted?
   end
 
+  def last_user_name
+    return read_attribute(:last_user_name) if has_attribute?(:last_user_name)
+    last_user.username
+  end
+
+  def board_name
+    return read_attribute(:board_name) if has_attribute?(:board_name)
+    board.name
+  end
+
   def user_joined(user)
     NotifyFollowersOfNewPostJob.perform_later(self.id, user.id)
   end

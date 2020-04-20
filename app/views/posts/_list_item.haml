@@ -1,5 +1,5 @@
 %tr
-  - klass = cycle('even', 'odd')
+  - klass ||= cycle('even', 'odd')
   - replies_count = post.reply_count
   %td.post-completed.vtop{class: [klass, (post.complete? ? 'post-complete' : 'post-incomplete')]}
     - if post.complete?

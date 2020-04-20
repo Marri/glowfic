@@ -6,9 +6,9 @@ module NotificationHelper
     when 'import_fail'
       'Post import failed'
     when 'new_favorite_post'
-      ''
+      'An author you favorited has written a new post'
     when 'joined_favorite_post'
-      ''
+      'An author you favorited has joined a post'
     end
   end
 end
