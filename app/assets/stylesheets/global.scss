@@ -85,6 +85,16 @@ button, .button {
   background-color: $bg_color_spacer_alt;
 }
 
+.spacer-wideish {
+  @extend .spacer;
+  height: 6px;
+}
+
+.spacer-wide {
+  @extend .spacer;
+  height: 20px;
+}
+
 .centered { text-align: center !important; }
 .left-align { text-align: left; }
 .right-align { text-align: right; }

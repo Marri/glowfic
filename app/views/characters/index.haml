@@ -56,7 +56,7 @@
         = submit_tag "Search", class: 'button'
   - if character_split == 'template'
     %tr
-      %th.odd{style: 'padding: 3px', colspan: colspan}= # spacer between two .subbers
+      %th.odd.spacer-wideish{colspan: colspan}= # spacer between two .subbers
     - if @group
       = render 'group', group: @group, page_view: page_view, colspan: colspan
     - elsif @user.character_groups.exists?
