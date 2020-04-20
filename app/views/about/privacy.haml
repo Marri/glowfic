@@ -1,4 +1,4 @@
-#privacy-content.odd{style: 'padding: 15px;'}
+#privacy-content
   %h1 Privacy Policy
 
   %p
@@ -13,7 +13,7 @@
   %ol
     %li
       = link_to 'Information we automatically collect', '#auto'
-      %ol{style: 'list-style-type: lower-alpha'}
+      %ol.alphabetical-list
         %li= link_to 'Non-personally-identifying', '#impersonal'
         %li= link_to 'Personally-identifying', '#personal'
     %li= link_to 'Information you are required to provide to us on registration', '#required'
@@ -25,7 +25,7 @@
     %li= link_to 'Deleting your information', '#deleting'
     %li
       = link_to 'Outside vendors', '#vendors'
-      %ol{style: 'list-style-type: lower-alpha'}
+      %ol.alphabetical-list
         %li= link_to 'Business vendors', '#business'
         %li= link_to 'Site features', '#features'
     %li= link_to 'Updates to the policy', '#updates'

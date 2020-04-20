@@ -534,3 +534,10 @@ The copy box can't be invisible/hidden or copy fails but opacity works
 .no-close .ui-dialog-titlebar-close {
   display: none;
 }
+
+#tos-content, #dmca-content, #privacy-content, #contact-content {
+  background-color: $bg_color_odd;
+  padding: 15px;
+}
+
+.alphabetical-list { list-style-type: lower-alpha }

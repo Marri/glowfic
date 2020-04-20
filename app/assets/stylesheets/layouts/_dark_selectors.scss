@@ -178,6 +178,8 @@ tr.gallery-tags .tag-item {
   color: $font_color_reply_content;
 }
 
+#tos-content, #dmca-content, #privacy-content, #contact-content { background-color: $bg_color_odd; }
+
 @import 'dark_themes_selectors';
 
 /* TODO: do this for starrydark */
