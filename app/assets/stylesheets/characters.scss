@@ -51,7 +51,7 @@
 // character list view
 .character-list-template { padding: 10px; }
 
-%character-list-cell { padding: 5px 10px; }
+%character-list-cell { padding: 5px; }
 
 .character-list-none {
   @extend %character-list-cell;
