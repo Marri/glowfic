@@ -229,7 +229,7 @@ module ApplicationHelper
   end
 
   def author_links(post, linked: true, colored: false)
-    total = post.authors.size
+    total = post.authors.length
     authors = post.authors.reject(&:deleted?).sort_by{|a| a.username.downcase}
     num_deleted = total - authors.size
     deleted = 'deleted user'.pluralize(num_deleted)
