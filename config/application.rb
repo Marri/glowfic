@@ -61,9 +61,7 @@ module Glowfic
     config.time_zone = 'Eastern Time (US & Canada)'
 
     config.action_view.sanitized_allowed_tags = Glowfic::ALLOWED_TAGS
-    config.after_initialize do
-      ActionView::Base.sanitized_allowed_attributes += ['style', 'target']
-    end
+    config.action_view.sanitized_allowed_attributes = %w(href src width height alt cite datetime title class name xml:lang abbr style target)
     config.middleware.use Rack::Pratchett
 
     # The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.
