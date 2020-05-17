@@ -278,7 +278,8 @@ RSpec.describe PostsController do
         login_as(user)
         post :create, params: { button_import: true, dreamwidth_url: 'http://www.google.com' }
         expect(response).to render_template(:new)
-        expect(flash[:error]).to eq("Invalid URL provided.")
+        expect(flash[:error][:message]).to eq("An error occurred when importing this thread.")
+        expect(flash[:error][:array]).to eq(["Url is invalid"])
       end
 
       it "requires extant usernames" do
@@ -304,7 +305,8 @@ RSpec.describe PostsController do
         post :create, params: { button_import: true, dreamwidth_url: url }
         expect(response).to redirect_to(posts_url)
         expect(flash[:success]).to eq("Post has begun importing. You will be updated on progress via site message.")
-        expect(ScrapePostJob).to have_been_enqueued.with(url, nil, nil, nil, nil, user.id).on_queue('low')
+        params = { dreamwidth_url: url }
+        expect(ScrapePostJob).to have_been_enqueued.with(params, user: user).on_queue('low')
       end
     end
 

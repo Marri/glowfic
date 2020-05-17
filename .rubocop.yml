@@ -200,7 +200,7 @@ Rails/ReadWriteAttribute:
 # post_scraper.rb is run manually in the command line so stdout is fine
 Rails/Output:
   Exclude:
-    - 'app/services/post_scraper.rb'
+    - 'app/services/reply_scraper.rb'
 
 ################## RSpec #################################
 

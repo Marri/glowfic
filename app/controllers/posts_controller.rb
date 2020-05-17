@@ -388,11 +388,21 @@ class PostsController < WritableController
   end
 
   def import_thread
-    begin
-      importer = PostImporter.new(params[:dreamwidth_url])
-      importer.import(params[:board_id], current_user.id, section_id: params[:section_id], status: params[:status], threaded: params[:threaded])
-    rescue PostImportError => e
-      flash.now[:error] = e.api_error
+    importer = PostImporter.new(params[:dreamwidth_url])
+    importer.import(import_params, user: current_user)
+    if importer.errors.present?
+      if importer.errors.key?(:username)
+        flash.now[:error] = {
+          message: importer.errors[:base].first,
+          array: importer.errors[:username].flatten
+        }
+      else
+        # if we don't have a username array there'll only be one error message
+        flash.now[:error] = {
+          message: "An error occurred when importing this thread.",
+          array: importer.errors.full_messages
+        }
+      end
       params[:view] = 'import'
       editor_setup
       render :new
@@ -458,5 +468,16 @@ class PostsController < WritableController
     end
 
     params.fetch(:post, {}).permit(allowed_params)
+  end
+
+  def import_params
+    allowed_params = [
+      :board_id,
+      :section_id,
+      :status,
+      :threaded,
+      :dreamwidth_url
+    ]
+    params.permit(allowed_params)
   end
 end
