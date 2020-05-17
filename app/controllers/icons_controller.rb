@@ -6,39 +6,15 @@ class IconsController < UploadingController
   before_action :set_s3_url, only: :edit
 
   def delete_multiple
-    gallery = Gallery.find_by_id(params[:gallery_id])
-    icon_ids = (params[:marked_ids] || []).map(&:to_i).reject(&:zero?)
-    if icon_ids.empty? || (icons = Icon.where(id: icon_ids)).empty?
-      flash[:error] = "No icons selected."
-      redirect_to user_galleries_path(current_user) and return
+    deleter = Icon::MultiRemover.new
+    deleter.perform(params, user: current_user)
+    if deleter.errors.present?
+      flash[:error] = deleter.errors.full_messages.first
+      redirect_to user_galleries_path(current_user)
+    else
+      flash[:success] = "Icons #{params[:gallery_delete] ? 'removed from gallery' : 'deleted'}."
+      icon_redirect(deleter.gallery)
     end
-
-    if params[:gallery_delete]
-      unless gallery
-        flash[:error] = "Gallery could not be found."
-        redirect_to user_galleries_path(current_user) and return
-      end
-
-      unless gallery.user_id == current_user.id
-        flash[:error] = "That is not your gallery."
-        redirect_to user_galleries_path(current_user) and return
-      end
-
-      icons.each do |icon|
-        next unless icon.user_id == current_user.id
-        gallery.icons.destroy(icon)
-      end
-
-      flash[:success] = "Icons removed from gallery."
-      icon_redirect(gallery) and return
-    end
-
-    icons.each do |icon|
-      next unless icon.user_id == current_user.id
-      icon.destroy
-    end
-    flash[:success] = "Icons deleted."
-    icon_redirect(gallery) and return
   end
 
   def show

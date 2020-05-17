@@ -8,18 +8,18 @@ RSpec.describe IconsController do
       expect(flash[:error]).to eq("You must be logged in to view that page.")
     end
 
-    it "requires icons" do
-      user_id = login
-      delete :delete_multiple
-      expect(response).to redirect_to(user_galleries_url(user_id))
-      expect(flash[:error]).to eq("No icons selected.")
+    it "succeeds" do
+      user = create(:user)
+      login_as(user)
+      icons = create_list(:icon, 3, user: user)
+      delete :delete_multiple, params: { marked_ids: icons.map(&:id) }
+      expect(response).to redirect_to(user_gallery_path(id: 0, user_id: user.id))
+      expect(flash[:success]).to eq("Icons deleted.")
     end
 
-    it "requires valid icons" do
-      icon = create(:icon)
-      icon.destroy!
+    it "handles failure" do
       user_id = login
-      delete :delete_multiple, params: { marked_ids: [0, '0', 'abc', -1, '-1', icon.id] }
+      delete :delete_multiple
       expect(response).to redirect_to(user_galleries_url(user_id))
       expect(flash[:error]).to eq("No icons selected.")
     end
@@ -28,54 +28,6 @@ RSpec.describe IconsController do
       let(:user) { create(:user) }
 
       before(:each) { login_as(user) }
-
-      it "requires gallery" do
-        icon = create(:icon, user: user)
-        delete :delete_multiple, params: { marked_ids: [icon.id], gallery_delete: true }
-        expect(response).to redirect_to(user_galleries_url(user.id))
-        expect(flash[:error]).to eq("Gallery could not be found.")
-      end
-
-      it "requires your gallery" do
-        icon = create(:icon, user: user)
-        gallery = create(:gallery)
-        delete :delete_multiple, params: { marked_ids: [icon.id], gallery_id: gallery.id, gallery_delete: true }
-        expect(response).to redirect_to(user_galleries_url(user.id))
-        expect(flash[:error]).to eq("That is not your gallery.")
-      end
-
-      it "skips other people's icons" do
-        icon = create(:icon)
-        gallery = create(:gallery, user: user)
-        gallery.icons << icon
-        icon.reload
-        expect(icon.galleries.count).to eq(1)
-        delete :delete_multiple, params: { marked_ids: [icon.id], gallery_id: gallery.id, gallery_delete: true }
-        icon.reload
-        expect(icon.galleries.count).to eq(1)
-      end
-
-      it "removes int ids from gallery" do
-        icon = create(:icon, user: user)
-        gallery = create(:gallery, user: user)
-        gallery.icons << icon
-        expect(icon.galleries.count).to eq(1)
-        delete :delete_multiple, params: { marked_ids: [icon.id], gallery_id: gallery.id, gallery_delete: true }
-        expect(icon.galleries.count).to eq(0)
-        expect(response).to redirect_to(gallery_url(gallery))
-        expect(flash[:success]).to eq("Icons removed from gallery.")
-      end
-
-      it "removes string ids from gallery" do
-        icon = create(:icon, user: user)
-        gallery = create(:gallery, user: user)
-        gallery.icons << icon
-        expect(icon.galleries.count).to eq(1)
-        delete :delete_multiple, params: { marked_ids: [icon.id.to_s], gallery_id: gallery.id, gallery_delete: true }
-        expect(icon.galleries.count).to eq(0)
-        expect(response).to redirect_to(gallery_url(gallery))
-        expect(flash[:success]).to eq("Icons removed from gallery.")
-      end
 
       it "goes back to index page if given" do
         icon = create(:icon, user: user)
@@ -114,27 +66,6 @@ RSpec.describe IconsController do
       let(:user) { create(:user) }
 
       before(:each) { login_as(user) }
-
-      it "skips other people's icons" do
-        icon = create(:icon)
-        delete :delete_multiple, params: { marked_ids: [icon.id] }
-        icon.reload
-      end
-
-      it "removes int ids from gallery" do
-        icon = create(:icon, user: user)
-        delete :delete_multiple, params: { marked_ids: [icon.id] }
-        expect(Icon.find_by_id(icon.id)).to be_nil
-      end
-
-      it "removes string ids from gallery" do
-        icon = create(:icon, user: user)
-        icon2 = create(:icon, user: user)
-        delete :delete_multiple, params: { marked_ids: [icon.id.to_s, icon2.id.to_s] }
-        expect(Icon.find_by_id(icon.id)).to be_nil
-        expect(Icon.find_by_id(icon2.id)).to be_nil
-        expect(response).to redirect_to(user_gallery_path(id: 0, user_id: user.id))
-      end
 
       it "goes back to index page if given" do
         icon = create(:icon, user: user)
