@@ -1174,54 +1174,6 @@ RSpec.describe RepliesController do
     end
 
     context "searching" do
-      it "finds all when no arguments given" do
-        create_list(:reply, 4)
-        get :search, params: { commit: true }
-        expect(assigns(:search_results)).to match_array(Reply.all)
-      end
-
-      it "filters by author" do
-        replies = Array.new(4) { create(:reply) }
-        filtered_reply = replies.last
-        get :search, params: { commit: true, author_id: filtered_reply.user_id }
-        expect(assigns(:search_results)).to match_array([filtered_reply])
-      end
-
-      it "filters by icon" do
-        create(:reply, with_icon: true)
-        reply = create(:reply, with_icon: true)
-        get :search, params: { commit: true, icon_id: reply.icon_id }
-        expect(assigns(:search_results)).to match_array([reply])
-      end
-
-      it "filters by character" do
-        create(:reply, with_character: true)
-        reply = create(:reply, with_character: true)
-        get :search, params: { commit: true, character_id: reply.character_id }
-        expect(assigns(:search_results)).to match_array([reply])
-      end
-
-      it "filters by string" do
-        reply = create(:reply, content: 'contains seagull')
-        cap_reply = create(:reply, content: 'Seagull is capital')
-        create(:reply, content: 'nope')
-        get :search, params: { commit: true, subj_content: 'seagull' }
-        expect(assigns(:search_results)).to match_array([reply, cap_reply])
-      end
-
-      it "filters by exact match" do
-        create(:reply, content: 'contains forks')
-        create(:reply, content: 'Forks is capital')
-        reply = create(:reply, content: 'Forks High is capital')
-        create(:reply, content: 'Forks high is kinda capital')
-        create(:reply, content: 'forks High is different capital')
-        create(:reply, content: 'forks high is not capital')
-        create(:reply, content: 'Forks is split from High')
-        create(:reply, content: 'nope')
-        get :search, params: { commit: true, subj_content: '"Forks High"' }
-        expect(assigns(:search_results)).to match_array([reply])
-      end
-
       it "only shows from visible posts" do
         reply1 = create(:reply, content: 'contains forks')
         reply2 = create(:reply, content: 'visible contains forks')
@@ -1232,13 +1184,6 @@ RSpec.describe RepliesController do
         expect(assigns(:search_results)).to match_array([reply2])
       end
 
-      it "filters by post" do
-        replies = Array.new(4) { create(:reply) }
-        filtered_reply = replies.last
-        get :search, params: { commit: true, post_id: filtered_reply.post_id }
-        expect(assigns(:search_results)).to match_array([filtered_reply])
-      end
-
       it "requires visible post if given" do
         reply1 = create(:reply)
         reply1.post.update!(privacy: Concealable::PRIVATE)
@@ -1246,41 +1191,6 @@ RSpec.describe RepliesController do
         get :search, params: { commit: true, post_id: reply1.post_id }
         expect(assigns(:search_results)).to be_nil
         expect(flash[:error]).to eq('You do not have permission to view this post.')
-      end
-
-      it "filters by continuity" do
-        continuity_post = create(:post, num_replies: 1)
-        create(:post, num_replies: 1) # wrong post
-        filtered_reply = continuity_post.replies.last
-        get :search, params: { commit: true, board_id: continuity_post.board_id }
-        expect(assigns(:search_results)).to match_array([filtered_reply])
-      end
-
-      it "filters by template" do
-        character = create(:template_character)
-        templateless_char = create(:character)
-        reply = create(:reply, character: character, user: character.user)
-        create(:reply, character: templateless_char, user: templateless_char.user)
-        get :search, params: { commit: true, template_id: character.template_id }
-        expect(assigns(:search_results)).to match_array([reply])
-      end
-
-      it "sorts by created desc" do
-        reply = create(:reply)
-        reply2 = Timecop.freeze(reply.created_at + 2.minutes) do
-          create(:reply)
-        end
-        get :search, params: { commit: true, sort: 'created_new' }
-        expect(assigns(:search_results)).to eq([reply2, reply])
-      end
-
-      it "sorts by created asc" do
-        reply = create(:reply)
-        reply2 = Timecop.freeze(reply.created_at + 2.minutes) do
-          create(:reply)
-        end
-        get :search, params: { commit: true, sort: 'created_old' }
-        expect(assigns(:search_results)).to eq([reply, reply2])
       end
     end
   end

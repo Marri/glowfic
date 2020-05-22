@@ -1,4 +1,4 @@
-class TagSearcher < Object
+class Tag::Searcher < Object
   def initialize
     @qs = Tag.ordered_by_type.select('tags.*')
   end

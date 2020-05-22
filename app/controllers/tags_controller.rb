@@ -7,7 +7,7 @@ class TagsController < ApplicationController
   before_action :require_permission, except: [:index, :show, :destroy]
 
   def index
-    @tags = TagSearcher.new.search(tag_name: params[:name], tag_type: params[:view], page: page)
+    @tags = Tag::Searcher.new.search(tag_name: params[:name], tag_type: params[:view], page: page)
     @post_counts = Post.visible_to(current_user).joins(post_tags: :tag).where(post_tags: {tag_id: @tags.map(&:id)})
     @post_counts = @post_counts.group('post_tags.tag_id').count
     @view = params[:view]
