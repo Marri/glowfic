@@ -1133,7 +1133,7 @@ RSpec.describe RepliesController do
         create(:reply, post: post)
         user_ignoring_tags = create(:user)
         create(:reply, post: post, user: user_ignoring_tags)
-        post.opt_out_of_owed(user_ignoring_tags)
+        post.author_for(user_ignoring_tags).opt_out_of_owed
 
         get :search, params: { post_id: post.id }
         expect(response).to have_http_status(200)

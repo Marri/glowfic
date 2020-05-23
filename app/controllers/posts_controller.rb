@@ -74,11 +74,11 @@ class PostsController < WritableController
       posts.each { |post| post.mark_read(current_user) }
       flash[:success] = "#{posts.size} #{'post'.pluralize(posts.size)} marked as read."
     elsif params[:commit] == "Remove from Replies Owed"
-      posts.each { |post| post.opt_out_of_owed(current_user) }
+      posts.each { |post| post.author_for(current_user).opt_out_of_owed }
       flash[:success] = "#{posts.size} #{'post'.pluralize(posts.size)} removed from replies owed."
       redirect_to owed_posts_path and return
     elsif params[:commit] == "Show in Replies Owed"
-      posts.each { |post| post.opt_in_to_owed(current_user) }
+      posts.map { |post| post.author_for(current_user) }.compact.each(&:opt_in_to_owed)
       flash[:success] = "#{posts.size} #{'post'.pluralize(posts.size)} added to replies owed."
       redirect_to owed_posts_path and return
     else

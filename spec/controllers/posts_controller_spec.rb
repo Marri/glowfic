@@ -1359,7 +1359,7 @@ RSpec.describe PostsController do
 
       ignored_author = create(:user)
       create(:reply, user: ignored_author, post: post) # ignored user's post
-      post.opt_out_of_owed(ignored_author)
+      post.author_for(ignored_author).opt_out_of_owed
 
       login_as(user)
 
@@ -2712,7 +2712,7 @@ RSpec.describe PostsController do
         post = create(:post, user: other_user, tagging_authors: [other_user])
         create(:reply, post: post, user: user)
         create(:reply, post: post, user: other_user)
-        post.opt_out_of_owed(user)
+        post.author_for(user).opt_out_of_owed
         get :owed
         expect(response.status).to eq(200)
         expect(assigns(:posts)).to match_array([])
@@ -3091,27 +3091,28 @@ RSpec.describe PostsController do
       it "does nothing if the user has not yet joined" do
         user = create(:user)
         owed_post = create(:post, unjoined_authors: [user])
-        owed_post.opt_out_of_owed(user)
+        owed_post.author_for(user).opt_out_of_owed
         expect(owed_post.author_for(user)).to be_nil
         login_as(user)
         post :mark, params: { marked_ids: [owed_post.id], commit: 'Show in Replies Owed' }
         expect(response).to redirect_to(owed_posts_url)
         expect(flash[:success]).to eq("1 post added to replies owed.")
-        expect(owed_post.post_authors.find_by(user: user)).to be_nil
+        expect(owed_post.author_for(user)).to be_nil
       end
 
       it "updates post author if the user has joined" do
         user = create(:user)
         owed_post = create(:post, unjoined_authors: [user])
         create(:reply, post: owed_post, user: user)
-        expect(owed_post.post_authors.find_by(user: user).joined).to eq(true)
-        owed_post.opt_out_of_owed(user)
-        expect(owed_post.post_authors.find_by(user: user).can_owe).to eq(false)
+        post_author = owed_post.author_for(user)
+        expect(post_author.joined).to eq(true)
+        post_author.opt_out_of_owed
+        expect(post_author.can_owe).to eq(false)
         login_as(user)
         post :mark, params: { marked_ids: [owed_post.id], commit: 'Show in Replies Owed' }
         expect(response).to redirect_to(owed_posts_url)
         expect(flash[:success]).to eq("1 post added to replies owed.")
-        expect(owed_post.post_authors.find_by(user: user).can_owe).to eq(true)
+        expect(post_author.reload.can_owe).to eq(true)
       end
     end
   end

@@ -54,4 +54,23 @@ RSpec.describe PostAuthor do
       }.to raise_error(ActiveRecord::RecordInvalid)
     end
   end
+
+  describe "#opt_out_of_owed" do
+    it "removes owedness if user previously could owe" do
+      post = create(:post)
+      post_author = post.author_for(post.user)
+      expect(post_author.reload.can_owe).to eq(true)
+      post_author.opt_out_of_owed
+      expect(post_author.reload.can_owe).to eq(false)
+    end
+
+    it "destroys if not joined" do
+      user = create(:user)
+      post = create(:post, unjoined_authors: [user])
+      post_author = post.author_for(user)
+      expect(post_author.reload.can_owe).to eq(true)
+      post_author.opt_out_of_owed
+      expect(post.author_for(user)).to be_nil
+    end
+  end
 end
