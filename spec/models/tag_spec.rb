@@ -1,24 +1,88 @@
 RSpec.describe Tag do
   describe "#merge_with" do
-    it "takes the correct actions" do
+    it "declines to merge tags of different types" do
+      expect(create(:setting).merge_with(create(:label))).to eq(false)
+    end
+
+    it "correctly merges labels" do
       good_tag = create(:label)
       bad_tag = create(:label)
 
       # TODO handle properly with nested attributes
-      create(:post, label_ids: [good_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [good_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [good_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [bad_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [bad_tag.id], setting_ids: [], content_warning_ids: [])
+      create_list(:post, 3, labels: [good_tag])
+      create_list(:post, 2, labels: [bad_tag])
+      mutual = create(:post, labels: [good_tag, bad_tag])
 
-      expect(good_tag.posts.count).to eq(3)
-      expect(bad_tag.posts.count).to eq(2)
+      expect(good_tag.posts.count).to eq(4)
+      expect(bad_tag.posts.count).to eq(3)
 
       good_tag.merge_with(bad_tag)
 
       expect(Tag.find_by_id(bad_tag.id)).to be_nil
       expect(bad_tag.posts.count).to eq(0)
-      expect(good_tag.posts.count).to eq(5)
+      expect(good_tag.posts.count).to eq(6)
+      expect(mutual.labels.count).to eq(1)
+    end
+
+    it "correctly merges settings" do
+      good_setting = create(:setting)
+      bad_setting = create(:setting)
+
+      create(:setting, parent_settings: [good_setting])
+      create(:setting, parent_settings: [bad_setting])
+      mutual_child = create(:setting, parent_settings: [good_setting, bad_setting])
+
+      good_parent = create(:setting)
+      bad_parent = create(:setting)
+      mutual_parent = create(:setting)
+      good_setting.update!(parent_settings: [good_parent, mutual_parent])
+      bad_setting.update!(parent_settings: [bad_parent, mutual_parent])
+
+      create(:character, settings: [good_setting])
+      create(:character, settings: [bad_setting])
+
+      create(:post, settings: [good_setting])
+      create(:post, settings: [bad_setting])
+
+      expect(good_setting.reload.parent_settings.count).to eq(2)
+      expect(good_setting.reload.child_settings.count).to eq(2)
+      expect(good_setting.characters.count).to eq(1)
+      expect(good_setting.posts.count).to eq(1)
+      expect(bad_setting.reload.parent_settings.count).to eq(2)
+      expect(bad_setting.reload.child_settings.count).to eq(2)
+      expect(bad_setting.characters.count).to eq(1)
+      expect(bad_setting.posts.count).to eq(1)
+
+      good_setting.merge_with(bad_setting)
+
+      good_setting.reload
+
+      expect(Tag.find_by(id: bad_setting.id)).to be_nil
+      expect(good_setting.child_settings.count).to eq(3)
+      expect(good_setting.characters.count).to eq(2)
+      expect(good_setting.posts.count).to eq(2)
+      expect(good_setting.parent_settings.count).to eq(3)
+      expect(mutual_child.parent_settings.count).to eq(1)
+      expect(mutual_parent.child_settings.count).to eq(1)
+    end
+
+    it "correctly merges gallery groups" do
+      good_group = create(:gallery_group)
+      bad_group = create(:gallery_group)
+
+      create_list(:gallery, 3, gallery_groups: [good_group])
+      create_list(:gallery, 2, gallery_groups: [bad_group])
+      mutual = create(:gallery, gallery_groups: [good_group, bad_group])
+
+      expect(good_group.galleries.count).to eq(4)
+      expect(bad_group.galleries.count).to eq(3)
+
+      good_group.merge_with(bad_group)
+
+      expect(Tag.find_by_id(bad_group.id)).to be_nil
+      expect(bad_group.galleries.count).to eq(0)
+      expect(good_group.galleries.count).to eq(6)
+      expect(mutual.gallery_groups.count).to eq(1)
     end
   end
 
