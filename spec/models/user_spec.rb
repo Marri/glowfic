@@ -212,7 +212,6 @@ RSpec.describe User do
   describe "visiblity caching" do
     let (:user) { create(:user) }
     let (:memory_store) { ActiveSupport::Cache.lookup_store(:memory_store) }
-    let (:cache) { Rails.cache }
 
     before(:each) do
       allow(Rails).to receive(:cache).and_return(memory_store)
@@ -242,7 +241,7 @@ RSpec.describe User do
         second_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id] + create_list(:user, 3).map(&:id))
         third_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id])
         expect(user.visible_posts).to match_array([visible_post.id, second_visible.id, third_visible.id])
-        expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
+        expect(Rails.cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
       end
 
       it "handles being removed from access list" do
@@ -250,7 +249,7 @@ RSpec.describe User do
         ids = visible_post.viewer_ids - [user.id]
         visible_post.update!(viewer_ids: ids)
         expect(PostViewer.where(user: user).pluck(:post_id)).to be_empty
-        expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
+        expect(Rails.cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
         expect(user.visible_posts).to be_empty
         expect(Post.visible_to(user)).not_to include(visible_post)
       end
@@ -260,15 +259,15 @@ RSpec.describe User do
         second_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: create_list(:user, 3).map(&:id))
         ids = second_visible.viewer_ids + [user.id]
         second_visible.update!(viewer_ids: ids)
-        expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
+        expect(Rails.cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
         expect(user.visible_posts).to match_array([visible_post.id, second_visible.id])
       end
 
       it "handles a new access-listed post" do
         expect(user.visible_posts).to eq([visible_post.id])
-        expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
+        expect(Rails.cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
         second_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id] + create_list(:user, 3).map(&:id))
-        expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
+        expect(Rails.cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
         expect(user.visible_posts).to match_array([visible_post.id, second_visible.id])
       end
 
@@ -288,7 +287,7 @@ RSpec.describe User do
 
       it "handles an access listed post becoming public" do
         expect(user.visible_posts).to eq([visible_post.id])
-        expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
+        expect(Rails.cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
         visible_post.update!(privacy: Concealable::PUBLIC)
         expect(Post.all.visible_to(user)).to include(visible_post)
       end
