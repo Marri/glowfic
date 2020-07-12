@@ -14,9 +14,7 @@ class IndexSection < ApplicationRecord
   private
 
   def clear_index_post_values
-    IndexPost.where(index_section_id: id).find_each do |post|
-      post.update(index_section_id: nil)
-    end
+    UpdateModelJob.perform_later(IndexPost.to_s, {index_section_id: id}, {index_section_id: nil})
   end
 
   def ordered_attributes
