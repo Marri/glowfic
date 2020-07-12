@@ -2,7 +2,7 @@ class CharacterAlias < ApplicationRecord
   belongs_to :character, optional: false
   has_many :reply_drafts, dependent: :nullify
   validates :name, presence: true
-  after_destroy :clear_alias_ids
+  after_destroy_commit :clear_alias_ids
 
   scope :ordered, -> { order(Arel.sql('lower(name) asc'), created_at: :asc, id: :asc) }
 

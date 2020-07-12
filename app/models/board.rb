@@ -22,7 +22,7 @@ class Board < ApplicationRecord
   validates :name, presence: true, uniqueness: true
 
   after_create :add_creator_to_authors
-  after_destroy :move_posts_to_sandbox
+  after_destroy_commit :move_posts_to_sandbox
 
   scope :ordered, -> { order(pinned: :desc, name: :asc) }
 

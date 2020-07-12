@@ -7,7 +7,7 @@ class BoardSection < ApplicationRecord
 
   validates :name, presence: true
 
-  after_destroy :clear_section_ids
+  after_destroy_commit :clear_section_ids
 
   scope :ordered, -> { order(section_order: :asc) }
 

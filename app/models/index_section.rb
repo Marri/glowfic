@@ -7,7 +7,7 @@ class IndexSection < ApplicationRecord
 
   validates :name, presence: true
 
-  after_destroy :clear_index_post_values
+  after_destroy_commit :clear_index_post_values
 
   scope :ordered, -> { order(section_order: :asc) }
 
