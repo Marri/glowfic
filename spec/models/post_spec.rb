@@ -90,7 +90,7 @@ RSpec.describe Post do
           create(:reply, post: post)
         end
         post.reload
-        expect(reply2.reply_order).to eq(1)
+        expect(reply2.reply_order).to eq(2)
         expect(post.tagged_at).to be_the_same_time_as(reply2.created_at)
         expect(post.updated_at).to be_the_same_time_as(reply2.created_at)
         expect(post.tagged_at).to be > post.edited_at

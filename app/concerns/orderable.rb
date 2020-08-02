@@ -36,6 +36,7 @@ module Orderable
       others.each_with_index do |other, index|
         next if other.order == index
         other.order = index
+        other.order += 1 if other.is_a? Reply
         other.save!
       end
     end
@@ -52,6 +53,7 @@ module Orderable
       return unless new_record? || order_change?(false)
       return if new_record? && self.order.present?
       self.order = ordered_items.count
+      self.order += 1 if self.is_a? Reply
     end
 
     def order_change?(is_after)
