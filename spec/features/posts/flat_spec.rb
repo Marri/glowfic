@@ -7,7 +7,7 @@ RSpec.feature "Viewing flat posts", :type => :feature do
 
     visit post_path(post, view: 'flat')
     expect(page).to have_selector('.post-container', count: 1)
-    expect(page).to have_selector('.post-post', count: 1)
+    expect(page).to have_selector('.post-reply', count: 1)
     expect(page).to have_selector('#post-title', exact_text: "test subject")
 
     within('.post-content') do

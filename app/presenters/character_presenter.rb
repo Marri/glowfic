@@ -14,7 +14,6 @@ class CharacterPresenter
     if options[:post_for_alias].present?
       post = options[:post_for_alias]
       most_recent_use = post.replies.where(character_id: @character.id).ordered.last
-      most_recent_use = post if most_recent_use.nil? && post.character_id == character.id
       char_json[:alias_id_for_post] = most_recent_use.try(:character_alias_id)
       return char_json unless options[:include].present?
     end

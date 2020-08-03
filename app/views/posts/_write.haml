@@ -11,18 +11,19 @@
     = f.text_field :description, placeholder: 'Description'
     .details (Optional: describe the thread's setting and major players, e.g. A Bell and Vorkosigans in Chronicle)
     - unless post.id.present? && !post.editable_by?(current_user)
-      %br
-      #post-form-wrapper
-        = f.text_area :content, class: 'tinymce'
-        - unless current_user.id == post.user_id
-          %b= f.label :audit_comment, 'Moderator note'
-          %br
-          = f.text_area :audit_comment, placeholder: 'Explain reason for moderation here', class: 'mod'
-          %br
-        = f.hidden_field :character_id, id: 'reply_character_id'
-        = f.hidden_field :icon_id, id: 'reply_icon_id'
-        = f.hidden_field :character_alias_id, id: 'reply_character_alias_id'
-      = render 'posts/editor_help'
+      = fields_for :reply, post.written, :html => { :id => 'reply_form' } do |w|
+        %br
+        #post-form-wrapper
+          = w.text_area :content, class: 'tinymce'
+          - unless current_user.id == post.user_id
+            %b= w.label :audit_comment, 'Moderator note'
+            %br
+            = w.text_area :audit_comment, placeholder: 'Explain reason for moderation here', class: 'mod'
+            %br
+          = w.hidden_field :character_id, id: 'reply_character_id'
+          = w.hidden_field :icon_id, id: 'reply_icon_id'
+          = w.hidden_field :character_alias_id, id: 'reply_character_alias_id'
+        = render 'posts/editor_help'
   - content_for :buttons do
     - if post.id.present? && !post.editable_by?(current_user)
       = submit_tag 'Save', class: 'button', id: 'submit_button', data: { disable_with: 'Saving...' }
@@ -85,4 +86,4 @@
     #post-editor.padding-10= yield :form
     .subber.centered= yield :buttons
   - else
-    = render 'editor', item: post
+    = render 'editor', item: post.written

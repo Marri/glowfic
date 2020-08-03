@@ -15,7 +15,7 @@ class RepliesController < WritableController
     @icon = Icon.find_by_id(params[:icon_id]) if params[:icon_id].present?
     if @post.try(:visible_to?, current_user)
       @users = @post.authors.active
-      char_ids = @post.replies.select(:character_id).distinct.pluck(:character_id) + [@post.character_id]
+      char_ids = @post.replies.select(:character_id).distinct.pluck(:character_id)
       @characters = Character.where(id: char_ids).ordered
       @templates = Template.where(id: @characters.map(&:template_id).uniq.compact).ordered
       gon.post_id = @post.id
@@ -102,15 +102,16 @@ class RepliesController < WritableController
       redirect_to post_path(draft.post, page: :unread, anchor: :unread) and return
     elsif params[:button_preview]
       draft = make_draft
-      preview(ReplyDraft.reply_from_draft(draft)) and return
+      @reply = ReplyDraft.reply_from_draft(draft)
+      preview and return
     end
 
-    reply = Reply.new(permitted_params)
-    reply.user = current_user
+    @reply = Reply.new(permitted_params)
+    @reply.user = current_user
 
-    if reply.post.present?
-      last_seen_reply_order = reply.post.last_seen_reply_for(current_user).try(:reply_order)
-      @unseen_replies = reply.post.replies.ordered.paginate(page: 1, per_page: 10)
+    if @reply.post.present?
+      last_seen_reply_order = @reply.post.last_seen_reply_for(current_user).try(:reply_order)
+      @unseen_replies = @reply.post.replies.ordered.paginate(page: 1, per_page: 10)
       if last_seen_reply_order.present?
         @unseen_replies = @unseen_replies.where('reply_order > ?', last_seen_reply_order)
         @audits = Audited::Audit.where(auditable_id: @unseen_replies.map(&:id)).group(:auditable_id).count
@@ -118,43 +119,43 @@ class RepliesController < WritableController
       most_recent_unseen_reply = @unseen_replies.last
 
       if params[:allow_dupe].blank?
-        last_by_user = reply.post.replies.where(user_id: reply.user_id).ordered.last
+        last_by_user = @reply.post.replies.where(user_id: @reply.user_id).ordered.last
         match_attrs = ['content', 'icon_id', 'character_id', 'character_alias_id']
-        if last_by_user.present? && last_by_user.attributes.slice(*match_attrs) == reply.attributes.slice(*match_attrs)
+        if last_by_user.present? && last_by_user.attributes.slice(*match_attrs) == @reply.attributes.slice(*match_attrs)
           flash.now[:error] = "This looks like a duplicate. Did you attempt to post this twice? Please resubmit if this was intentional."
           @allow_dupe = true
-          if most_recent_unseen_reply.nil? || (most_recent_unseen_reply.id == last_by_user.id && @unseen_replies.count == 1)
-            preview(reply)
-          else
+          unless most_recent_unseen_reply.nil? || (most_recent_unseen_reply.id == last_by_user.id && @unseen_replies.count == 1)
             draft = make_draft(false)
-            preview(ReplyDraft.reply_from_draft(draft))
+            @reply = ReplyDraft.reply_from_draft(draft)
           end
+          preview
           return
         end
       end
 
       if most_recent_unseen_reply.present?
-        reply.post.mark_read(current_user, at_time: reply.post.read_time_for(@unseen_replies))
+        @reply.post.mark_read(current_user, at_time: @reply.post.read_time_for(@unseen_replies))
         num = @unseen_replies.count
         pluraled = num > 1 ? "have been #{num} new replies" : "has been 1 new reply"
         flash.now[:error] = "There #{pluraled} since you last viewed this post."
         draft = make_draft
-        preview(ReplyDraft.reply_from_draft(draft)) and return
+        @reply = ReplyDraft.reply_from_draft(draft)
+        preview and return
       end
     end
 
     begin
-      reply.save!
+      @reply.save!
     rescue ActiveRecord::RecordInvalid
       flash[:error] = {
         message: "Your reply could not be saved because of the following problems:",
-        array: reply.errors.full_messages
+        array: @reply.errors.full_messages
       }
-      redirect_to posts_path and return unless reply.post
-      redirect_to post_path(reply.post)
+      redirect_to posts_path and return unless @reply.post
+      redirect_to post_path(@reply.post)
     else
       flash[:success] = "Posted!"
-      redirect_to reply_path(reply, anchor: "reply-#{reply.id}")
+      redirect_to reply_path(@reply, anchor: "reply-#{@reply.id}")
     end
   end
 
@@ -173,7 +174,7 @@ class RepliesController < WritableController
 
   def update
     @reply.assign_attributes(permitted_params)
-    preview(@reply) and return if params[:button_preview]
+    preview and return if params[:button_preview]
 
     if current_user.id != @reply.user_id && @reply.audit_comment.blank?
       flash[:error] = "You must provide a reason for your moderator edit."
@@ -282,12 +283,9 @@ class RepliesController < WritableController
     end
   end
 
-  def preview(written)
-    @written = written
-    @post = @written.post
-    @written.user = current_user unless @written.user
-    @audits = { @written.id => @written.audits.count } if @written.id.present?
-
+  def preview
+    @post = @reply.post
+    @audits = { @reply.id => @reply.audits.count } if @reply.id.present?
     @page_title = @post.subject
 
     editor_setup

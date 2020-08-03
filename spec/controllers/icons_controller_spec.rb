@@ -426,13 +426,13 @@ RSpec.describe IconsController do
 
     it "handles destroy failure" do
       icon = create(:icon)
-      post = create(:post, user: icon.user, icon: icon)
+      reply = create(:reply, user: icon.user, icon: icon)
       login_as(icon.user)
       expect_any_instance_of(Icon).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: icon.id }
       expect(response).to redirect_to(icon_url(icon))
       expect(flash[:error]).to eq({message: "Icon could not be deleted.", array: []})
-      expect(post.reload.icon).to eq(icon)
+      expect(reply.reload.icon).to eq(icon)
     end
   end
 
@@ -601,7 +601,7 @@ RSpec.describe IconsController do
       other_icon = create(:icon, user: user)
       icon_post = create(:post, user: user, icon: icon)
       reply = create(:reply, user: user, icon: icon)
-      reply_post_icon = reply.post.icon_id
+      reply_post_icon = reply.post.written.icon_id
 
       login_as(user)
       perform_enqueued_jobs(only: UpdateModelJob) do
@@ -610,9 +610,9 @@ RSpec.describe IconsController do
       expect(response).to redirect_to(icon_path(icon))
       expect(flash[:success]).to eq('All uses of this icon will be replaced.')
 
-      expect(icon_post.reload.icon_id).to eq(other_icon.id)
+      expect(icon_post.written.reload.icon_id).to eq(other_icon.id)
       expect(reply.reload.icon_id).to eq(other_icon.id)
-      expect(reply.post.reload.icon_id).to eq(reply_post_icon) # check it doesn't replace all replies in a post
+      expect(reply.post.written.reload.icon_id).to eq(reply_post_icon) # check it doesn't replace all replies in a post
     end
 
     it "succeeds with no other icon" do
@@ -628,7 +628,7 @@ RSpec.describe IconsController do
       expect(response).to redirect_to(icon_path(icon))
       expect(flash[:success]).to eq('All uses of this icon will be replaced.')
 
-      expect(icon_post.reload.icon_id).to be_nil
+      expect(icon_post.written.reload.icon_id).to be_nil
       expect(reply.reload.icon_id).to be_nil
     end
 
@@ -651,9 +651,9 @@ RSpec.describe IconsController do
       expect(response).to redirect_to(icon_path(icon))
       expect(flash[:success]).to eq('All uses of this icon will be replaced.')
 
-      expect(icon_post.reload.icon_id).to eq(other_icon.id)
+      expect(icon_post.written.reload.icon_id).to eq(other_icon.id)
       expect(icon_reply.reload.icon_id).to eq(other_icon.id)
-      expect(other_post.reload.icon_id).to eq(icon.id)
+      expect(other_post.written.reload.icon_id).to eq(icon.id)
     end
   end
 end

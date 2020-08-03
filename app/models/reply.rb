@@ -12,12 +12,15 @@ class Reply < ApplicationRecord
   validate :author_can_write_in_post, on: :create
   audited associated_with: :post, except: :reply_order, update_with_comment_only: false
 
+  before_create :set_post_written
   after_create :notify_other_authors, :destroy_draft, :update_active_char, :set_last_reply, :update_post, :update_post_authors
   after_save :update_flat_post
-  after_update :update_post
+  after_update :update_post, :update_post_written
   after_destroy :set_previous_reply_to_last, :remove_post_author
 
-  attr_accessor :skip_notify, :skip_post_update, :is_import, :skip_regenerate
+  CONTENT_ATTRS = %w(icon_id character_alias_id character_id content)
+
+  attr_accessor :skip_notify, :skip_post_update, :is_import, :skip_regenerate, :skip_draft
 
   pg_search_scope(
     :search,
@@ -29,7 +32,7 @@ class Reply < ApplicationRecord
 
   def post_page(per=25)
     per_page = per > 0 ? per : post.replies.count
-    index = post.replies.where('reply_order < ?', self.reply_order).count
+    index = post.replies.where('reply_order < ?', self.reply_order).where.not(reply_order: 0).count
     (index / per_page) + 1
   end
 
@@ -81,7 +84,7 @@ class Reply < ApplicationRecord
   end
 
   def destroy_draft
-    return if is_import
+    return if is_import || skip_draft
     ReplyDraft.draft_for(post_id, user_id).try(:destroy)
   end
 
@@ -144,5 +147,28 @@ class Reply < ApplicationRecord
 
   def ordered_attributes
     [:post_id]
+  end
+
+  def set_post_written
+    return unless reply_order == 0
+    return if self.slice(CONTENT_ATTRS) == post.slice(CONTENT_ATTRS)
+    post.assign_attributes(
+      content: content,
+      icon: icon,
+      character: character,
+      character_alias: character_alias,
+    )
+  end
+
+  def update_post_written
+    return unless reply_order == 0
+    return if self.slice(CONTENT_ATTRS) == post.slice(CONTENT_ATTRS)
+    post.update!(
+      content: content,
+      icon: icon,
+      character: character,
+      character_alias: character_alias,
+      edited_at: updated_at,
+    )
   end
 end

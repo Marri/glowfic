@@ -13,5 +13,5 @@
 .content-header= @post.subject
 - if @post.description.present?
   .post-subheader= sanitize_simple_link_text(@post.description)
-= render 'replies/single', reply: @written, show_edit: false
-= render 'write', reply: @written
+= render 'replies/single', reply: @reply, show_edit: false
+= render 'write', reply: @reply

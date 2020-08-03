@@ -79,5 +79,5 @@
       No Icon
   = yield :form
   .clear &nbsp;
-- if item.is_a?(Post)
+- if content_for?(:buttons)
   .subber.centered= yield :buttons

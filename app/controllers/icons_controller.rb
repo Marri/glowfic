@@ -45,15 +45,13 @@ class IconsController < UploadingController
     @page_title = @icon.keyword
     if params[:view] == 'posts'
       post_ids = Reply.where(icon_id: @icon.id).select(:post_id).distinct.pluck(:post_id)
-      posts = Post.where(icon_id: @icon.id).or(Post.where(id: post_ids))
-      @posts = posts_from_relation(posts.ordered)
+      @posts = posts_from_relation(Post.where(id: post_ids).ordered)
     elsif params[:view] == 'galleries'
       use_javascript('galleries/expander_old')
     else
-      posts_using = Post.where(icon_id: @icon.id).visible_to(current_user)
       replies_using = Reply.where(icon_id: @icon.id).visible_to(current_user)
-      @times_used = (posts_using.count + replies_using.count)
-      @posts_used = (posts_using.pluck(:id) + replies_using.select(:post_id).distinct.pluck(:post_id)).uniq.count
+      @times_used = replies_using.count
+      @posts_used = replies_using.select(:post_id).distinct.count
     end
     @galleries = @icon.galleries.ordered_by_name
     @meta_og = og_data
@@ -96,9 +94,7 @@ class IconsController < UploadingController
     gon.gallery = Hash[all_icons.map { |i| [i.id, {url: i.url, keyword: i.keyword}] }]
     gon.gallery[''] = {url: view_context.image_path('icons/no-icon.png'), keyword: 'No Icon'}
 
-    post_ids = Reply.where(icon_id: @icon.id).select(:post_id).distinct.pluck(:post_id)
-    all_posts = Post.where(icon_id: @icon.id) + Post.where(id: post_ids)
-    @posts = all_posts.uniq
+    @posts = Post.where(id: Reply.where(icon_id: @icon.id).select(:post_id).distinct.pluck(:post_id))
   end
 
   def do_replace

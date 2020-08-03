@@ -32,9 +32,9 @@ RSpec.feature "Editing posts", :type => :feature do
     expect(page).to have_no_selector('.post-container')
     within('#post-editor') do
       expect(page).to have_field('Subject', with: 'test subject')
-      expect(page).to have_field('post_content', with: 'test content')
+      expect(page).to have_field('reply_content', with: 'test content')
       fill_in 'Subject', with: 'other subject'
-      fill_in "post_content", with: "other content"
+      fill_in "reply_content", with: "other content"
     end
     click_button 'Save'
 
@@ -66,7 +66,7 @@ RSpec.feature "Editing posts", :type => :feature do
     expect(page).to have_no_selector('.post-container')
     within('#post-editor') do
       fill_in 'Subject', with: 'other subject'
-      fill_in "post_content", with: "other content"
+      fill_in "reply_content", with: "other content"
     end
     click_button 'Preview'
 
@@ -77,9 +77,9 @@ RSpec.feature "Editing posts", :type => :feature do
     expect(page).to have_selector('#post-editor')
     within('#post-editor') do
       expect(page).to have_field('Subject', with: 'other subject')
-      expect(page).to have_field('post_content', with: 'other content')
+      expect(page).to have_field('reply_content', with: 'other content')
       fill_in 'Subject', with: 'third subject'
-      fill_in "post_content", with: "third content"
+      fill_in "reply_content", with: "third content"
     end
     click_button 'Save'
 
@@ -126,9 +126,9 @@ RSpec.feature "Editing posts", :type => :feature do
     expect(page).to have_no_selector('.post-container')
     within('#post-editor') do
       expect(page).to have_field('Subject', with: 'test subject')
-      expect(page).to have_field('post_content', with: 'test content')
+      expect(page).to have_field('reply_content', with: 'test content')
       fill_in 'Subject', with: 'other subject'
-      fill_in "post_content", with: "other content"
+      fill_in "reply_content", with: "other content"
       fill_in 'Moderator note', with: 'example edit'
     end
     click_button 'Save'
@@ -166,7 +166,7 @@ RSpec.feature "Editing posts", :type => :feature do
     expect(page).to have_no_selector('.post-container')
     within('#post-editor') do
       fill_in 'Subject', with: 'other subject'
-      fill_in "post_content", with: "other content"
+      fill_in "reply_content", with: "other content"
       fill_in 'Moderator note', with: 'example edit'
     end
     click_button 'Preview'
@@ -180,7 +180,7 @@ RSpec.feature "Editing posts", :type => :feature do
       expect(page).to have_field('Subject', with: 'other subject')
       expect(page).to have_field('Moderator note', with: 'example edit')
       fill_in 'Subject', with: 'third subject'
-      fill_in "post_content", with: "third content"
+      fill_in "reply_content", with: "third content"
       fill_in 'Moderator note', with: 'another edit'
     end
     click_button 'Save'
@@ -251,10 +251,10 @@ RSpec.feature "Editing posts", :type => :feature do
     expect(page).to have_no_selector('.post-container')
     within('#post-editor') do
       expect(page).to have_field('Subject', with: 'test subject')
-      expect(page).to have_field('post_content', with: 'test content')
+      expect(page).to have_field('reply_content', with: 'test content')
       fill_in 'Subject', with: ''
       fill_in "Description", with: "test description"
-      fill_in "post_content", with: "other content"
+      fill_in "reply_content", with: "other content"
     end
     click_button 'Save'
 
@@ -265,7 +265,7 @@ RSpec.feature "Editing posts", :type => :feature do
     within('#post-editor') do
       expect(page).to have_field('Subject', with: '')
       expect(page).to have_field('Description', with: 'test description')
-      expect(page).to have_field('post_content', with: 'other content')
+      expect(page).to have_field('reply_content', with: 'other content')
     end
   end
 end

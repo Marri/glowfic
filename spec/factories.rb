@@ -42,21 +42,36 @@ FactoryBot.define do
       with_icon { false }
       with_character { false }
       num_replies { 0 }
+
+      # character { nil }
+      # character_alias { nil }
+      # icon { nil }
+      # content { "test content" }
     end
     user
     board
     description { "" }
-    content { "test content" }
     sequence :subject do |n|
       "test subject #{n}"
     end
-    before(:create) do |post, evaluator|
-      post.character = create(:character, user: post.user) if evaluator.with_character
-      post.icon = create(:icon, user: post.user) if evaluator.with_icon
+    content { "test content "}
+
+    after(:build) do |post, evaluator|
+      # create_written is called before factorybot sets the user
+      # so we need to set the post.written user here
+      post.written.user = post.user
+
+      post.written.content = post.content
+      post.written.character = post.character
+      post.written.character_alias = post.character_alias
+      post.written.icon = post.icon
+
+      post.written.character = create(:character, user: post.user) if evaluator.with_character
+      post.written.icon = create(:icon, user: post.user) if evaluator.with_icon
     end
 
     after(:create) do |post, evaluator|
-      evaluator.num_replies.times do create(:reply, user: post.user, post: post) end
+      create_list(:reply, evaluator.num_replies, user: post.user, post: post)
     end
   end
 

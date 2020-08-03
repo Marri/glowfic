@@ -112,10 +112,11 @@ class PostsController < WritableController
   end
 
   def new
-    @post = Post.new(character: current_user.active_character, user: current_user)
+    @post = Post.new(user: current_user)
     @post.board_id = params[:board_id]
     @post.section_id = params[:section_id]
-    @post.icon_id = (current_user.active_character ? current_user.active_character.default_icon.try(:id) : current_user.avatar_id)
+    @post.written.character = current_user.active_character
+    @post.written.icon_id = (current_user.active_character ? current_user.active_character.default_icon.try(:id) : current_user.avatar_id)
     @page_title = 'New Post'
 
     @permitted_authors -= [current_user]
@@ -127,9 +128,12 @@ class PostsController < WritableController
 
   def create
     import_thread and return if params[:button_import].present?
-    preview and return if params[:button_preview].present?
 
     @post = current_user.posts.new(permitted_params)
+    @post.assign_attributes(written_params)
+    @post.written.assign_attributes(written_params)
+
+    preview and return if params[:button_preview].present?
     @post.settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
     @post.content_warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
     @post.labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
@@ -138,9 +142,10 @@ class PostsController < WritableController
       @post.save!
     rescue ActiveRecord::RecordInvalid
       flash.now[:error] = {
-        array: @post.errors.full_messages,
+        array: @post.errors.full_messages + @post.written.errors.full_messages,
         message: "Your post could not be saved because of the following problems:"
       }
+      @reply = @post.written
       editor_setup
       @page_title = 'New Post'
       render :new
@@ -188,19 +193,28 @@ class PostsController < WritableController
 
     change_status and return if params[:status].present?
     change_authors_locked and return if params[:authors_locked].present?
+
+    @post.assign_attributes(permitted_params(params[:button_preview].blank?))
+    @post.assign_attributes(written_params)
+    @post.written.assign_attributes(written_params)
     preview and return if params[:button_preview].present?
 
-    @post.assign_attributes(permitted_params)
     @post.board ||= Board.find_by(id: Board::ID_SANDBOX)
     settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
     warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
     labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     is_author = @post.author_ids.include?(current_user.id)
-    if current_user.id != @post.user_id && @post.audit_comment.blank? && !is_author
-      flash[:error] = "You must provide a reason for your moderator edit."
-      editor_setup
-      render :edit and return
+
+    unless current_user.id == @post.user_id || is_author
+      if @post.written.audit_comment.blank?
+        flash[:error] = "You must provide a reason for your moderator edit."
+        editor_setup
+        render :edit and return
+      else
+        # no audit will be saved if a comment is the only change, so this should be safe
+        @post.audit_comment = @post.written.audit_comment
+      end
     end
 
     begin
@@ -210,10 +224,11 @@ class PostsController < WritableController
         @post.labels = labels
         @post.save!
         @post.author_for(current_user).update!(private_note: @post.private_note) if is_author
+        @post.written.save!
       end
     rescue ActiveRecord::RecordInvalid
       flash.now[:error] = {
-        array: @post.errors.full_messages,
+        array: @post.errors.full_messages + @post.written.errors.full_messages,
         message: "Your post could not be saved because of the following problems:"
       }
       @audits = { post: @post.audits.count }
@@ -279,7 +294,7 @@ class PostsController < WritableController
     end
     if params[:character_id].present?
       post_ids = Reply.where(character_id: params[:character_id]).select(:post_id).distinct.pluck(:post_id)
-      @search_results = @search_results.where(character_id: params[:character_id]).or(@search_results.where(id: post_ids))
+      @search_results = @search_results.where(id: post_ids)
     end
     @search_results = posts_from_relation(@search_results, show_blocked: !!params[:show_blocked])
   end
@@ -302,8 +317,6 @@ class PostsController < WritableController
   private
 
   def preview
-    @post ||= Post.new(user: current_user)
-    @post.assign_attributes(permitted_params(false))
     @post.board ||= Board.find_by_id(3)
 
     @author_ids = params.fetch(:post, {}).fetch(:unjoined_author_ids, [])
@@ -311,10 +324,8 @@ class PostsController < WritableController
     @settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
     @content_warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
     @labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
-
-    @written = @post
-
     @audits = { post: @post.audits.count } if @post.id.present?
+    @reply = @post.written
 
     editor_setup
     @page_title = 'Previewing: ' + @post.subject.to_s
@@ -444,10 +455,6 @@ class PostsController < WritableController
       :privacy,
       :subject,
       :description,
-      :content,
-      :character_id,
-      :icon_id,
-      :character_alias_id,
       :authors_locked,
       :audit_comment,
       :private_note
@@ -462,5 +469,15 @@ class PostsController < WritableController
     end
 
     params.fetch(:post, {}).permit(allowed_params)
+  end
+
+  def written_params
+    params.fetch(:reply, {}).permit(
+      :content,
+      :character_id,
+      :icon_id,
+      :character_alias_id,
+      :audit_comment,
+    )
   end
 end

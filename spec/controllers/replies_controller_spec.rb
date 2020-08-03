@@ -36,13 +36,13 @@ RSpec.describe RepliesController do
         expect(response).to render_template(:preview)
         expect(assigns(:javascripts)).to include('posts/editor')
         expect(assigns(:page_title)).to eq(reply_post.subject)
-        expect(assigns(:written)).to be_a_new_record
-        expect(assigns(:written).post).to eq(reply_post)
-        expect(assigns(:written).user).to eq(reply_post.user)
-        expect(assigns(:written).content).to eq('example')
-        expect(assigns(:written).character).to eq(char1)
-        expect(assigns(:written).icon).to eq(icon)
-        expect(assigns(:written).character_alias).to eq(calias)
+        expect(assigns(:reply)).to be_a_new_record
+        expect(assigns(:reply).post).to eq(reply_post)
+        expect(assigns(:reply).user).to eq(reply_post.user)
+        expect(assigns(:reply).content).to eq('example')
+        expect(assigns(:reply).character).to eq(char1)
+        expect(assigns(:reply).icon).to eq(icon)
+        expect(assigns(:reply).character_alias).to eq(calias)
         expect(assigns(:post)).to eq(reply_post)
         expect(ReplyDraft.count).to eq(1)
         draft = ReplyDraft.last
@@ -59,9 +59,11 @@ RSpec.describe RepliesController do
         expect(controller.gon.editor_user[:username]).to eq(user.username)
         # templates
         templates = assigns(:templates)
-        expect(templates.length).to eq(2)
-        template = templates.first
-        expect(template).to eq(char2.template)
+        expect(templates.length).to eq(3)
+        used = templates.first
+        expect(used.name).to eq("Thread characters")
+        expect(used.plucked_characters).to eq([[char1.id, char1.name]])
+        expect(templates[1]).to eq(char2.template)
         templateless = templates.last
         expect(templateless.name).to eq('Templateless')
         expect(templateless.plucked_characters).to eq([[char1.id, char1.name]])
@@ -390,7 +392,7 @@ RSpec.describe RepliesController do
       post :create, params: { reply: {post_id: reply_post.id, content: searchable} }
       reply = reply_post.replies.ordered.last
       expect(reply.content).to eq(searchable)
-      expect(reply.reply_order).to eq(0)
+      expect(reply.reply_order).to eq(1)
     end
 
     it "sets reply_order correctly with an existing reply" do
@@ -402,7 +404,7 @@ RSpec.describe RepliesController do
       post :create, params: { reply: {post_id: reply_post.id, content: searchable} }
       reply = reply_post.replies.ordered.last
       expect(reply.content).to eq(searchable)
-      expect(reply.reply_order).to eq(1)
+      expect(reply.reply_order).to eq(2)
     end
 
     it "sets reply_order correctly with multiple existing replies" do
@@ -415,7 +417,7 @@ RSpec.describe RepliesController do
       post :create, params: { reply: {post_id: reply_post.id, content: searchable} }
       reply = reply_post.replies.ordered.last
       expect(reply.content).to eq(searchable)
-      expect(reply.reply_order).to eq(2)
+      expect(reply.reply_order).to eq(3)
     end
   end
 
@@ -682,13 +684,13 @@ RSpec.describe RepliesController do
       login_as(reply_post.user)
       create(:reply, post: reply_post)
       reply = create(:reply, post: reply_post)
-      expect(reply.reply_order).to eq(1)
+      expect(reply.reply_order).to eq(2)
       expect(reply_post.replies.ordered.last).to eq(reply)
       create(:reply, post: reply_post)
       expect(reply_post.replies.ordered.last).not_to eq(reply)
       reply_post.mark_read(reply_post.user)
       put :update, params: { id: reply.id, reply: {content: 'new content'} }
-      expect(reply.reload.reply_order).to eq(1)
+      expect(reply.reload.reply_order).to eq(2)
     end
 
     context "preview" do
@@ -727,7 +729,7 @@ RSpec.describe RepliesController do
         expect(ReplyDraft.count).to eq(0)
         expect(assigns(:audits)).to eq({reply.id => 1})
 
-        written = assigns(:written)
+        written = assigns(:reply)
         expect(written).not_to be_a_new_record
         expect(written.user).to eq(reply_post.user)
         expect(written.character).to eq(char)
@@ -745,9 +747,11 @@ RSpec.describe RepliesController do
         expect(controller.gon.editor_user[:username]).to eq(user.username)
         # templates
         templates = assigns(:templates)
-        expect(templates.length).to eq(2)
-        template_chars = templates.first
-        expect(template_chars).to eq(char2.template)
+        expect(templates.length).to eq(3)
+        used = templates.first
+        expect(used.name).to eq("Thread characters")
+        expect(used.plucked_characters).to eq([[char.id, char.name]])
+        expect(templates[1]).to eq(char2.template)
         templateless = templates.last
         expect(templateless.name).to eq('Templateless')
         expect(templateless.plucked_characters).to eq([[char.id, char.name]])
@@ -773,9 +777,9 @@ RSpec.describe RepliesController do
         }
 
         expect(response).to render_template(:preview)
-        expect(assigns(:written).user).to eq(reply.user)
-        expect(assigns(:written).audit_comment).to eq('note')
-        expect(assigns(:written).content).to eq(newcontent)
+        expect(assigns(:reply).user).to eq(reply.user)
+        expect(assigns(:reply).audit_comment).to eq('note')
+        expect(assigns(:reply).content).to eq(newcontent)
 
         expect(controller.gon.editor_user[:username]).to eq(user.username)
         expect(assigns(:templates)).to eq([char.template])
@@ -907,11 +911,12 @@ RSpec.describe RepliesController do
       post = create(:post)
       reply = create(:reply, user: post.user, post: post)
       login_as(post.user)
+      expect(reply.reply_order).to eq(1)
       expect_any_instance_of(Reply).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: reply.id }
       expect(response).to redirect_to(reply_url(reply, anchor: "reply-#{reply.id}"))
       expect(flash[:error]).to eq({message: "Reply could not be deleted.", array: []})
-      expect(post.reload.replies).to eq([reply])
+      expect(post.reload.replies.find_by(reply_order: 1)).to eq(reply)
     end
   end
 
@@ -971,7 +976,7 @@ RSpec.describe RepliesController do
       post_attributes.each do |key, val|
         expect(new_attributes[key]).to eq(val)
       end
-      expect(reloaded_post.replies.pluck(:reply_order).sort).to eq(0.upto(4).to_a)
+      expect(reloaded_post.replies.pluck(:reply_order).sort).to eq(0.upto(5).to_a)
     end
 
     it "handles first reply deletion" do
@@ -991,7 +996,7 @@ RSpec.describe RepliesController do
       post_attributes.each do |key, val|
         expect(new_attributes[key]).to eq(val)
       end
-      expect(reloaded_post.replies.pluck(:reply_order).sort).to eq(0.upto(2).to_a)
+      expect(reloaded_post.replies.pluck(:reply_order).sort).to eq(0.upto(3).to_a)
     end
 
     it "handles last reply deletion" do
@@ -1013,13 +1018,13 @@ RSpec.describe RepliesController do
       end
       expect(reloaded_post.last_user).to eq(deleted_reply.user)
       expect(reloaded_post.last_reply).to eq(deleted_reply)
-      expect(reloaded_post.replies.pluck(:reply_order).sort).to eq(0.upto(2).to_a)
+      expect(reloaded_post.replies.pluck(:reply_order).sort).to eq(0.upto(3).to_a)
     end
 
     it "handles only reply deletion" do
       rpost = create(:post)
       expect(rpost.last_user).to eq(rpost.user)
-      expect(rpost.last_reply).to be_nil
+      expect(rpost.last_reply).to eq(rpost.written)
 
       deleted_reply = Timecop.freeze(rpost.reload.tagged_at + 1.day) { create(:reply, post: rpost) }
       rpost = Post.find(rpost.id)
@@ -1029,11 +1034,12 @@ RSpec.describe RepliesController do
       deleted_reply.destroy!
       rpost = Post.find(rpost.id)
       expect(rpost.last_user).to eq(rpost.user)
-      expect(rpost.last_reply).to be_nil
+      expect(rpost.last_reply).to eq(rpost.written)
 
       login_as(deleted_reply.user)
       post :restore, params: { id: deleted_reply.id }
       rpost = Post.find(rpost.id)
+      expect(deleted_reply.reload.reply_order).to eq(1)
       expect(rpost.last_user).to eq(deleted_reply.user)
       expect(rpost.last_reply).to eq(deleted_reply)
     end
@@ -1142,7 +1148,7 @@ RSpec.describe RepliesController do
         expect(assigns(:post)).to eq(post)
         expect(assigns(:search_results)).to be_nil
         expect(assigns(:users)).to match_array(post.joined_authors)
-        expect(assigns(:characters)).to match_array([post.character])
+        expect(assigns(:characters)).to match_array([post.written.character])
         expect(assigns(:templates)).to be_empty
       end
 
@@ -1237,7 +1243,7 @@ RSpec.describe RepliesController do
         replies = Array.new(4) { create(:reply) }
         filtered_reply = replies.last
         get :search, params: { commit: true, post_id: filtered_reply.post_id }
-        expect(assigns(:search_results)).to match_array([filtered_reply])
+        expect(assigns(:search_results)).to match_array([filtered_reply.post.written, filtered_reply])
       end
 
       it "requires visible post if given" do
@@ -1254,7 +1260,7 @@ RSpec.describe RepliesController do
         create(:post, num_replies: 1) # wrong post
         filtered_reply = continuity_post.replies.last
         get :search, params: { commit: true, board_id: continuity_post.board_id }
-        expect(assigns(:search_results)).to match_array([filtered_reply])
+        expect(assigns(:search_results)).to match_array([continuity_post.written, filtered_reply])
       end
 
       it "filters by template" do
@@ -1267,18 +1273,18 @@ RSpec.describe RepliesController do
       end
 
       it "sorts by created desc" do
-        reply = create(:reply)
+        reply = create(:post).written
         reply2 = Timecop.freeze(reply.created_at + 2.minutes) do
-          create(:reply)
+          create(:post).written
         end
         get :search, params: { commit: true, sort: 'created_new' }
         expect(assigns(:search_results)).to eq([reply2, reply])
       end
 
       it "sorts by created asc" do
-        reply = create(:reply)
+        reply = create(:post).written
         reply2 = Timecop.freeze(reply.created_at + 2.minutes) do
-          create(:reply)
+          create(:post).written
         end
         get :search, params: { commit: true, sort: 'created_old' }
         expect(assigns(:search_results)).to eq([reply, reply2])
@@ -1303,6 +1309,8 @@ RSpec.describe RepliesController do
         end
 
         counts = replies.map(&:id).zip([1, 1, 2, 2, 6, 2]).to_h
+        writtens = replies.collect{ |r| r.post.written.id }
+        writtens.each { |id| counts[id] = 1 }
 
         get :search, params: { commit: true, sort: 'created_old' }
         expect(assigns(:audits)).to eq(counts)

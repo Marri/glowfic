@@ -141,7 +141,7 @@ RSpec.describe Reply do
       first_reply = create(:reply, post: post)
       second_reply = create(:reply, post: post)
       third_reply = create(:reply, post: post)
-      expect(post.replies.ordered).to eq([first_reply, second_reply, third_reply])
+      expect(post.replies.ordered).to eq([post.written, first_reply, second_reply, third_reply])
     end
 
     it "orders replies by reply_order, not created_at" do
@@ -149,17 +149,17 @@ RSpec.describe Reply do
       second_reply = Timecop.freeze(first_reply.created_at - 5.seconds) { create(:reply, post: post) }
       third_reply = Timecop.freeze(first_reply.created_at - 3.seconds) { create(:reply, post: post) }
       expect(post.replies.ordered).not_to eq(post.replies.order(:created_at))
-      expect(post.replies.order(:created_at)).to eq([second_reply, third_reply, first_reply])
-      expect(post.replies.ordered).to eq([first_reply, second_reply, third_reply])
+      expect(post.replies.order(:created_at)).to eq([second_reply, third_reply, post.written, first_reply])
+      expect(post.replies.ordered).to eq([post.written, first_reply, second_reply, third_reply])
     end
 
     it "orders replies by reply order not ID" do
       first_reply = create(:reply, post: post)
       second_reply = create(:reply, post: post)
       third_reply = create(:reply, post: post)
-      second_reply.update_columns(reply_order: 2) # rubocop:disable Rails/SkipsModelValidations
-      third_reply.update_columns(reply_order: 1) # rubocop:disable Rails/SkipsModelValidations
-      expect(post.replies.ordered).to eq([first_reply, third_reply, second_reply])
+      second_reply.update_columns(reply_order: 3) # rubocop:disable Rails/SkipsModelValidations
+      third_reply.update_columns(reply_order: 2) # rubocop:disable Rails/SkipsModelValidations
+      expect(post.replies.ordered).to eq([post.written, first_reply, third_reply, second_reply])
     end
   end
 end

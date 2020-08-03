@@ -239,7 +239,7 @@ RSpec.describe Api::V1::CharactersController do
 
     it "requires post to have permission when provided a post_id", :show_in_doc do
       post = create(:post, privacy: :private, with_character: true)
-      get :show, params: { id: post.character_id, post_id: post.id }
+      get :show, params: { id: post.written.character_id, post_id: post.id }
       expect(response).to have_http_status(:forbidden)
       expect(response.json['errors'].size).to eq(1)
       expect(response.json['errors'][0]['message']).to eq("You do not have permission to perform this action.")

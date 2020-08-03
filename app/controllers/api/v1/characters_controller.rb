@@ -26,7 +26,7 @@ class Api::V1::CharactersController < Api::ApiController
     queryset = queryset.where(template_id: @template&.id) if params[:template_id].present?
 
     if @post
-      char_ids = @post.replies.select(:character_id).distinct.pluck(:character_id) + [@post.character_id]
+      char_ids = @post.replies.select(:character_id).distinct.pluck(:character_id)
       queryset = queryset.where(id: char_ids)
     end
 

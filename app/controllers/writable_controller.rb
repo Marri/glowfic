@@ -13,8 +13,8 @@ class WritableController < ApplicationController
     @templates = templates + [templateless]
 
     if @post
-      uniq_chars_ids = @post.replies.where(user_id: user.id).where('character_id is not null').group(:character_id).pluck(:character_id)
-      uniq_chars_ids << @post.character_id if @post.user_id == user.id && @post.character_id.present?
+      uniq_chars_ids = @post.replies.where(user: user).select(:character_id).distinct.pluck(:character_id)
+      uniq_chars_ids << @reply.character_id if @reply.present?
       uniq_chars = Character.where(id: uniq_chars_ids).ordered.pluck(pluck)
       threadchars = faked.new('Thread characters', nil, uniq_chars)
       @templates.insert(0, threadchars)
@@ -47,12 +47,12 @@ class WritableController < ApplicationController
         self.page = cur_page = 1
       end
     elsif cur_page == 'last'
-      self.page = cur_page = @post.replies.paginate(per_page: per, page: 1).total_pages
+      self.page = cur_page = @post.replies.where.not(reply_order: 0).paginate(per_page: per, page: 1).total_pages
     elsif cur_page == 'unread'
       if logged_in?
         @unread = @post.first_unread_for(current_user) if logged_in?
         if @unread.nil?
-          self.page = cur_page = @post.replies.paginate(per_page: per, page: 1).total_pages
+          self.page = cur_page = @post.replies.where.not(reply_order: 0).paginate(per_page: per, page: 1).total_pages
         elsif @unread.class == Post
           self.page = cur_page = 1
         else
@@ -73,10 +73,11 @@ class WritableController < ApplicationController
       character_aliases.name as alias
     SQL
 
-    reply_count = @replies.count
+    reply_count = @replies.where.not(reply_order: 0).count
 
     @replies = @replies
       .select(select)
+      .where('replies.reply_order > 0')
       .joins(:user)
       .left_outer_joins(:character)
       .left_outer_joins(:icon)
@@ -117,7 +118,7 @@ class WritableController < ApplicationController
         @reply = @post.build_new_reply_for(current_user, reply_hash)
       end
 
-      @post.mark_read(current_user, at_time: @post.read_time_for(@replies))
+      @post.mark_read(current_user, at_time: @post.read_time_for(@replies + [@post.written]))
     end
 
     @warnings = @post.content_warnings if display_warnings?

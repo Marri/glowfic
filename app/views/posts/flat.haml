@@ -22,36 +22,4 @@
         %span#post-title= @post.subject
       - if @post.description.present?
         .post-subheader= sanitize_simple_link_text(@post.description)
-      .post-container.post-post
-        .padding-10
-          .post-info-box
-            - if @post.icon
-              .post-icon= icon_tag @post.icon
-            .post-info-text
-              - if @post.character
-                .post-character= @post.name
-                - if @post.character.screenname
-                  .post-screenname= breakable_text(@post.character.screenname)
-              - else
-                .spacer-alt
-              .post-author
-                - if @post.user.deleted?
-                  %em (deleted user)
-                - else
-                  = @post.user.username
-          .post-edit-box
-            = link_to post_path(@post), rel: 'alternate' do
-              = image_tag "icons/link.png", title: 'Permalink', alt: 'Permalink'
-            = link_to post_path(@post, unread: true), method: :put do
-              = image_tag "icons/eye.png", title: 'Mark Unread Here', alt: 'Mark Unread'
-          .post-content= sanitize_written_content(@post.content.to_s)
-        .post-footer
-          .right-align>
-            .padding-5>
-              - if @post.created_at
-                = precede 'Posted ' do
-                  %span.post-posted=pretty_time(@post.created_at, format: ApplicationHelper::TIME_FORMAT)
-              - if @post.created_at.to_i != @post.last_updated.to_i
-                = precede ' | Updated ' do
-                  %span.post-updated=pretty_time(@post.last_updated, format: ApplicationHelper::TIME_FORMAT)
-      .flat-post-replies= @post.flat_post.content.try(:html_safe)
+      = @post.flat_post.content.try(:html_safe)

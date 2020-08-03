@@ -22,7 +22,7 @@ class Api::V1::PostsController < Api::ApiController
   error 403, "Post is not visible to the user"
   error 404, "Post not found"
   def show
-    render json: @post.as_json(include: [:character, :icon, :content])
+    render json: @post.as_json
   end
 
   api :PATCH, '/posts/:id', 'Update a single post. Currently only supports saving the private note for an author.'

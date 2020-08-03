@@ -1,9 +1,7 @@
-- if reply.is_a?(Post)
+- if reply.reply_order == 0
   - write = 'post-post'.freeze
-- elsif reply.is_a?(Reply)
-  - write = 'post-reply'.freeze
 - else
-  - write = ''.freeze
+  - write = 'post-reply'.freeze
 .post-container{class: [write, (reply == @unread && current_user.try(:visible_unread?)) ? 'reply-highlighted' : '']}
   - if reply.is_a?(Reply) && reply.id.present?
     <a id="reply-#{reply.id}" class="noheight"> </a>
@@ -32,15 +30,23 @@
       .post-edit-box
         = link_to post_or_reply_link(reply), rel: 'alternate'.freeze do
           = image_tag "icons/link.png".freeze, title: 'Permalink'.freeze, alt: 'Permalink'.freeze
-        - if reply.editable_by?(current_user) || (reply.is_a?(Post) && reply.metadata_editable_by?(current_user))
-          = link_to path_for(reply, 'edit_%s') do
-            = image_tag "icons/pencil.png".freeze, title: 'Edit'.freeze, alt: 'Edit'.freeze
-        - if reply.deletable_by?(current_user)
-          = link_to path_for(reply, '%s'), method: :delete, data: { confirm: "Are you sure you wish to delete this #{reply.class.to_s.downcase}?" } do
-            = image_tag "icons/cross.png".freeze, title: 'Delete'.freeze, alt: 'Delete'.freeze
-        - if reply.is_a?(Reply) && logged_in?
-          = link_to post_path(@post, unread: true, at_id: reply.id), method: :put do
-            = image_tag "icons/eye.png".freeze, title: 'Mark Unread Here'.freeze, alt: 'Mark Unread Here'.freeze
+        - if reply.order == 0
+          - if reply.post.metadata_editable_by?(current_user)
+            = link_to edit_post_path(@post) do
+              = image_tag "icons/pencil.png".freeze, title: 'Edit'.freeze, alt: 'Edit'.freeze
+          - if reply.post.deletable_by?(current_user)
+            = link_to post_path(@post), method: :delete, data: { confirm: "Are you sure you wish to delete this post?" } do
+              = image_tag "icons/cross.png".freeze, title: 'Delete'.freeze, alt: 'Delete'.freeze
+        - else
+          - if reply.editable_by?(current_user)
+            = link_to edit_reply_path(reply) do
+              = image_tag "icons/pencil.png".freeze, title: 'Edit'.freeze, alt: 'Edit'.freeze
+          - if reply.deletable_by?(current_user)
+            = link_to reply_path(reply), method: :delete, data: { confirm: "Are you sure you wish to delete this reply?" } do
+              = image_tag "icons/cross.png".freeze, title: 'Delete'.freeze, alt: 'Delete'.freeze
+          - if logged_in?
+            = link_to post_path(@post, unread: true, at_id: reply.id), method: :put do
+              = image_tag "icons/eye.png".freeze, title: 'Mark Unread Here'.freeze, alt: 'Mark Unread Here'.freeze
     .post-content= sanitize_written_content(reply.content.to_s)
   .post-footer
     - unless local_assigns[:hide_footer]

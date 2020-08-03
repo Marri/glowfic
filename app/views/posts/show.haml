@@ -127,16 +127,16 @@
       = link_to post_path(@prev_post) do
         .view-button.float-none &laquo; Previous Post
 - if page.to_i == 1
-  = render 'replies/single', reply: @post
+  = render 'replies/single', reply: @post.written
 - else
   .post-expander
     .info + Show First Post
     .hidden
-      = render 'replies/single', reply: @post
+      = render 'replies/single', reply: @post.written
 - if @replies.present?
   = render 'posts/paginator', paginated: @replies
 = render partial: 'replies/single', collection: @replies, as: :reply
-- if @post.complete? && (@replies.empty? || (@replies.last.id == @post.last_reply_id))
+- if @post.complete? && @replies.last.id == @post.last_reply_id
   .post-ender Here Ends This Thread
   - if @prev_post || @next_post
     .post-navheader
@@ -146,9 +146,9 @@
       - if @prev_post
         = link_to post_path(@prev_post) do
           .view-button.float-none &laquo; Previous Post
-- if @post.on_hiatus? && (@replies.empty? || (@replies.last.id == @post.last_reply_id))
+- if @post.on_hiatus? && @replies.last.id == @post.last_reply_id
   .post-ender This Thread Is On Hiatus
-- if @post.abandoned? && (@replies.empty? || (@replies.last.id == @post.last_reply_id))
+- if @post.abandoned? && @replies.last.id == @post.last_reply_id
   .post-ender This Thread Has Been Permanently Abandoned
 - if @replies.present?
   = render 'posts/paginator', paginated: @replies
