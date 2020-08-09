@@ -156,6 +156,20 @@ class ApplicationController < ActionController::Base
   # unread_ids and unread_counts do not necessarily include fully unread posts
   helper_method :unread_ids, :opened_ids, :unread_counts
 
+  def post_unread?(post)
+    return false unless post
+    return false unless unread_ids
+    unread_ids.include?(post.id)
+  end
+  helper_method :post_unread?
+
+  def post_opened?(post)
+    return false unless post
+    return false unless opened_ids
+    opened_ids.include?(post.id)
+  end
+  helper_method :post_opened?
+
   def generate_short(msg)
     short_msg = Glowfic::Sanitizers.full(msg) # strip all tags, replacing appropriately with spaces
     return short_msg if short_msg.length <= 75

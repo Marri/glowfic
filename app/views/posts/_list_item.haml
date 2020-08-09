@@ -14,15 +14,14 @@
       = image_tag "icons/exclamation.png", class: 'vmid', title: "Content Warning: " + post.content_warnings.pluck(:name).join(', '), alt: 'Has Warnings'
   %td.post-subject.vtop{class: klass}
     - if logged_in?
-      - if unread_post?(post, unread_ids) || (@show_unread && !opened_post?(post, opened_ids))
+      - if post_unread?(post) || (@show_unread && !post_opened?(post))
         = link_to unread_path(post) do
           = image_tag unread_img, class: 'vmid', title: 'First Unread', alt: 'First Unread'
       - elsif @show_unread
         = link_to unread_path(post) do
           = image_tag lastlink_img, class: 'vmid', title: 'First Unread', alt: 'Jump To End'
-    - if logged_in? && @opened_ids.present? && !@opened_ids.include?(post.id)
-      %b= link_to post.subject, post_path(post), title: strip_tags(post.description)&.html_safe
-    - else
+    - opened = logged_in? && post_opened?(post)
+    = conditional_tag :b, !opened do
       = link_to post.subject, post_path(post), title: strip_tags(post.description)&.html_safe
     - if !@hide_quicklinks && (!logged_in? || per_page > 0)
       - total_pages = (replies_count.to_f / per_page).ceil
@@ -46,7 +45,7 @@
   %td.width-70.post-replies.vtop{class: klass}= link_to replies_count, stats_post_path(post)
   - if logged_in? && local_assigns[:show_unread_count]
     %td.width-70.vtop{class: klass}
-      - if @opened_ids.include?(post.id) && unread_ids.include?(post.id)
+      - if post_opened?(post) || post_unread?(post)
         = @unread_counts.fetch(post.id, 0)
       - else
         \-

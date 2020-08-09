@@ -201,18 +201,6 @@ module ApplicationHelper
       'Private'             => :private }
   end
 
-  def unread_post?(post, unread_ids)
-    return false unless post
-    return false unless unread_ids
-    unread_ids.include?(post.id)
-  end
-
-  def opened_post?(post, opened_ids)
-    return false unless post
-    return false unless opened_ids
-    opened_ids.include?(post.id)
-  end
-
   def message_sender(message)
     return message.sender_name if message.site_message?
     link_to(message.sender_name, user_path(message.sender))
@@ -251,5 +239,13 @@ module ApplicationHelper
   def allowed_boards(obj, user)
     authored_ids = BoardAuthor.where(user: user).select(:board_id)
     Board.where(id: obj.board_id).or(Board.where(authors_locked: false)).or(Board.where(id: authored_ids)).ordered
+  end
+
+  def conditional_tag(tag_name, condition, &block)
+    if condition
+      content_tag tag_name, capture(&block)
+    else
+      capture(&block)
+    end
   end
 end
