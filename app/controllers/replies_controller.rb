@@ -77,6 +77,7 @@ class RepliesController < WritableController
     end
 
     @search_results = @search_results
+      .where.not(reply_order: 0)
       .select('replies.*, characters.name, characters.screenname, users.username, users.deleted as user_deleted')
       .visible_to(current_user)
       .joins(:user)

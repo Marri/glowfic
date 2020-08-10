@@ -157,8 +157,8 @@ RSpec.describe Reply do
       first_reply = create(:reply, post: post)
       second_reply = create(:reply, post: post)
       third_reply = create(:reply, post: post)
-      second_reply.update_columns(reply_order: 2) # rubocop:disable Rails/SkipsModelValidations
-      third_reply.update_columns(reply_order: 1) # rubocop:disable Rails/SkipsModelValidations
+      second_reply.update_columns(reply_order: 3) # rubocop:disable Rails/SkipsModelValidations
+      third_reply.update_columns(reply_order: 2) # rubocop:disable Rails/SkipsModelValidations
       expect(post.replies.ordered).to eq([first_reply, third_reply, second_reply])
     end
   end

@@ -92,7 +92,7 @@ class GalleriesController < UploadingController
     if page_view == 'list'
       posts = Post.visible_to(current_user).where(icon_id: icons.map(&:id))
       post_counts = posts.select(:icon_id).group(:icon_id).count
-      replies = Reply.visible_to(current_user).where(icon_id: icons.map(&:id))
+      replies = Reply.visible_to(current_user).where(icon_id: icons.map(&:id)).where.not(reply_order: 0)
       reply_counts = replies.select(:icon_id).group(:icon_id).count
       post_ids = replies.select(:icon_id, :post_id).distinct.pluck(:icon_id, :post_id)
       post_ids += posts.select(:icon_id, :id).distinct.pluck(:icon_id, :id)

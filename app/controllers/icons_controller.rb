@@ -51,7 +51,7 @@ class IconsController < UploadingController
       use_javascript('galleries/expander_old')
     else
       posts_using = Post.where(icon_id: @icon.id).visible_to(current_user)
-      replies_using = Reply.where(icon_id: @icon.id).visible_to(current_user)
+      replies_using = Reply.where(icon_id: @icon.id).visible_to(current_user).where.not(reply_order: 0)
       @times_used = (posts_using.count + replies_using.count)
       @posts_used = (posts_using.pluck(:id) + replies_using.select(:post_id).distinct.pluck(:post_id)).uniq.count
     end
