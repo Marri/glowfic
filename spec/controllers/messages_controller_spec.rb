@@ -112,7 +112,7 @@ RSpec.describe MessagesController do
       login
       get :new, params: { recipient_id: user.id }
       expect(response.status).to eq(200)
-      expect(assigns(:message).recipient_id).to eq(recipient.id)
+      expect(assigns(:message).recipient_id).to eq(user.id)
     end
 
     context "with blocks" do
@@ -131,7 +131,7 @@ RSpec.describe MessagesController do
         login_as(blocked)
         get :new, params: { recipient_id: blocker }
         expect(response.status).to eq(200)
-        expect(assigns(:message).recipient_id).to be(blocker)
+        expect(assigns(:message).recipient_id).to eq(blocker.id)
       end
 
       it "hides blocked users" do
@@ -176,6 +176,9 @@ RSpec.describe MessagesController do
   end
 
   describe "POST create" do
+    let(:user) { create(:user) }
+    let(:recipient) { create(:user) }
+
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -183,7 +186,6 @@ RSpec.describe MessagesController do
     end
 
     it "fails with invalid params" do
-      user = create(:user)
       login_as(user)
       messages = Array.new(2) { create(:message, sender: user) }
       recents = messages.map(&:recipient).map{|x| [x.username, x.id]}
@@ -202,8 +204,7 @@ RSpec.describe MessagesController do
     end
 
     it "succeeds with valid recipient" do
-      login
-      recipient = create(:user)
+      login_as(user)
       post :create, params: { message: {subject: 'test', message: 'testing', recipient_id: recipient.id} }
       expect(response).to redirect_to(messages_url(view: 'inbox'))
       expect(flash[:success]).to eq('Message sent!')
@@ -214,18 +215,17 @@ RSpec.describe MessagesController do
     end
 
     it "overrides recipient if you try to forward a message" do
-      previous = create(:message)
-      other_user = create(:user)
-      login_as(previous.recipient)
+      previous = create(:message, recipient: user)
+      login_as(user)
       post :create, params: {
-        message: {subject: 'Re: ' + previous.subject, message: 'response', recipient_id: other_user.id},
+        message: {subject: 'Re: ' + previous.subject, message: 'response', recipient_id: create(:user).id},
         parent_id: previous.id
       }
       expect(assigns(:message).recipient_id).to eq(previous.sender_id)
     end
 
     it "fails with invalid parent" do
-      login
+      login_as(user)
       post :create, params: { message: {subject: 'Re: Fake', message: 'response'}, parent_id: -1 }
       expect(flash[:error][:array]).to include('Message parent could not be found.')
       expect(assigns(:message).parent).to be_nil
@@ -234,7 +234,6 @@ RSpec.describe MessagesController do
 
     it "fails with someone else's parent" do
       message = create(:message)
-      user = create(:user)
       login_as(user)
       expect(message.visible_to?(user)).to eq(false)
       post :create, params: { message: {subject: 'Re: Fake', message: 'response'}, parent_id: message.id }
@@ -244,8 +243,8 @@ RSpec.describe MessagesController do
     end
 
     it "succeeds with valid parent" do
-      previous = create(:message)
-      login_as(previous.recipient)
+      previous = create(:message, recipient: user)
+      login_as(user)
       expect(Message.count).to eq(1)
       post :create, params: {
         message: {subject: 'Re: ' + previous.subject, message: 'response'},
@@ -263,8 +262,8 @@ RSpec.describe MessagesController do
     end
 
     it "succeeds when replying to own message" do
-      previous = create(:message)
-      login_as(previous.sender)
+      previous = create(:message, sender: user)
+      login_as(user)
       expect(Message.count).to eq(1)
       post :create, params: {
         message: {subject: 'Re: ' + previous.subject, message: 'response'},
@@ -280,10 +279,12 @@ RSpec.describe MessagesController do
     end
 
     context "preview" do
+      before(:each) { login_as(user) }
+
       render_views
+
       it "sets messages if in a thread" do
-        previous = create(:message)
-        login_as(previous.sender)
+        previous = create(:message, sender: user)
         expect {
           post :create, params: {
             message: {subject: 'Preview', message: 'example'},
@@ -300,9 +301,7 @@ RSpec.describe MessagesController do
       end
 
       it "succeeds" do
-        user = create(:user)
-        login_as(user)
-        messages = Array.new(2) { create(:message, sender: user) }
+        messages = create_list(:message, 2, sender: user)
         recents = messages.map(&:recipient).map{|x| [x.username, x.id]}
         recents_data = recents.reverse
         other_user = create(:user)
@@ -320,6 +319,9 @@ RSpec.describe MessagesController do
   end
 
   describe "GET show" do
+    let(:message) { create(:message) }
+    let(:read_message) { create(:message, unread: false) }
+
     it "requires login" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -334,7 +336,6 @@ RSpec.describe MessagesController do
     end
 
     it "requires your message" do
-      message = create(:message)
       login
       get :show, params: { id: message.id }
       expect(response).to redirect_to(messages_url(view: 'inbox'))
@@ -342,7 +343,6 @@ RSpec.describe MessagesController do
     end
 
     it "requires extant sender" do
-      message = create(:message)
       login_as(message.recipient)
       message.sender.archive
       get :show, params: { id: message.id }
@@ -351,7 +351,6 @@ RSpec.describe MessagesController do
     end
 
     it "requires extant recipient" do
-      message = create(:message)
       login_as(message.sender)
       message.recipient.archive
       get :show, params: { id: message.id }
@@ -362,7 +361,6 @@ RSpec.describe MessagesController do
     context "with views" do
       render_views
       it "works for sender" do
-        message = create(:message)
         login_as(message.sender)
         get :show, params: { id: message.id }
         expect(response).to have_http_status(200)
@@ -371,7 +369,6 @@ RSpec.describe MessagesController do
       end
 
       it "works for recipient" do
-        message = create(:message)
         login_as(message.recipient)
         get :show, params: { id: message.id }
         expect(response).to have_http_status(200)
@@ -380,8 +377,7 @@ RSpec.describe MessagesController do
       end
 
       it "works for unread in thread" do
-        message = create(:message, unread: true)
-        create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: false) # sender
+        create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: false)
         subsequent = create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: false)
         login_as(message.recipient)
         get :show, params: { id: subsequent.id }
@@ -391,14 +387,12 @@ RSpec.describe MessagesController do
     end
 
     it "does not remark the message read" do
-      message = create(:message, unread: false)
-      login_as(message.recipient)
+      login_as(read_message.recipient)
       expect_any_instance_of(Message).not_to receive(:update)
-      get :show, params: { id: message.id }
+      get :show, params: { id: read_message.id }
     end
 
     it "does not remark the message read for unread sender in thread" do
-      message = create(:message, unread: true)
       sender = create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: true)
       subsequent = create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: false)
       login_as(message.recipient)
@@ -414,6 +408,10 @@ RSpec.describe MessagesController do
   end
 
   describe "POST mark" do
+    let(:message) { create(:message) }
+    let(:unread_message) { create(:message, unread: true) }
+    let(:read_message) { create(:message, unread: false) }
+
     it "requires login" do
       post :mark
       expect(response).to redirect_to(root_url)
@@ -435,31 +433,27 @@ RSpec.describe MessagesController do
       end
 
       it "does not work for users without access" do
-        message = create(:message)
         login
         expect_any_instance_of(Message).not_to receive(:update)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Unread" }
       end
 
       it "does not work for sender" do
-        message = create(:message, unread: false)
-        login_as(message.sender)
-        post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Unread" }
-        expect(message.reload.unread).to eq(false)
+        login_as(read_message.sender)
+        post :mark, params: { marked_ids: [read_message.id.to_s], commit: "Mark Unread" }
+        expect(read_message.reload.unread).to eq(false)
       end
 
       it "works unread for recipient" do
-        message = create(:message, unread: true)
-        login_as(message.recipient)
-        post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Unread" }
-        expect(message.reload.unread).to eq(true)
+        login_as(unread_message.recipient)
+        post :mark, params: { marked_ids: [unread_message.id.to_s], commit: "Mark Unread" }
+        expect(unread_message.reload.unread).to eq(true)
       end
 
       it "works read for recipient" do
-        message = create(:message, unread: false)
-        login_as(message.recipient)
-        post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Unread" }
-        expect(message.reload.unread).to eq(true)
+        login_as(read_message.recipient)
+        post :mark, params: { marked_ids: [read_message.id.to_s], commit: "Mark Unread" }
+        expect(read_message.reload.unread).to eq(true)
       end
     end
 
@@ -471,31 +465,27 @@ RSpec.describe MessagesController do
       end
 
       it "does not work for users without access" do
-        message = create(:message)
         login
         expect_any_instance_of(Message).not_to receive(:update)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Read" }
       end
 
       it "does not work for sender" do
-        message = create(:message, unread: true)
-        login_as(message.sender)
-        post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Read" }
-        expect(message.reload.unread).to eq(true)
+        login_as(unread_message.sender)
+        post :mark, params: { marked_ids: [unread_message.id.to_s], commit: "Mark Read" }
+        expect(unread_message.reload.unread).to eq(true)
       end
 
       it "works unread for recipient" do
-        message = create(:message, unread: true)
-        login_as(message.recipient)
-        post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Read" }
-        expect(message.reload.unread).to eq(false)
+        login_as(unread_message.recipient)
+        post :mark, params: { marked_ids: [unread_message.id.to_s], commit: "Mark Read" }
+        expect(unread_message.reload.unread).to eq(false)
       end
 
       it "works read for recipient" do
-        message = create(:message, unread: false)
-        login_as(message.recipient)
-        post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Read" }
-        expect(message.reload.unread).to eq(false)
+        login_as(read_message.recipient)
+        post :mark, params: { marked_ids: [read_message.id.to_s], commit: "Mark Read" }
+        expect(read_message.reload.unread).to eq(false)
       end
     end
 
@@ -507,7 +497,6 @@ RSpec.describe MessagesController do
       end
 
       it "does not work for users without access" do
-        message = create(:message)
         login
         expect_any_instance_of(Message).not_to receive(:update)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Delete" }
@@ -515,7 +504,6 @@ RSpec.describe MessagesController do
 
       context "sender" do
         it "works" do
-          message = create(:message)
           login_as(message.sender)
           expect(message.visible_outbox).to eq(true)
           post :mark, params: { marked_ids: [message.id.to_s], commit: "Delete" }
@@ -525,7 +513,6 @@ RSpec.describe MessagesController do
 
       context "recipient" do
         it "works" do
-          message = create(:message)
           login_as(message.recipient)
           expect(message.visible_inbox).to eq(true)
           post :mark, params: { marked_ids: [message.id.to_s], commit: "Delete" }
