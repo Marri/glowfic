@@ -13,6 +13,8 @@ RSpec.describe ReportsController do
   end
 
   describe "GET show" do
+    let(:user) { create(:user) }
+
     it "requires valid type" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(reports_url)
@@ -25,7 +27,6 @@ RSpec.describe ReportsController do
     end
 
     it "sets variables with logged in daily" do
-      user = create(:user)
       post = create(:post)
       post.mark_read(user)
       time = post.last_read(user)
@@ -121,7 +122,6 @@ RSpec.describe ReportsController do
       end
 
       it "works with logged in" do
-        user = create(:user)
         DailyReport.mark_read(user, at_time: 3.days.ago.to_date)
         create(:post_view, user: user)
         login_as(user)

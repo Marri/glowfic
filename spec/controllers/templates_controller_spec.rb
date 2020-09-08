@@ -1,4 +1,8 @@
 RSpec.describe TemplatesController do
+  let(:user) { create(:user) }
+  let(:template) { create(:template, user: user) }
+  let(:char) { create(:character, user: user) }
+
   describe "GET new" do
     it "requires login" do
       get :new
@@ -34,8 +38,7 @@ RSpec.describe TemplatesController do
     end
 
     it "works" do
-      char = create(:character)
-      login_as(char.user)
+      login_as(user)
       post :create, params: { template: {name: 'testtest', description: 'test desc', character_ids: [char.id]} }
       created = Template.last
       expect(response).to redirect_to(template_url(created))
@@ -72,13 +75,12 @@ RSpec.describe TemplatesController do
     end
 
     it "sets correct variables" do
-      template = create(:template)
-      char1 = create(:character, user: template.user, template: template)
-      char2 = create(:character, user: template.user, template: template)
+      template = create(:template, user: user)
+      chars = create_list(:character, 2, user: user, template: template)
       non_char = create(:character)
-      template_post = create(:post, user: template.user, character: char1)
+      template_post = create(:post, user: user, character: chars[0])
       reply_post = create(:post)
-      create(:reply, post: reply_post, user: template.user, character: char2)
+      create(:reply, post: reply_post, user: user, character: chars[1])
       create(:post, character: non_char, user: non_char.user)
 
       get :show, params: { id: template.id }
@@ -117,7 +119,6 @@ RSpec.describe TemplatesController do
     end
 
     it "requires your template" do
-      template = create(:template)
       user_id = login
       get :edit, params: { id: template.id }
       expect(response).to redirect_to(user_characters_url(user_id))
@@ -125,8 +126,7 @@ RSpec.describe TemplatesController do
     end
 
     it "works" do
-      template = create(:template)
-      login_as(template.user)
+      login_as(user)
       get :edit, params: { id: template.id }
       expect(response).to have_http_status(200)
       expect(assigns(:page_title)).to eq("Edit Template: #{template.name}")
@@ -149,7 +149,6 @@ RSpec.describe TemplatesController do
     end
 
     it "requires your template" do
-      template = create(:template)
       user_id = login
       put :update, params: { id: template.id }
       expect(response).to redirect_to(user_characters_url(user_id))
@@ -157,8 +156,7 @@ RSpec.describe TemplatesController do
     end
 
     it "requires valid params" do
-      template = create(:template)
-      login_as(template.user)
+      login_as(user)
       put :update, params: { id: template.id, template: {name: ''} }
       expect(assigns(:template)).not_to be_valid
       expect(response).to render_template(:edit)
@@ -167,10 +165,8 @@ RSpec.describe TemplatesController do
     end
 
     it "works" do
-      template = create(:template)
-      char = create(:character, user: template.user)
       new_name = template.name + 'new'
-      login_as(template.user)
+      login_as(user)
 
       put :update, params: {
         id: template.id,
@@ -205,37 +201,32 @@ RSpec.describe TemplatesController do
     end
 
     it "requires your template" do
-      user = create(:user)
-      login_as(user)
-      template = create(:template)
+      user_id = login
       delete :destroy, params: { id: template.id }
-      expect(response).to redirect_to(user_characters_url(user.id))
+      expect(response).to redirect_to(user_characters_url(user_id))
       expect(flash[:error]).to eq("That is not your template.")
     end
 
     it "succeeds" do
-      template = create(:template)
-      login_as(template.user)
+      login_as(user)
       delete :destroy, params: { id: template.id }
-      expect(response).to redirect_to(user_characters_url(template.user_id))
+      expect(response).to redirect_to(user_characters_url(user))
       expect(flash[:success]).to eq("Template deleted successfully.")
     end
 
     it "handles destroy failure" do
-      template = create(:template)
-      character = create(:character, user: template.user, template: template)
-      login_as(template.user)
+      char
+      login_as(user)
       expect_any_instance_of(Template).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: template.id }
       expect(response).to redirect_to(template_url(template))
       expect(flash[:error]).to eq({message: "Template could not be deleted.", array: []})
-      expect(character.reload.template).to eq(template)
+      expect(char.reload.template).to eq(template)
     end
   end
 
   describe "#editor_setup" do
     it "orders untemplated characters correctly" do
-      user = create(:user)
       login_as(user)
       char2 = create(:character, user: user, name: 'b')
       char3 = create(:character, user: user, name: 'c')

@@ -1,4 +1,6 @@
 RSpec.describe SessionsController do
+  let(:user) { create(:user) }
+
   describe "GET index" do
     it "works when logged out" do
       get :index
@@ -21,7 +23,6 @@ RSpec.describe SessionsController do
     end
 
     it "logs out if user has become invalid" do
-      user = create(:user)
       login_as(user)
       user.destroy!
       get :index
@@ -68,7 +69,6 @@ RSpec.describe SessionsController do
     end
 
     it "disallows logins with old passwords when reset is pending" do
-      user = create(:user)
       create(:password_reset, user: user)
       expect(user.password_resets.active.unused).not_to be_empty
       post :create, params: { username: user.username }
@@ -100,7 +100,6 @@ RSpec.describe SessionsController do
 
     it "logs in successfully without salt_uuid and sets it" do
       password = 'password'
-      user = create(:user)
       user.update_columns(salt_uuid: nil, crypted: user.send(:old_crypted_password, password)) # rubocop:disable Rails/SkipsModelValidations
       user.reload
       expect(user.salt_uuid).to be_nil

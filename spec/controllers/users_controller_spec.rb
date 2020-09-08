@@ -1,4 +1,6 @@
 RSpec.describe UsersController do
+  let(:user) { create(:user) }
+
   describe "GET index" do
     it "succeeds when logged out" do
       get :index
@@ -150,28 +152,24 @@ RSpec.describe UsersController do
     end
 
     it "works when logged out" do
-      user = create(:user)
       get :show, params: { id: user.id }
       expect(response.status).to eq(200)
     end
 
     it "works when logged in as someone else" do
-      user = create(:user)
       login
       get :show, params: { id: user.id }
       expect(response.status).to eq(200)
     end
 
     it "works when logged in as yourself" do
-      user = create(:user)
       login_as(user)
       get :show, params: { id: user.id }
       expect(response.status).to eq(200)
     end
 
     it "sets the correct variables" do
-      user = create(:user)
-      posts = Array.new(3) { create(:post, user: user) }
+      posts = create_list(:post, 3, user: user)
       create(:post)
       get :show, params: { id: user.id }
       expect(assigns(:page_title)).to eq(user.username)
@@ -179,7 +177,6 @@ RSpec.describe UsersController do
     end
 
     it "sorts posts correctly" do
-      user = create(:user)
       post1 = create(:post)
       post2 = create(:post, user: user)
       post3 = create(:post)
@@ -231,7 +228,6 @@ RSpec.describe UsersController do
     end
 
     it "requires own user" do
-      user = create(:user)
       login
       get :edit, params: { id: user.id }
       expect(response).to redirect_to(continuities_url)
@@ -262,7 +258,6 @@ RSpec.describe UsersController do
     end
 
     it "requires valid params" do
-      user = create(:user)
       login_as(user)
       put :update, params: { id: user.id, user: {moiety: 'A'} }
       expect(response).to render_template(:edit)
@@ -270,9 +265,8 @@ RSpec.describe UsersController do
     end
 
     it "does not update another user" do
-      user1 = create(:user)
       user2 = create(:user)
-      login_as(user1)
+      login_as(user)
       put :update, params: { id: user2.id, user: {email: 'bademail@example.com'} }
       expect(response).to redirect_to(continuities_url)
       expect(flash[:error]).to eq('You do not have permission to edit that user.')
@@ -280,7 +274,6 @@ RSpec.describe UsersController do
     end
 
     it "works with valid params" do
-      user = create(:user)
       login_as(user)
 
       user_details = {
@@ -354,7 +347,6 @@ RSpec.describe UsersController do
     end
 
     it "requires own user" do
-      user = create(:user)
       login
       put :password, params: { id: user.id }
       expect(response).to redirect_to(continuities_url)
@@ -496,8 +488,6 @@ RSpec.describe UsersController do
   end
 
   describe "GET output" do
-    let(:user) { create(:user) }
-
     it "requires login" do
       get :output, params: { id: user.id }
       expect(response).to redirect_to(root_url)

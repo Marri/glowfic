@@ -656,7 +656,7 @@ RSpec.describe PostsController do
       expect(post.tagging_authors).to match_array([user, coauthor, other_user])
 
       board.reload
-      expect(board.writers).to match_array([user, other_user])
+      expect(board.writers).to match_array([user, coauthor])
       expect(board.cameos).to match_array([other_user])
     end
 
