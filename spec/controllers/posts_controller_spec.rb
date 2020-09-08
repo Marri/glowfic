@@ -1,4 +1,9 @@
 RSpec.describe PostsController do
+  let(:user) { create(:user) }
+  let(:coauthor) { create(:user) }
+  let(:viewer) { create(:user) }
+  let(:other_user) { create(:user) }
+
   shared_examples "logged out post list" do
     it "does not show user-only posts" do
       posts = create_list(:post, 2)
@@ -11,13 +16,9 @@ RSpec.describe PostsController do
   end
 
   shared_examples "logged in post list" do
-    let(:user) { create(:user) }
-    let(:posts) { create_list(:post, 3) }
+    let!(:posts) { create_list(:post, 3) }
 
-    before(:each) {
-      login_as(user)
-      posts
-    }
+    before(:each) { login_as(user) }
 
     it "does not show access-locked or private threads" do
       create(:post, privacy: :private)
@@ -243,18 +244,18 @@ RSpec.describe PostsController do
       it "filters by multiple authors" do
         author1 = create(:user)
         author2 = create(:user)
-        nonauthor = create(:user)
 
         found_posts = []
         create(:post, user: author1) # one author but not the other, post
-        post = create(:post, user: nonauthor) # one author but not the other, reply
-        create(:reply, user: author2, post: post)
+
+        post = create(:post)
+        create(:reply, user: author2, post: post)  # one author but not the other, reply
 
         post = create(:post, user: author1) # both authors, one post only
         create(:reply, post: post, user: author2)
         found_posts << post
 
-        post = create(:post, user: nonauthor) # both authors, replies only
+        post = create(:post) # both authors, replies only
         create(:reply, post: post, user: author1)
         create(:reply, post: post, user: author2)
         found_posts << post
@@ -297,8 +298,6 @@ RSpec.describe PostsController do
   end
 
   describe "GET new" do
-    let(:user) { create(:user) }
-
     it "requires login" do
       get :new
       expect(response).to redirect_to(root_url)
@@ -353,9 +352,8 @@ RSpec.describe PostsController do
 
     it "defaults authors to be the current user in open boards" do
       login_as(user)
-      create(:user) # user not in the board
-      board_creator = create(:user) # user in the board
-      board = create(:board, creator: board_creator, authors_locked: false)
+      create(:user)
+      board = create(:board, authors_locked: false)
       get :new, params: { board_id: board.id }
       expect(assigns(:post).board).to eq(board)
       expect(assigns(:author_ids)).to eq([])
@@ -363,7 +361,6 @@ RSpec.describe PostsController do
 
     it "defaults authors to be board authors in closed boards" do
       login_as(user)
-      coauthor = create(:user)
       create(:user)
       board = create(:board, creator: user, writers: [coauthor])
       get :new, params: { board_id: board.id }
@@ -373,9 +370,6 @@ RSpec.describe PostsController do
   end
 
   describe "POST create" do
-    let(:user) { create(:user) }
-    let(:coauthor) { create(:user) }
-
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -388,7 +382,7 @@ RSpec.describe PostsController do
       let(:user) { create(:importing_user) }
 
       it "requires valid user" do
-        login_as(create(:user))
+        login
         post :create, params: { button_import: true }
         expect(response).to redirect_to(new_post_path)
         expect(flash[:error]).to eq("You do not have access to this feature.")
@@ -515,7 +509,7 @@ RSpec.describe PostsController do
               privacy: :access_list,
               board_id: board.id,
               unjoined_author_ids: [coauthor.id],
-              viewer_ids: [coauthor.id, create(:user).id],
+              viewer_ids: [coauthor.id, other_user.id],
               content: 'test content',
             },
           }
@@ -579,9 +573,8 @@ RSpec.describe PostsController do
     end
 
     it "creates new post authors correctly" do
-      create(:user) # user should not be author
-      board_creator = create(:user) # user should not be author
-      board = create(:board, creator: board_creator)
+      create(:user)
+      board = create(:board)
       login_as(user)
 
       time = Time.zone.now - 5.minutes
@@ -615,9 +608,8 @@ RSpec.describe PostsController do
     end
 
     it "handles post submitted with no authors" do
-      create(:user) # non-author
-      board_creator = create(:user)
-      board = create(:board, creator: board_creator)
+      create(:user)
+      board = create(:board)
       login_as(user)
 
       time = Time.zone.now - 5.minutes
@@ -645,8 +637,7 @@ RSpec.describe PostsController do
     end
 
     it "adds new post authors to board cameo" do
-      new_author = create(:user)
-      create(:user) # separate user
+      create(:user)
       board = create(:board, creator: user, writers: [coauthor])
 
       login_as(user)
@@ -656,17 +647,17 @@ RSpec.describe PostsController do
             subject: 'a',
             user_id: user.id,
             board_id: board.id,
-            unjoined_author_ids: [user.id, coauthor.id, new_author.id]
+            unjoined_author_ids: [user.id, coauthor.id, other_user.id]
           }
         }
       }.to change { BoardAuthor.count }.by(1)
 
       post = assigns(:post).reload
-      expect(post.tagging_authors).to match_array([user, coauthor, new_author])
+      expect(post.tagging_authors).to match_array([user, coauthor, other_user])
 
       board.reload
-      expect(board.writers).to match_array([user, coauthor])
-      expect(board.cameos).to match_array([new_author])
+      expect(board.writers).to match_array([user, other_user])
+      expect(board.cameos).to match_array([other_user])
     end
 
     it "does not add to cameos of open boards" do
@@ -786,7 +777,6 @@ RSpec.describe PostsController do
       char = create(:character, user: user)
       icon = create(:icon, user: user)
       calias = create(:alias, character: char)
-      viewer = create(:user)
       setting1 = create(:setting)
       setting2 = create(:setting)
       warning1 = create(:content_warning)
@@ -931,7 +921,6 @@ RSpec.describe PostsController do
 
   describe "GET show" do
     let(:post) { create(:post) }
-    let(:user) { create(:user) }
 
     it "does not require login" do
       get :show, params: { id: post.id }
@@ -1308,7 +1297,6 @@ RSpec.describe PostsController do
   end
 
   describe "GET delete_history" do
-    let(:user) { create(:user)}
     let(:post) { create(:post, user: user) }
     let(:reply) { create(:reply, post: post) }
 
@@ -1417,7 +1405,6 @@ RSpec.describe PostsController do
     end
 
     it "sets relevant fields" do
-      user = create(:user)
       char1 = create(:character, user: user)
       char2 = create(:character, user: user)
       char3 = create(:template_character, user: user)
@@ -1436,8 +1423,6 @@ RSpec.describe PostsController do
       expect(post.icon).to be_nil
 
       create(:reply, user: user, post: post, character: char2) # reply1
-
-      coauthor = create(:user)
       create(:reply, user: coauthor, post: post) # other user's post
 
       ignored_author = create(:user)
@@ -1488,7 +1473,6 @@ RSpec.describe PostsController do
   end
 
   describe "PUT update" do
-    let(:user) { create(:user) }
     let(:post) { create(:post) }
 
     it "requires login" do
@@ -1892,8 +1876,6 @@ RSpec.describe PostsController do
         char2 = create(:template_character, user: user)
         icon = create(:icon, user: user)
         calias = create(:alias, character: char1)
-        coauthor = create(:user)
-        viewer = create(:user)
         expect(controller).to receive(:editor_setup).and_call_original
         expect(controller).to receive(:setup_layout_gon).and_call_original
         put :update, params: {
@@ -1981,7 +1963,6 @@ RSpec.describe PostsController do
       end
 
       it "does not create authors or viewers" do
-        coauthor = create(:user)
         board = create(:board, creator: user, authors_locked: true)
         post = create(:post, user: user, board: board, authors_locked: true, privacy: :access_list)
 
@@ -1991,7 +1972,7 @@ RSpec.describe PostsController do
             button_preview: true,
             post: {
               unjoined_author_ids: [coauthor.id],
-              viewer_ids: [coauthor.id, create(:user).id],
+              viewer_ids: [coauthor.id, other_user.id],
             },
           }
         }.not_to change { [Post::Author.count, PostViewer.count, BoardAuthor.count] }
@@ -2004,7 +1985,6 @@ RSpec.describe PostsController do
     end
 
     context "make changes" do
-      let(:coauthor) { create(:user) }
       let(:post) { create(:post, user: user) }
 
       before(:each) { login_as(user) }
@@ -2161,19 +2141,18 @@ RSpec.describe PostsController do
       end
 
       it "updates board cameos if necessary" do
-        new_author = create(:user)
         board = create(:board, creator: user, writers: [coauthor])
         post = create(:post, user: user, board: board)
         put :update, params: {
           id: post.id,
           post: {
-            unjoined_author_ids: [coauthor.id, new_author.id]
+            unjoined_author_ids: [coauthor.id, other_user.id]
           }
         }
         post.reload
         board.reload
-        expect(post.tagging_authors).to match_array([user, coauthor, new_author])
-        expect(board.cameos).to match_array([new_author])
+        expect(post.tagging_authors).to match_array([user, coauthor, other_user])
+        expect(board.cameos).to match_array([other_user])
       end
 
       it "does not add to cameos of open boards" do
@@ -2235,8 +2214,6 @@ RSpec.describe PostsController do
 
         char1 = create(:character, user: user)
         char2 = create(:template_character, user: user)
-
-        coauthor = create(:user)
 
         expect(controller).to receive(:editor_setup).and_call_original
         expect(controller).to receive(:setup_layout_gon).and_call_original
@@ -2305,11 +2282,9 @@ RSpec.describe PostsController do
         char = create(:character, user: user)
         calias = create(:alias, character_id: char.id)
         icon = create(:icon, user: user)
-        viewer = create(:user)
         setting = create(:setting)
         warning = create(:content_warning)
         tag = create(:label)
-        coauthor = create(:user)
 
         post.reload
         expect(post.tagging_authors).to match_array([user, removed_author, joined_author])
@@ -2374,7 +2349,6 @@ RSpec.describe PostsController do
     end
 
     context "metadata" do
-      let(:coauthor) { create(:user) }
       let(:post) { create(:post, subject: "test subject") }
 
       it "allows coauthors" do
@@ -2591,7 +2565,6 @@ RSpec.describe PostsController do
     end
 
     it "works for logged in" do
-      user = create(:user)
       expect(session[:ignore_warnings]).to be_nil
       expect(warn_post.send(:view_for, user)).to be_a_new_record
       login_as(user)
@@ -2622,7 +2595,6 @@ RSpec.describe PostsController do
     end
 
     it "requires post permission" do
-      user = create(:user)
       login_as(user)
       expect(post).not_to be_editable_by(user)
       delete :destroy, params: { id: post.id }
@@ -2638,10 +2610,8 @@ RSpec.describe PostsController do
     end
 
     it "deletes Post::Authors" do
-      user = create(:user)
       login_as(user)
-      other_user = create(:user)
-      post = create(:post, user: user, authors: [user, other_user])
+      post = create(:post, user: user, authors: [user, coauthor])
       id1 = post.post_authors[0].id
       id2 = post.post_authors[1].id
       delete :destroy, params: { id: post.id }
@@ -2675,7 +2645,6 @@ RSpec.describe PostsController do
     end
 
     context "with views" do
-      let(:user) { create(:user) }
       let(:post) { create(:post, user: user) }
 
       before(:each) do
@@ -2701,7 +2670,6 @@ RSpec.describe PostsController do
     end
 
     context "with hidden" do
-      let(:user) { create(:user) }
       let(:unhidden_post) { create(:post, user: user) }
       let(:hidden_post) { create(:post, user: user) }
 
@@ -2725,9 +2693,6 @@ RSpec.describe PostsController do
     end
 
     context "with hiatused" do
-      let(:user) { create(:user) }
-      let(:other_user) { create(:user) }
-
       before(:each) {
         login_as(user)
         create(:post)
@@ -2757,8 +2722,6 @@ RSpec.describe PostsController do
     end
 
     context "with posts" do
-      let!(:user) { create(:user) }
-      let!(:other_user) { create(:user) }
       let(:post) { create(:post, user: user) }
 
       before(:each) { login_as(user) }
@@ -2885,7 +2848,6 @@ RSpec.describe PostsController do
     let(:controller_action) { "unread" }
     let(:params) { { } }
     let(:assign_variable) { :posts }
-    let(:user) { create(:user) }
 
     it "requires login" do
       get :unread
@@ -3061,7 +3023,6 @@ RSpec.describe PostsController do
   end
 
   describe "POST mark" do
-    let(:user) { create(:user) }
     let(:private_post) { create(:post, privacy: :private) }
     let(:post1) { create(:post) }
     let(:post2) { create(:post) }
@@ -3230,7 +3191,6 @@ RSpec.describe PostsController do
   end
 
   describe "GET hidden" do
-    let(:user) { create(:user) }
     let(:board) { create(:board) }
     let(:post) { create(:post, board: board) }
 
@@ -3278,7 +3238,6 @@ RSpec.describe PostsController do
   end
 
   describe "POST unhide" do
-    let(:user) { create(:user) }
     let(:board) { create(:board) }
     let(:stay_hidden_board) { create(:board) }
     let(:hidden_post) { create(:post, board: board)}
