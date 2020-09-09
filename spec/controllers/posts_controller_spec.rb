@@ -1344,9 +1344,9 @@ RSpec.describe PostsController do
       login_as(user)
       reply.destroy!
       restore(reply)
-      reply = Reply.find_by_id(reply.id)
-      reply.update!(content: 'new content')
-      reply.destroy!
+      new_reply = Reply.find_by(id: reply.id)
+      new_reply.update!(content: 'new content')
+      new_reply.destroy!
       get :delete_history, params: { id: post.id }
       expect(assigns(:deleted_audits).count).to eq(1)
       expect(assigns(:audit).audited_changes['content']).to eq('new content')

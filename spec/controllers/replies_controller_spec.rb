@@ -614,6 +614,7 @@ RSpec.describe RepliesController do
 
     it "does not save audit when only comment provided" do
       Reply.auditing_enabled = true
+      reply
       login_as(user)
       expect {
         put :update, params: { id: reply.id, reply: { audit_comment: 'note' } }
@@ -1009,18 +1010,19 @@ RSpec.describe RepliesController do
       post :restore, params: { id: reply.id }
       expect(flash[:success]).to eq("Reply has been restored!")
 
-      reply.reload
-      expect(reply.content).not_to eq('restored right')
-      reply.update!(content: 'restored right')
-      reply.destroy!
+      restored = Reply.find_by(id: reply.id)
+      expect(restored.content).not_to eq('restored right')
+      restored.update!(content: 'restored right')
+      restored.destroy!
 
       post :restore, params: { id: reply.id }
       expect(flash[:success]).to eq("Reply has been restored!")
-      reply = Reply.find(reply.id)
+      reply = Reply.find_by(id: restored.id)
       expect(reply.content).to eq('restored right')
     end
 
     it "does not update post status" do
+      reply
       create(:reply, post: rpost, user: user)
       reply.destroy!
 

@@ -215,7 +215,7 @@ RSpec.describe TemplatesController do
     end
 
     it "handles destroy failure" do
-      char
+      char = create(:character, user: user, template: template)
       login_as(user)
       expect_any_instance_of(Template).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: template.id }
