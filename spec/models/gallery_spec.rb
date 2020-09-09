@@ -21,9 +21,9 @@ RSpec.describe Gallery do
 
   it "returns icons in keyword order" do
     gallery = create(:gallery, user: user)
-    gallery.icons << create(:icon, keyword: 'zzz', user: gallery.user)
-    gallery.icons << create(:icon, keyword: 'yyy', user: gallery.user)
-    gallery.icons << create(:icon, keyword: 'xxx', user: gallery.user)
+    gallery.icons << create(:icon, keyword: 'zzz', user: user)
+    gallery.icons << create(:icon, keyword: 'yyy', user: user)
+    gallery.icons << create(:icon, keyword: 'xxx', user: user)
     expect(gallery.icons.pluck(:keyword)).to eq(['xxx', 'yyy', 'zzz'])
   end
 
@@ -39,18 +39,16 @@ RSpec.describe Gallery do
 
     context "with scope" do
       it "works for galleries without gallery groups" do
-        gallery1 = create(:gallery)
-        gallery2 = create(:gallery)
-        galleries = Gallery.where(id: [gallery1.id, gallery2.id]).select(:id).with_gallery_groups.ordered_by_id
-        expect(galleries).to eq([gallery1, gallery2])
+        list = create_list(:gallery, 2)
+        galleries = Gallery.where(id: list.map(&:id)).select(:id).with_gallery_groups.ordered_by_id
+        expect(galleries).to eq(list)
         expect(galleries.map(&:gallery_groups_data)).to eq([[], []])
       end
 
       it "works for galleries with same gallery group" do
-        gallery1 = create(:gallery, gallery_groups: [group])
-        gallery2 = create(:gallery, gallery_groups: [group])
-        galleries = Gallery.where(id: [gallery1.id, gallery2.id]).select(:id).with_gallery_groups.ordered_by_id
-        expect(galleries).to eq([gallery1, gallery2])
+        list = create_list(:gallery, 2, gallery_groups: [group])
+        galleries = Gallery.where(id: list.map(&:id)).select(:id).with_gallery_groups.ordered_by_id
+        expect(galleries).to eq(list)
         groups = galleries.map(&:gallery_groups_data)
         expect(groups.first.map(&:id)).to eq([group.id])
         expect(groups.first.map(&:name)).to eq([group.name])

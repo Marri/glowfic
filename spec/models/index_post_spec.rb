@@ -1,32 +1,24 @@
 RSpec.describe IndexPost do
+  let(:user) { create(:user) }
+  let(:index) { create(:index, user: user) }
+
   it "should autofill post section order on creation" do
-    index = create(:index)
-    post2 = create(:post, user: index.user)
-    post0 = create(:post, user: index.user)
-    post1 = create(:post, user: index.user)
-    index.posts << post0
-    index.posts << post1
-    index.posts << post2
+    post2 = create(:post, user: user)
+    post0 = create(:post, user: user)
+    post1 = create(:post, user: user)
+    posts = [post0, post1, post2]
+    index.posts << posts
     expect(IndexPost.count).to eq(3)
     expect(index.reload.posts.count).to eq(3)
-    expect(post0.index_posts.first.section_order).to eq(0)
-    expect(post1.index_posts.first.section_order).to eq(1)
-    expect(post2.index_posts.first.section_order).to eq(2)
+    expect(posts.map{|p| p.index_posts.first.section_order}).to eq([0, 1, 2])
   end
 
   it "should reorder upon deletion" do
-    index = create(:index)
-    post2 = create(:post, user: index.user)
-    post0 = create(:post, user: index.user)
-    post1 = create(:post, user: index.user)
-    index.posts << post0
-    index.posts << post1
-    index.posts << post2
-    expect(post0.index_posts.first.section_order).to eq(0)
-    expect(post1.index_posts.first.section_order).to eq(1)
-    expect(post2.index_posts.first.section_order).to eq(2)
+    posts = create_list(:post, 3, user: user)
+    index.posts << posts
+    expect(posts.map{|p| p.index_posts.first.section_order}).to eq([0, 1, 2])
+    post1 = posts[1]
     index.posts.destroy(post1)
-    expect(post0.index_posts.first.section_order).to eq(0)
-    expect(post2.index_posts.first.section_order).to eq(1)
+    expect(posts.map{|p| p.index_posts.first&.section_order}).to eq([0, nil, 1])
   end
 end

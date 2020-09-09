@@ -1,13 +1,13 @@
 RSpec.describe Message do
   describe "validations" do
+    let(:message) { build(:message) }
+
     it "cannot have a nil sender" do
-      message = build(:message)
       message.sender = nil
       expect(message).not_to be_valid
     end
 
     it "can have a zero sender_id to represent site messages" do
-      message = build(:message)
       message.sender_id = 0
       expect(message).to be_valid
       expect(message.sender_name).to eq('Glowfic Constellation')
@@ -15,7 +15,7 @@ RSpec.describe Message do
   end
 
   describe "#notify_recipient" do
-    before(:each) do ResqueSpec.reset! end
+    before(:each) { ResqueSpec.reset! }
 
     it "does not send with notifications off" do
       message = create(:message)
@@ -46,26 +46,30 @@ RSpec.describe Message do
     end
   end
 
-  it "hides blocked messages from recipient without erroring to sender" do
-    block = create(:block, block_interactions: true)
-    message = build(:message, sender: block.blocked_user, recipient: block.blocking_user)
-    expect(message.save).to be true
-    expect(message.visible_inbox).to eq(false)
-    expect(message.unread).to eq(false)
-  end
+  context "with blocks" do
+    let(:blocker) { create(:user) }
+    let(:blocked) { create(:user) }
 
-  it "errors to sender if messaging a blocked user" do
-    block = create(:block, block_interactions: true)
-    message = build(:message, sender: block.blocking_user, recipient: block.blocked_user)
-    expect(message.save).to eq(false)
-    expect(message.errors.full_messages.first).to eq("Recipient must not be blocked by you")
+    before(:each) { create(:block, blocking_user: blocker, blocked_user: blocked, block_ineractions: true) }
+
+    it "hides blocked messages from recipient without erroring to sender" do
+      message = build(:message, sender: blocked, recipient: blocker)
+      expect(message.save).to be(true)
+      expect(message.visible_inbox).to eq(false)
+      expect(message.unread).to eq(false)
+    end
+
+    it "errors to sender if messaging a blocked user" do
+      message = build(:message, sender: blocker, recipient: blocked)
+      expect(message.save).to eq(false)
+      expect(message.errors.full_messages.first).to eq("Recipient must not be blocked by you")
+    end
   end
 
   it "does not error to blocked user if updating an existing message" do
     message = create(:message)
     create(:block, blocking_user: message.sender, blocked_user: message.recipient)
-    message.unread = false
-    message.save!
+    expect(message.update(unread: false)).to be(true)
   end
 
   it "errors to sender if messaging a deleted user" do
