@@ -1,7 +1,8 @@
 RSpec.describe Gallery do
+  let(:user) { create(:user) }
+  let(:icon) { create(:icon, user: user) }
+
   it "adds icons if it saves successfully" do
-    user = create(:user)
-    icon = create(:icon, user: user)
     expect(icon.has_gallery).to eq(false)
     gallery = build(:gallery, user: user)
     gallery.icon_ids = [icon.id]
@@ -11,18 +12,15 @@ RSpec.describe Gallery do
   end
 
   it "only adds icons if it saves successfully" do
-    user = create(:user)
-    icon = create(:icon, user: user)
     expect(icon.has_gallery).to eq(false)
-    gallery = build(:gallery, user: user, name: nil)
-    gallery.icon_ids = [icon.id]
+    gallery = build(:gallery, user: user, name: nil, icons: [icon])
     expect(gallery).not_to be_valid
     expect(gallery.save).to eq(false)
     expect(icon.reload.has_gallery).to eq(false)
   end
 
   it "returns icons in keyword order" do
-    gallery = create(:gallery)
+    gallery = create(:gallery, user: user)
     gallery.icons << create(:icon, keyword: 'zzz', user: gallery.user)
     gallery.icons << create(:icon, keyword: 'yyy', user: gallery.user)
     gallery.icons << create(:icon, keyword: 'xxx', user: gallery.user)
@@ -30,8 +28,9 @@ RSpec.describe Gallery do
   end
 
   describe "#gallery_groups_data" do
+    let(:group) { create(:gallery_group) }
+
     it "works without with_gallery_groups scope" do
-      group = create(:gallery_group)
       gallery = create(:gallery, gallery_groups: [group])
       galleries = Gallery.where(id: gallery.id).select(:id)
       expect(galleries).to eq([gallery])
@@ -48,7 +47,6 @@ RSpec.describe Gallery do
       end
 
       it "works for galleries with same gallery group" do
-        group = create(:gallery_group)
         gallery1 = create(:gallery, gallery_groups: [group])
         gallery2 = create(:gallery, gallery_groups: [group])
         galleries = Gallery.where(id: [gallery1.id, gallery2.id]).select(:id).with_gallery_groups.ordered_by_id

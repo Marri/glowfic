@@ -107,27 +107,40 @@ RSpec.describe Character do
       expect(character.characters_galleries.map(&:added_by_group)).to match_array([false])
     end
 
-    it "removes associated galleries when not present only if not also present in groups, otherwise sets flag" do
-      # does not remove gallery_manual when not told to
-      # sets flag on gallery_both to be added_by_group
-      # does not remove gallery_auto despite not being present
-      gallery_manual = create(:gallery, user: user)
-      gallery_both = create(:gallery, gallery_groups: [group], user: user)
-      gallery_automatic = create(:gallery, gallery_groups: [group], user: user)
+    context "with mixed galleries" do
+      let(:gallery_manual) { create(:gallery, user: user) }
+      let(:gallery_both) { create(:gallery, gallery_groups: [group], user: user) }
+      let(:gallery_automatic) { create(:gallery, gallery_groups: [group], user: user) }
 
-      CharactersGallery.create!(character: character, gallery: gallery_manual)
-      character.characters_galleries.where(gallery_id: gallery_both.id).update_all(added_by_group: false) # rubocop:disable Rails/SkipsModelValidations
+      before(:each) do
+        CharactersGallery.create!(character: character, gallery: gallery_manual)
+        character.characters_galleries.where(gallery_id: gallery_both.id).update_all(added_by_group: false) # rubocop:disable Rails/SkipsModelValidations
 
-      character.reload
-      expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id])
-      expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id, gallery_both.id])
+        character.reload
+        expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id]) # rubocop:disable RSpec/ExpectInHook
+        expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id, gallery_both.id]) # rubocop:disable RSpec/ExpectInHook
+      end
 
-      character.update!(ungrouped_gallery_ids: [gallery_manual.id])
+      it "removes associated galleries when not present only if not also present in groups, otherwise sets flag" do
+        # does not remove gallery_manual when not told to
+        # sets flag on gallery_both to be added_by_group
+        # does not remove gallery_auto despite not being present
+        character.update!(ungrouped_gallery_ids: [gallery_manual.id])
 
-      character.reload
-      expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id])
-      expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id])
-      expect(character.characters_galleries.find_by(gallery_id: gallery_both.id)).to be_added_by_group
+        character.reload
+        expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id])
+        expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id])
+        expect(character.characters_galleries.find_by(gallery_id: gallery_both.id)).to be_added_by_group
+      end
+
+      it "does nothing if unchanged" do
+        # does not remove or change the status of any of: gallery_manual, gallery_both, gallery_auto
+        character.update!(ungrouped_gallery_ids: [gallery_manual.id, gallery_both.id])
+
+        character.reload
+        expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id])
+        expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id, gallery_both.id])
+      end
     end
 
     it "deletes manually-added galleries when not present" do
@@ -143,29 +156,11 @@ RSpec.describe Character do
       expect(character.gallery_ids).to eq([])
     end
 
-    it "does nothing if unchanged" do
-      # does not remove or change the status of any of: gallery_manual, gallery_both, gallery_auto
-      gallery_manual = create(:gallery, user: user)
-      gallery_both = create(:gallery, gallery_groups: [group], user: user)
-      gallery_automatic = create(:gallery, gallery_groups: [group], user: user)
-
-      CharactersGallery.create!(character: character, gallery: gallery_manual)
-      character.characters_galleries.where(gallery_id: gallery_both.id).update_all(added_by_group: false) # rubocop:disable Rails/SkipsModelValidations
-
-      character.reload
-      expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id])
-      expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id, gallery_both.id])
-
-      character.ungrouped_gallery_ids = [gallery_manual.id, gallery_both.id]
-      character.save!
-
-      character.reload
-      expect(character.gallery_ids).to match_array([gallery_manual.id, gallery_both.id, gallery_automatic.id])
-      expect(character.ungrouped_gallery_ids).to match_array([gallery_manual.id, gallery_both.id])
-    end
-
     ['before', 'after'].each do |time|
       context "combined #{time} gallery_group_ids" do
+        let(:group1) { create(:gallery_group) }
+        let(:group2) { create(:gallery_group) }
+
         def process_changes(obj, gallery_group_ids, ungrouped_gallery_ids, time)
           if time == 'before'
             obj.ungrouped_gallery_ids = ungrouped_gallery_ids
@@ -190,8 +185,6 @@ RSpec.describe Character do
         end
 
         it "supports adding a gallery at the same time as swapping its group" do
-          group1 = create(:gallery_group)
-          group2 = create(:gallery_group)
           gallery = create(:gallery, user: user, gallery_groups: [group1, group2])
           character = create(:character, user: user, gallery_groups: [group1])
           expect(character.reload.galleries).to match_array([gallery])
@@ -220,9 +213,6 @@ RSpec.describe Character do
         end
 
         it "keeps a gallery when removing at the same time as swapping its group" do
-          user = create(:user)
-          group1 = create(:gallery_group)
-          group2 = create(:gallery_group)
           gallery = create(:gallery, user: user, gallery_groups: [group1, group2])
           character = create(:character, user: user, galleries: [gallery], gallery_groups: [group1])
           expect(character.reload.galleries).to match_array([gallery])
@@ -254,20 +244,18 @@ RSpec.describe Character do
     end
 
     it "is only created on mod update" do
-      character = create(:character)
-      Audited.audit_class.as_user(character.user) do
-        character.update(name: character.name + 'notmod')
+      Audited.audit_class.as_user(user) do
+        character.update!(name: character.name + 'notmod')
       end
       Audited.audit_class.as_user(create(:user)) do
-        character.update(name: character.name + 'mod', audit_comment: 'mod')
+        character.update!(name: character.name + 'mod', audit_comment: 'mod')
       end
       expect(Audited::Audit.count).to eq(1)
     end
 
     it "is not created on destroy" do
-      character = create(:character)
       Audited.audit_class.as_user(create(:user)) do
-        character.destroy
+        character.destroy!
       end
       expect(Audited::Audit.count).to eq(0)
     end
