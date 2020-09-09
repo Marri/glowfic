@@ -118,7 +118,8 @@ RSpec.describe MessagesController do
     context "with blocks" do
       let(:blocker) { create(:user) }
       let(:blocked) { create(:user) }
-      let(:block) { create(:blocker, blocking_user: blocker, blocked_user: blocked) }
+
+      before(:each) { create(:block, blocking_user: blocker, blocked_user: blocked) }
 
       it "handles provided blocked user" do
         login_as(blocker)
