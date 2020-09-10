@@ -1,5 +1,8 @@
 RSpec.describe ReplyDraft do
   describe "validations" do
+    let(:post) { create(:post) }
+    let(:user) { create(:user) }
+
     it "requires a post" do
       draft = build(:reply_draft, post: nil)
       expect(draft).not_to be_valid
@@ -21,8 +24,6 @@ RSpec.describe ReplyDraft do
     end
 
     it "is limited to one per user per post" do
-      post = create(:post)
-      user = create(:user)
       create(:reply_draft, user: user, post: post)
       draft = build(:reply_draft, post: post, user: user)
       expect(draft).not_to be_valid
@@ -30,21 +31,18 @@ RSpec.describe ReplyDraft do
     end
 
     it "allows multiple drafts by different users on the same post" do
-      post = create(:post)
       create(:reply_draft, post: post)
       draft = build(:reply_draft, post: post)
       expect(draft).to be_valid
     end
 
     it "allows multiple drafts by the same user on different posts" do
-      user = create(:user)
       create(:reply_draft, user: user)
       draft = build(:reply_draft, user: user)
       expect(draft).to be_valid
     end
 
     it "works when valid" do
-      user = create(:user)
       icon = create(:icon, user: user)
       character = create(:character, user: user)
       draft = build(:reply_draft, icon: icon, character: character, user: user)
@@ -53,20 +51,19 @@ RSpec.describe ReplyDraft do
   end
 
   describe ".draft_for" do
+    let(:draft) { create(:reply_draft) }
+
     it "does not find wrong post draft" do
-      draft = create(:reply_draft)
       found = ReplyDraft.draft_for(draft.post_id + 1, draft.user_id)
       expect(found).to be_nil
     end
 
     it "does not find wrong user draft" do
-      draft = create(:reply_draft)
       found = ReplyDraft.draft_for(draft.post_id, draft.user_id + 1)
       expect(found).to be_nil
     end
 
     it "finds correct draft" do
-      draft = create(:reply_draft)
       found = ReplyDraft.draft_for(draft.post_id, draft.user_id)
       expect(found).to eq(draft)
     end

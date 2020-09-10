@@ -5,11 +5,8 @@ RSpec.describe Tag do
       bad_tag = create(:label)
 
       # TODO handle properly with nested attributes
-      create(:post, label_ids: [good_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [good_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [good_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [bad_tag.id], setting_ids: [], content_warning_ids: [])
-      create(:post, label_ids: [bad_tag.id], setting_ids: [], content_warning_ids: [])
+      create_list(:post, 3, labels: [good_tag])
+      create_list(:post, 2, labels: [bad_tag])
 
       expect(good_tag.posts.count).to eq(3)
       expect(bad_tag.posts.count).to eq(2)
@@ -50,12 +47,9 @@ RSpec.describe Tag do
 
   describe "#post_count" do
     it "works" do
-      tag1 = create(:label)
-      tag2 = create(:label)
-      create(:post, labels: [tag2])
-      tag3 = create(:label)
-      create_list(:post, 2, labels: [tag3])
-      tags = [tag1, tag2, tag3]
+      tags = create_list(:label, 3)
+      create(:post, labels: [tags[1]])
+      create_list(:post, 2, labels: [tags[2]])
       fetched = Label.where(id: tags.map(&:id)).ordered_by_id
       expect(fetched).to eq(tags)
       expect(fetched.map(&:post_count)).to eq([0, 1, 2])
@@ -64,12 +58,10 @@ RSpec.describe Tag do
 
   describe "#character_count" do
     def create_tags
-      tag1 = create(:gallery_group)
-      tag2 = create(:gallery_group)
-      create(:character, gallery_groups: [tag2])
-      tag3 = create(:gallery_group)
-      create_list(:character, 2, gallery_groups: [tag3])
-      [tag1, tag2, tag3]
+      tags = create_list(:gallery_group, 3)
+      create(:character, gallery_groups: [tags[1]])
+      create_list(:character, 2, gallery_groups: [tag[2]])
+      tags
     end
 
     it "works with with_character_counts scope" do

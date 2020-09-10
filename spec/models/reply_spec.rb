@@ -49,62 +49,47 @@ RSpec.describe Reply do
   end
 
   describe "#notify_other_authors" do
-    before(:each) do ResqueSpec.reset! end
+    let(:notified_user) { create(:user, email_notifications: true) }
+    let(:post) { create(:post, user: notified_user) }
+    let(:another_notified_user) { create(:user, email_notifications: true) }
+
+    before(:each) { ResqueSpec.reset! }
 
     it "does nothing if skip_notify is set" do
-      notified_user = create(:user, email_notifications: true)
-      post = create(:post, user: notified_user)
-
       create(:reply, post: post, skip_notify: true)
       expect(UserMailer).to have_queue_size_of(0)
     end
 
     it "does nothing if the previous reply was yours" do
-      notified_user = create(:user, email_notifications: true)
-      post = create(:post, user: notified_user)
-
       reply = create(:reply, post: post, skip_notify: true)
-
       create(:reply, post: post, user: reply.user)
       expect(UserMailer).to have_queue_size_of(0)
     end
 
     it "does nothing if the post was yours on the first reply" do
-      notified_user = create(:user, email_notifications: true)
-      post = create(:post, user: notified_user)
-
       create(:reply, post: post, user: notified_user)
       expect(UserMailer).to have_queue_size_of(0)
     end
 
     it "does not send to authors with notifications off" do
-      post = create(:post)
-      expect(post.user.email_notifications).not_to eq(true)
+      post = create(:post, user: create(:user, email_notifications: false))
       create(:reply, post: post)
       expect(UserMailer).to have_queue_size_of(0)
     end
 
     it "does not send to emailless users" do
-      user = create(:user)
-      user.update_columns(email: nil) # rubocop:disable Rails/SkipsModelValidations
-      post = create(:post, user: user)
+      notified_user.update_columns(email: nil) # rubocop:disable Rails/SkipsModelValidations
       create(:reply, post: post)
       expect(UserMailer).to have_queue_size_of(0)
     end
 
     it "does not send to users who have opted out of owed" do
-      user = create(:user, email_notifications: true)
-      post = create(:post, user: user)
-      post.opt_out_of_owed(user)
+      post.opt_out_of_owed(notified_user)
       create(:reply, post: post)
       expect(UserMailer).to have_queue_size_of(0)
     end
 
     it "sends to all other active authors if previous reply wasn't yours" do
-      notified_user = create(:user, email_notifications: true)
-      post = create(:post, user: notified_user)
-
-      another_notified_user = create(:user, email_notifications: true)
       create(:reply, user: another_notified_user, post: post, skip_notify: true)
 
       reply = create(:reply, post: post)
@@ -114,10 +99,6 @@ RSpec.describe Reply do
     end
 
     it "sends if the post was yours but previous reply wasn't" do
-      notified_user = create(:user, email_notifications: true)
-      post = create(:post, user: notified_user)
-
-      another_notified_user = create(:user, email_notifications: true)
       create(:reply, user: another_notified_user, post: post, skip_notify: true)
 
       reply = create(:reply, post: post, user: notified_user)
@@ -149,10 +130,8 @@ RSpec.describe Reply do
     let(:post) { create(:post) }
 
     it "orders replies" do
-      first_reply = create(:reply, post: post)
-      second_reply = create(:reply, post: post)
-      third_reply = create(:reply, post: post)
-      expect(post.replies.ordered).to eq([first_reply, second_reply, third_reply])
+      replies = create_list(:reply, 3, post: post)
+      expect(post.replies.ordered).to eq(replies)
     end
 
     it "orders replies by reply_order, not created_at" do
@@ -165,12 +144,10 @@ RSpec.describe Reply do
     end
 
     it "orders replies by reply order not ID" do
-      first_reply = create(:reply, post: post)
-      second_reply = create(:reply, post: post)
-      third_reply = create(:reply, post: post)
-      second_reply.update_columns(reply_order: 2) # rubocop:disable Rails/SkipsModelValidations
-      third_reply.update_columns(reply_order: 1) # rubocop:disable Rails/SkipsModelValidations
-      expect(post.replies.ordered).to eq([first_reply, third_reply, second_reply])
+      replies = create_list(:reply, 3, post: post)
+      replies[1].update_columns(reply_order: 2) # rubocop:disable Rails/SkipsModelValidations
+      replies[2].update_columns(reply_order: 1) # rubocop:disable Rails/SkipsModelValidations
+      expect(post.replies.ordered).to eq([replies[0], replies[2], replies[1]])
     end
   end
 end

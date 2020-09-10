@@ -75,8 +75,7 @@ RSpec.describe Template do
 
   it "cleans up when deleted" do
     template = create(:template)
-    create(:character, template: template)
-    create(:character, template: template)
+    create_list(:character, 2, template: template)
     old_id = template.id
     template.destroy!
     expect(Character.where(template_id: old_id)).to be_empty
