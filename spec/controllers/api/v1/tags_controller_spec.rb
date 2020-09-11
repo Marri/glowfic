@@ -41,33 +41,30 @@ RSpec.describe Api::V1::TagsController do
       end
 
       context "in gallery group search with user_id" do
+        let(:user) { create(:user) }
+        let(:group) { create(:gallery_group) }
+
         it "should not display unused tags" do
-          user = create(:user)
-          ungrouped_tag = create(:gallery_group)
-          get :index, params: { q: ungrouped_tag.name, t: 'GalleryGroup', user_id: user.id }
+          get :index, params: { q: group.name, t: 'GalleryGroup', user_id: user.id }
           expect(response).to have_http_status(200)
           expect(response.json).to have_key('results')
           expect(response.json['results']).to eq([])
         end
 
         it "should display tags used on galleries" do
-          user = create(:user)
-          gal_grouped_tag = create(:gallery_group)
-          create(:gallery, user: user, gallery_groups: [gal_grouped_tag])
-          get :index, params: { q: gal_grouped_tag.name, t: 'GalleryGroup', user_id: user.id }
+          create(:gallery, user: user, gallery_groups: [group])
+          get :index, params: { q: group.name, t: 'GalleryGroup', user_id: user.id }
           expect(response).to have_http_status(200)
           expect(response.json).to have_key('results')
-          expect(response.json['results']).to contain_exactly(gal_grouped_tag.as_json.stringify_keys)
+          expect(response.json['results']).to contain_exactly(group.as_json.stringify_keys)
         end
 
         it "should display tags used on characters" do
-          user = create(:user)
-          char_grouped_tag = create(:gallery_group)
-          create(:character, user: user, gallery_groups: [char_grouped_tag])
-          get :index, params: { q: char_grouped_tag.name, t: 'GalleryGroup', user_id: user.id }
+          create(:character, user: user, gallery_groups: [group])
+          get :index, params: { q: group.name, t: 'GalleryGroup', user_id: user.id }
           expect(response).to have_http_status(200)
           expect(response.json).to have_key('results')
-          expect(response.json['results']).to contain_exactly(char_grouped_tag.as_json.stringify_keys)
+          expect(response.json['results']).to contain_exactly(group.as_json.stringify_keys)
         end
       end
     end
