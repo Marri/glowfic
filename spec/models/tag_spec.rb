@@ -60,7 +60,7 @@ RSpec.describe Tag do
     def create_tags
       tags = create_list(:gallery_group, 3)
       create(:character, gallery_groups: [tags[1]])
-      create_list(:character, 2, gallery_groups: [tag[2]])
+      create_list(:character, 2, gallery_groups: [tags[2]])
       tags
     end
 

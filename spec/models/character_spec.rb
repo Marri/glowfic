@@ -108,9 +108,9 @@ RSpec.describe Character do
     end
 
     context "with mixed galleries" do
-      let(:gallery_manual) { create(:gallery, user: user) }
-      let(:gallery_both) { create(:gallery, gallery_groups: [group], user: user) }
-      let(:gallery_automatic) { create(:gallery, gallery_groups: [group], user: user) }
+      let!(:gallery_manual) { create(:gallery, user: user) }
+      let!(:gallery_both) { create(:gallery, gallery_groups: [group], user: user) }
+      let!(:gallery_automatic) { create(:gallery, gallery_groups: [group], user: user) }
 
       before(:each) do
         CharactersGallery.create!(character: character, gallery: gallery_manual)

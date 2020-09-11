@@ -648,7 +648,7 @@ RSpec.describe RepliesController do
     end
 
     it "preserves reply_order" do
-      reply_post = reply.post
+      reply_post = create(:post, user: user)
       login_as(user)
       create(:reply, post: reply_post)
       reply = create(:reply, post: reply_post, user: user)

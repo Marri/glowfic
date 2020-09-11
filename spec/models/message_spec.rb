@@ -50,7 +50,7 @@ RSpec.describe Message do
     let(:blocker) { create(:user) }
     let(:blocked) { create(:user) }
 
-    before(:each) { create(:block, blocking_user: blocker, blocked_user: blocked, block_ineractions: true) }
+    before(:each) { create(:block, blocking_user: blocker, blocked_user: blocked, block_interactions: true) }
 
     it "hides blocked messages from recipient without erroring to sender" do
       message = build(:message, sender: blocked, recipient: blocker)

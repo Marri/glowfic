@@ -136,10 +136,9 @@ RSpec.describe MessagesController do
       end
 
       it "hides blocked users" do
-        user = create(:user)
-        login_as(user)
-        blocking_users = create_list(:block, 2, blocked_user: user)
-        create_list(:block, 2, blocking_user: user)
+        login_as(blocker)
+        blocking_users = create_list(:block, 2, blocked_user: blocker)
+        create_list(:block, 2, blocking_user: blocker)
         other_users = create_list(:user, 2) + blocking_users.map(&:blocking_user)
         other_users = other_users.sort_by!(&:username).pluck(:username, :id)
         get :new
