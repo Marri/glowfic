@@ -291,6 +291,17 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.index ["user_id"], name: "index_post_authors_on_user_id"
   end
 
+  create_table "post_links", force: :cascade do |t|
+    t.integer "linking_post_id", null: false
+    t.integer "linked_post_id", null: false
+    t.text "relationship", default: "related to", null: false
+    t.boolean "approved", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["linked_post_id"], name: "index_post_links_on_linked_post_id"
+    t.index ["linking_post_id"], name: "index_post_links_on_linking_post_id"
+  end
+
   create_table "post_tags", id: :serial, force: :cascade do |t|
     t.integer "post_id", null: false
     t.integer "tag_id", null: false

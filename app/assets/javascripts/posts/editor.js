@@ -1,11 +1,31 @@
 //= require posts/edit_notes
-/* global gon, tinyMCE, resizeScreenname, createTagSelect, createSelect2 */
+/* global gon, tinyMCE, resizeScreenname, createTagSelect, createSelect2, queryTransform, processResults */
 
 var tinyMCEInit = false, shownIcons = [];
 var iconSelectBox;
 
 $(document).ready(function() {
+  $("#post_id").select2({
+    ajax: {
+      delay: 200,
+      url: '/api/v1/posts',
+      dataType: 'json',
+      data: function(params) { return queryTransform(params); },
+      processResults: function(data, params) {
+        var total = this._request.getResponseHeader('Total');
+        return processResults(data, params, total, 'subject');
+      },
+      cache: true
+    },
+    placeholder: '— Choose Post —',
+    allowClear: true,
+    width: '300px'
+  });
+
+  $("#relation").select2({width: '300px'});
+
   setupMetadataEditor();
+  fixButtons();
   iconSelectBox = $('#reply-icon-selector');
 
   if ($("#post-editor .view-button").length > 0) setupWritableEditor();
@@ -38,6 +58,18 @@ function setupMetadataEditor() {
     width: '300px',
     minimumResultsForSearch: 20,
     placeholder: 'Choose user(s) to invite to reply to this post'
+  });
+
+  createSelect2('.post_link_relationship', {
+    width: '200px',
+    minimumResultsForSearch: 20,
+    placeholder: 'Choose relationship'
+  });
+
+  createSelect2('.post_link_linked_post_id', {
+    width: '300px',
+    minimumResultsForSearch: 20,
+    placeholder: 'Choose a post'
   });
 
   createTagSelect("Label", "label", "post");
@@ -497,5 +529,42 @@ function setSwitcherListSelected(characterId) {
   $(".char-access-icon.semiopaque").removeClass('semiopaque').addClass('pointer');
   $(".char-access-icon").each(function() {
     if (String($(this).data('character-id')) === String(characterId)) $(this).addClass('semiopaque').removeClass('pointer');
+  });
+}
+
+function fixButtons() {
+  $(".icon-row-add").hide().unbind();
+  $(".icon-row-add").last().show();
+  $(".icon-row-rem").show();
+  $(".icon-row-rem").first().hide();
+  bindAdd();
+  bindRem();
+}
+
+function bindAdd() {
+  $(".icon-row-add").click(function() {
+    addNewRow();
+    fixButtons();
+  });
+}
+
+function addNewRow() {
+  var oldRow = $(".link-row:last");
+  var newRow = oldRow.clone();
+  var index = oldRow.data('index') + 1;
+  newRow.data('index', index);
+
+  // clear all input values in the clone
+  var inputs = newRow.find('input');
+  inputs.val('');
+
+  newRow.insertBefore($("#post-notes"));
+}
+
+function bindRem() {
+  $(".icon-row-rem").click(function() {
+    var remRow = $(this).parent();
+    remRow.remove();
+    fixButtons();
   });
 }

@@ -37,7 +37,7 @@ FactoryBot.define do
     board
   end
 
-  factory :post do
+  factory :post, aliases: [:linking_post, :linked_post] do
     transient do
       with_icon { false }
       with_character { false }
@@ -248,5 +248,10 @@ FactoryBot.define do
     sequence :content do |n|
       "content for news post #{n}"
     end
+  end
+
+  factory :post_link do
+    linking_post
+    linked_post
   end
 end

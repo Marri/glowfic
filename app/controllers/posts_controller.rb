@@ -123,6 +123,7 @@ class PostsController < WritableController
       @author_ids = @post.board.writer_ids - [current_user.id]
       @authors_from_board = true
     end
+    @post.linked_post_joins.build
   end
 
   def create
@@ -389,6 +390,7 @@ class PostsController < WritableController
     @permitted_authors = User.active.ordered - (@post.try(:joined_authors) || [])
     @author_ids = permitted_params[:unjoined_author_ids].reject(&:blank?).map(&:to_i) if permitted_params.key?(:unjoined_author_ids)
     @author_ids ||= @post.try(:unjoined_author_ids) || []
+    @post.linked_post_joins.build unless @post.nil?
   end
 
   def import_thread
@@ -450,7 +452,13 @@ class PostsController < WritableController
       :character_alias_id,
       :authors_locked,
       :audit_comment,
-      :private_note
+      :private_note,
+      linked_post_joins_attributes: [
+        :id,
+        :linked_post_id,
+        :relationship,
+        :_destroy,
+      ],
     ]
 
     # prevents us from setting (and saving) associations on preview()

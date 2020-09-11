@@ -254,6 +254,14 @@ RSpec.describe PostsController do
       expect(assigns(:post).board).to eq(board)
       expect(assigns(:author_ids)).to match_array([coauthor.id])
     end
+
+    context "with render_view" do
+      render_views
+
+      it "works" do
+        get :new
+      end
+    end
   end
 
   describe "POST create" do
@@ -1419,6 +1427,17 @@ RSpec.describe PostsController do
       expect(assigns(:post).settings.map(&:id_for_select)).to match_array([setting.id])
       expect(assigns(:post).content_warnings.map(&:id_for_select)).to match_array([warning.id])
       expect(assigns(:post).labels.map(&:id_for_select)).to match_array([label.id])
+    end
+
+    context "with render_view" do
+      render_views
+
+      it "works" do
+        post = create(:post)
+        create(:post_link, linking_post: post)
+        expect(post.linked_post_joins).to be_present
+        get :edit, params: { id: post.id }
+      end
     end
   end
 
