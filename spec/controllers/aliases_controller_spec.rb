@@ -1,10 +1,10 @@
 RSpec.describe AliasesController do
   include ActiveJob::TestHelper
 
-  describe "GET new" do
-    let(:user) { create(:user) }
-    let(:character) { create(:character, user: user) }
+  let(:user) { create(:user) }
+  let(:character) { create(:character, user: user) }
 
+  describe "GET new" do
     it "requires login" do
       get :new, params: { character_id: -1 }
       expect(response).to redirect_to(root_url)
@@ -38,9 +38,6 @@ RSpec.describe AliasesController do
   end
 
   describe "POST create" do
-    let(:user) { create(:user) }
-    let(:character) { create(:character, user: user) }
-
     it "requires login" do
       post :create, params: { character_id: -1 }
       expect(response).to redirect_to(root_url)
@@ -56,9 +53,7 @@ RSpec.describe AliasesController do
 
     it "requires your character" do
       login_as(user)
-      character = create(:character)
-      expect(character.user_id).not_to eq(user.id)
-      post :create, params: { character_id: character.id }
+      post :create, params: { character_id: create(:character).id }
       expect(response).to redirect_to(user_characters_url(user.id))
       expect(flash[:error]).to eq("That is not your character.")
     end
@@ -98,8 +93,7 @@ RSpec.describe AliasesController do
   end
 
   describe "DELETE destroy" do
-    let(:user) { create(:user) }
-    let(:character) { create(:character, user: user) }
+    let(:calias) { create(:alias, character: character) }
 
     it "requires login" do
       delete :destroy, params: { id: -1, character_id: -1 }
@@ -116,9 +110,7 @@ RSpec.describe AliasesController do
 
     it "requires your character" do
       login_as(user)
-      character = create(:character)
-      expect(character.user_id).not_to eq(user.id)
-      delete :destroy, params: { id: -1, character_id: character.id }
+      delete :destroy, params: { id: -1, character_id: create(:character).id }
       expect(response).to redirect_to(user_characters_url(user.id))
       expect(flash[:error]).to eq("That is not your character.")
     end
@@ -132,16 +124,12 @@ RSpec.describe AliasesController do
 
     it "requires aliases to match character" do
       login_as(user)
-      calias = create(:alias)
-      expect(character.id).not_to eq(calias.character_id)
-      delete :destroy, params: { id: calias.id, character_id: character.id }
+      delete :destroy, params: { id: create(:alias).id, character_id: character.id }
       expect(response).to redirect_to(edit_character_url(character))
       expect(flash[:error]).to eq("Alias could not be found for that character.")
     end
 
     it "succeeds" do
-      login_as(user)
-      calias = create(:alias, character: character)
       reply = create(:reply, user: user, character: character, character_alias: calias)
       draft = create(:reply_draft, user: user, character: character, character_alias: calias)
       login_as(user)
@@ -155,7 +143,6 @@ RSpec.describe AliasesController do
     end
 
     it "handles destroy failure" do
-      calias = create(:alias, character: character)
       reply = create(:reply, user: user, character: character, character_alias: calias)
       login_as(user)
       expect_any_instance_of(CharacterAlias).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')

@@ -294,7 +294,7 @@ RSpec.describe BoardsController do
     it "sets expected variables" do
       coauthor = create(:user)
       board = create(:board, writers: [coauthor])
-      sections = [create(:board_section, board: board), create(:board_section, board: board)]
+      sections = create_list(:board_section, 2, board: board)
       posts = [create(:post, board: board, user: board.creator, tagged_at: Time.zone.now + 5.minutes), create(:post, user: coauthor, board: board)]
       sections[0].update!(section_order: 1)
       sections[1].update!(section_order: 0)

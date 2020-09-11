@@ -34,6 +34,10 @@ RSpec.describe BlocksController, type: :controller do
   end
 
   describe "POST create" do
+    let(:user) { create(:user) }
+    let(:blocked) { create(:user) }
+    let(:blocking) { create(:user) }
+
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -64,22 +68,19 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "does not let the user block themself" do
-      user = create(:user)
-      login_as(user)
-      post :create, params: { block: { blocked_user_id: user.id } }
+      user_id = login
+      post :create, params: { block: { blocked_user_id: user_id } }
       expect(response).to render_template('new')
       expect(flash[:error][:message]).to eq("User could not be blocked.")
       expect(flash[:error][:array]).to include("User cannot block themself")
     end
 
     it "succeeds" do
-      blocker = create(:user)
-      blockee = create(:user)
-      login_as(blocker)
+      login_as(blocking)
       expect {
         post :create, params: {
           block: {
-            blocked_user_id: blockee.id,
+            blocked_user_id: blocked.id,
             block_interactions: false,
             hide_them: :posts,
             hide_me: :all
@@ -90,17 +91,14 @@ RSpec.describe BlocksController, type: :controller do
       expect(flash[:success]).to eq("User blocked!")
       block = assigns(:block)
       expect(block).not_to be_nil
-      expect(block.blocking_user).to eq(blocker)
-      expect(block.blocked_user).to eq(blockee)
+      expect(block.blocking_user).to eq(blocking)
+      expect(block.blocked_user).to eq(blocked)
       expect(block.block_interactions).to eq(false)
       expect(block).to be_hide_them_posts
       expect(block).to be_hide_me_all
     end
 
     it "refreshes caches" do
-      user = create(:user)
-      blocked = create(:user)
-      blocking = create(:user)
       create(:block, blocking_user: blocking, blocked_user: user, hide_me: :posts)
       blocked_post = create(:post, user: blocking, authors_locked: true)
       hidden_post = create(:post, user: blocked, authors_locked: true)
@@ -257,7 +255,6 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "refreshes caches" do
-      user = create(:user)
       blocked = create(:user)
       blocking = create(:user)
       block = create(:block, blocking_user: user, blocked_user: blocked, hide_me: :posts, hide_them: :posts)

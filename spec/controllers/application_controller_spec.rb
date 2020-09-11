@@ -89,7 +89,7 @@ RSpec.describe ApplicationController do
     end
 
     context "with many posts" do
-      let(:default_post_ids) { Array.new(26) { create(:post).id } }
+      let(:default_post_ids) { create_list(:post, 26).map(&:id) }
       let(:relation) { Post.where(id: default_post_ids) }
 
       it "paginates by default" do
@@ -130,27 +130,21 @@ RSpec.describe ApplicationController do
       post3_user3 = create(:user)
       create_list(:reply, 25, post: post3, user: post3_user2)
       create_list(:reply, 10, post: post3, user: post3_user3)
-      post3.post_authors.find_by(user_id: post3_user3.id).update!(can_owe: false)
+      post3.opt_out_of_owed(post3_user3)
 
-      id_list = [post1.id, post2.id, post3.id]
+      id_list = [post1, post2, post3].map(&:id)
       relation = Post.where(id: id_list).ordered_by_id
       fetched_posts = controller.send(:posts_from_relation, relation)
       expect(fetched_posts.count).to eq(3)
       expect(fetched_posts.map(&:id)).to match_array(id_list)
 
-      fetched1 = fetched_posts[0]
-      fetched2 = fetched_posts[1]
-      fetched3 = fetched_posts[2]
+      fetched1, fetched2, fetched3 = fetched_posts
 
-      expect(fetched1.has_content_warnings?).not_to eq(true)
-      expect(fetched2.has_content_warnings?).to eq(true)
-      expect(fetched3.has_content_warnings?).to eq(true)
+      expect(fetched_posts.map(&:has_content_warnings?)).to eq([nil, true, true])
       expect(fetched2.content_warnings).to match_array([warning1])
       expect(fetched3.content_warnings).to match_array([warning1, warning2])
 
-      expect(fetched1.reply_count).to eq(0)
-      expect(fetched2.reply_count).to eq(1)
-      expect(fetched3.reply_count).to eq(35)
+      expect(fetched_posts.map(&:reply_count)).to eq([0, 1, 35])
 
       expect(fetched1.joined_authors).to match_array([post1.user])
       expect(fetched2.joined_authors).to match_array([post2.user, post2_reply.user])
@@ -260,16 +254,15 @@ RSpec.describe ApplicationController do
     end
 
     context "when logged out" do
-      it "returns empty array if no visible posts" do
-        hidden_post = create(:post, privacy: :private)
+      let!(:hidden_post) { create(:post, privacy: :private) }
 
+      it "returns empty array if no visible posts" do
         relation = Post.where(id: hidden_post.id)
         fetched_posts = controller.send(:posts_from_relation, relation)
         expect(fetched_posts).to be_empty
       end
 
       it "filters array if mixed visible and not visible posts" do
-        hidden_post = create(:post, privacy: :private)
         public_post = create(:post, privacy: :public)
         conste_post = create(:post, privacy: :registered)
 
@@ -280,13 +273,9 @@ RSpec.describe ApplicationController do
     end
 
     it 'preserves post order' do
-      post1 = create(:post)
-      post2 = create(:post)
-      post3 = create(:post)
-      post4 = create(:post)
-
-      expect(controller.send(:posts_from_relation, Post.all.order(tagged_at: :asc))).to eq([post1, post2, post3, post4])
-      expect(controller.send(:posts_from_relation, Post.all.ordered)).to eq([post4, post3, post2, post1])
+      posts = create_list(:post, 4)
+      expect(controller.send(:posts_from_relation, Post.all.order(tagged_at: :asc))).to eq(posts)
+      expect(controller.send(:posts_from_relation, Post.all.ordered)).to eq(posts.reverse)
     end
 
     it "uses an accurate custom post_count with joins and groups" do
