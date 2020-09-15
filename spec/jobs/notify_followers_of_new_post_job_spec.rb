@@ -275,6 +275,16 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
         expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
       end
+
+      it "does not send to users the original poster has blocked" do
+        create(:block, blocking_user: author, blocked_user: notified, hide_me: Block::POSTS)
+        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking the original poster" do
+        create(:block, blocked_user: author, blocking_user: notified, hide_them: Block::POSTS)
+        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+      end
     end
   end
 end
