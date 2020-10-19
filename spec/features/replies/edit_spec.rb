@@ -99,7 +99,7 @@ RSpec.feature "Creating replies", :type => :feature do
     end
 
     visit edit_reply_path(reply)
-    expect(page).to have_selector('.error', text: 'You do not have permission to modify this post.')
+    expect(page).to have_selector('.error', text: 'You do not have permission to modify this reply.')
     expect(page).to have_current_path(post_path(reply.post))
   end
 

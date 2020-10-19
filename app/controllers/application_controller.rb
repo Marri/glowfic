@@ -4,6 +4,8 @@ require Rails.root.join('lib', 'memorylogic')
 class ApplicationController < ActionController::Base
   include Authentication::Web
   include Memorylogic
+  include Translations
+  include ErrorRendering
 
   rescue_from ActionController::InvalidAuthenticityToken, with: :handle_invalid_token
 
@@ -214,5 +216,19 @@ class ApplicationController < ActionController::Base
 
   def standard_request?
     request.get? && !request.xhr?
+  end
+
+  def log_error(exception)
+    data = {
+      response_status: params[:response_status],
+      response_body: params[:response_body],
+      response_text: params[:response_text],
+      user_id: current_user.try(:id)
+    }
+    ExceptionNotifier.notify_exception(exception, data: data)
+  end
+
+  def associated_model
+    controller_path.classify.constantize
   end
 end

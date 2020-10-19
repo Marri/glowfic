@@ -22,7 +22,7 @@ RSpec.describe AliasesController do
       expect(character.user_id).not_to eq(user.id)
       get :new, params: { character_id: character.id }
       expect(response).to redirect_to(user_characters_url(user.id))
-      expect(flash[:error]).to eq("That is not your character.")
+      expect(flash[:error]).to eq("You do not have permission to modify this character.")
     end
 
     it "succeeds" do
@@ -57,7 +57,7 @@ RSpec.describe AliasesController do
       expect(character.user_id).not_to eq(user.id)
       post :create, params: { character_id: character.id }
       expect(response).to redirect_to(user_characters_url(user.id))
-      expect(flash[:error]).to eq("That is not your character.")
+      expect(flash[:error]).to eq("You do not have permission to modify this character.")
     end
 
     it "fails with missing params" do
@@ -65,7 +65,7 @@ RSpec.describe AliasesController do
       login_as(character.user)
       post :create, params: { character_id: character.id }
       expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Alias could not be created.")
+      expect(flash[:error][:message]).to eq("Alias could not be created because of the following problems:")
       expect(assigns(:page_title)).to eq("New Alias: #{character.name}")
       expect(assigns(:alias)).to be_a_new_record
     end
@@ -75,7 +75,7 @@ RSpec.describe AliasesController do
       login_as(character.user)
       post :create, params: { character_id: character.id, character_alias: {name: ''} }
       expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Alias could not be created.")
+      expect(flash[:error][:message]).to eq("Alias could not be created because of the following problems:")
       expect(assigns(:page_title)).to eq("New Alias: #{character.name}")
       expect(assigns(:alias)).to be_a_new_record
     end
@@ -118,7 +118,7 @@ RSpec.describe AliasesController do
       expect(character.user_id).not_to eq(user.id)
       delete :destroy, params: { id: -1, character_id: character.id }
       expect(response).to redirect_to(user_characters_url(user.id))
-      expect(flash[:error]).to eq("That is not your character.")
+      expect(flash[:error]).to eq("You do not have permission to modify this character.")
     end
 
     it "requires valid alias" do
@@ -160,7 +160,7 @@ RSpec.describe AliasesController do
       expect_any_instance_of(CharacterAlias).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: calias.id, character_id: calias.character.id }
       expect(response).to redirect_to(edit_character_path(calias.character))
-      expect(flash[:error]).to eq({message: "Alias could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Alias could not be deleted.")
       expect(reply.reload.character_alias).to eq(calias)
     end
   end

@@ -720,7 +720,7 @@ RSpec.describe PostsController do
         }
       }
 
-      expect(flash[:success]).to eq("You have successfully posted.")
+      expect(flash[:success]).to eq("Post created.")
       post = assigns(:post).reload
       expect(post.tagging_authors).to match_array([user, other_user])
 
@@ -758,7 +758,7 @@ RSpec.describe PostsController do
       }
 
       expect(response).to render_template(:new)
-      expect(flash[:error][:message]).to eq("Your post could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Post could not be created because of the following problems:")
       expect(assigns(:post)).not_to be_persisted
       expect(assigns(:post).user).to eq(user)
       expect(assigns(:post).subject).to eq('asubjct')
@@ -833,7 +833,7 @@ RSpec.describe PostsController do
         }
       }.to change{Post.count}.by(1)
       expect(response).to redirect_to(post_path(assigns(:post)))
-      expect(flash[:success]).to eq("You have successfully posted.")
+      expect(flash[:success]).to eq("Post created.")
 
       post = assigns(:post).reload
       expect(post).to be_persisted
@@ -1591,7 +1591,7 @@ RSpec.describe PostsController do
         id: post.id,
         post: { description: 'b', audit_comment: 'note' }
       }
-      expect(flash[:success]).to eq("Your post has been updated.")
+      expect(flash[:success]).to eq("Post updated.")
       expect(post.reload.description).to eq('b')
       expect(post.audits.last.comment).to eq('note')
       Post.auditing_enabled = false
@@ -1709,7 +1709,8 @@ RSpec.describe PostsController do
         expect(post.reload).not_to be_valid
         put :update, params: { id: post.id, status: 'abandoned' }
         expect(response).to redirect_to(post_url(post))
-        expect(flash[:error][:message]).to eq('Status could not be updated.')
+        expect(flash[:error][:message]).to eq('Status could not be updated because of the following problems:')
+        expect(flash[:error][:array]).to include("Board must exist")
         expect(post.reload.status).not_to eq(:abandoned)
       end
 
@@ -1854,7 +1855,7 @@ RSpec.describe PostsController do
         expect(post.reload).not_to be_valid
         put :update, params: { id: post.id, authors_locked: 'true' }
         expect(response).to redirect_to(post_url(post))
-        expect(flash[:error][:message]).to eq('Post could not be updated.')
+        expect(flash[:error][:message]).to eq('Post could not be updated because of the following problems:')
         expect(post.reload).not_to be_authors_locked
       end
     end
@@ -2221,7 +2222,7 @@ RSpec.describe PostsController do
           }
         }
         expect(response).to redirect_to(post_url(post))
-        expect(flash[:success]).to eq('Your post has been updated.')
+        expect(flash[:success]).to eq('Post updated.')
 
         post.reload
         expect(post.authors).to match_array([user, joined_user])
@@ -2351,7 +2352,7 @@ RSpec.describe PostsController do
         }
 
         expect(response).to render_template(:edit)
-        expect(flash[:error][:message]).to eq("Your post could not be saved because of the following problems:")
+        expect(flash[:error][:message]).to eq("Post could not be updated because of the following problems:")
         expect(post.reload.subject).not_to be_empty
 
         # editor_setup:
@@ -2432,7 +2433,7 @@ RSpec.describe PostsController do
           }
         }
         expect(response).to redirect_to(post_url(post))
-        expect(flash[:success]).to eq("Your post has been updated.")
+        expect(flash[:success]).to eq("Post updated.")
 
         post.reload
         expect(post.content).to eq(newcontent)
@@ -2485,7 +2486,7 @@ RSpec.describe PostsController do
           }
         }
         expect(response).to redirect_to(post_url(post))
-        expect(flash[:success]).to eq("Your post has been updated.")
+        expect(flash[:success]).to eq("Post updated.")
         post.reload
         expect(post.subject).to eq("new subject")
       end
@@ -2502,7 +2503,7 @@ RSpec.describe PostsController do
           }
         }
         expect(response).to redirect_to(post_url(post))
-        expect(flash[:success]).to eq("Your post has been updated.")
+        expect(flash[:success]).to eq("Post updated.")
         post.reload
         expect(post.subject).to eq("new subject")
       end
@@ -2760,7 +2761,7 @@ RSpec.describe PostsController do
       expect_any_instance_of(Post).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: post.id }
       expect(response).to redirect_to(post_url(post))
-      expect(flash[:error]).to eq({message: "Post could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Post could not be deleted.")
       expect(reply.reload.post).to eq(post)
     end
   end

@@ -10,7 +10,7 @@ RSpec.feature "Creating a new index", :type => :feature do
     expect(page).to have_no_selector('.flash.error')
     expect(page).to have_selector('.flash.success')
     within('.flash.success') do
-      expect(page).to have_text('Index created!')
+      expect(page).to have_text('Index created.')
     end
   end
 end

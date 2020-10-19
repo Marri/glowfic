@@ -49,33 +49,30 @@ class TagsController < ApplicationController
         @tag.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids) if @tag.is_a?(Setting)
         @tag.save!
       end
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Tag could not be saved because of the following problems:",
-        array: @tag.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@tag, :update_failed)
+      log_error(e) unless @tag.errors.present?
+
       @page_title = "Edit Tag: #{@tag.name}"
       build_editor
       render :edit
     else
-      flash[:success] = "Tag saved!"
+      flash[:success] = "Tag updated."
       redirect_to tag_path(@tag)
     end
   end
 
   def destroy
     unless @tag.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this tag."
+      flash[:error] = "You do not have permission to modify this tag."
       redirect_to tag_path(@tag) and return
     end
 
     begin
       @tag.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Tag could not be deleted.",
-        array: @tag.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_err(@tag, :delete_failed)
+      log_error(e) unless @tag.errors.present?
       redirect_to tag_path(@tag)
     else
       flash[:success] = "Tag deleted."
@@ -98,7 +95,7 @@ class TagsController < ApplicationController
 
   def require_permission
     unless @tag.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this tag."
+      flash[:error] = "You do not have permission to modify this tag."
       redirect_to tag_path(@tag)
     end
   end

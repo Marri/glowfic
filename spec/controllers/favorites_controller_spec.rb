@@ -156,7 +156,7 @@ RSpec.describe FavoritesController do
       login_as(user)
       post :create, params: { user_id: user.id }
       expect(response).to redirect_to(user_path(user))
-      expect(flash[:error][:message]).to eq('Your favorite could not be saved because of the following problems:')
+      expect(flash[:error][:message]).to eq('Favorite could not be saved because of the following problems:')
     end
 
     it "favorites a user" do
@@ -261,7 +261,7 @@ RSpec.describe FavoritesController do
       expect_any_instance_of(Favorite).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: favorite.id }
       expect(response).to redirect_to(favorites_path)
-      expect(flash[:error]).to eq({message: "Favorite could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Favorite could not be deleted.")
       expect(Favorite.find_by(id: favorite.id)).not_to be_nil
     end
   end

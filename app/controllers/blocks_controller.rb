@@ -24,17 +24,15 @@ class BlocksController < ApplicationController
 
     begin
       @block.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "User could not be blocked.",
-        array: @block.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@block, :create_failed)
+      log_error(e) unless @block.errors.present?
       editor_setup
       @users = [@block.blocked_user].compact
       @page_title = 'Block User'
       render :new
     else
-      flash[:success] = "User blocked!"
+      flash[:success] = "User blocked."
       redirect_to blocks_path
     end
   end
@@ -46,16 +44,15 @@ class BlocksController < ApplicationController
   def update
     begin
       @block.update!(permitted_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Block could not be saved.",
-        array: @block.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@block, :update_failed)
+      log_error(e) unless @block.errors.present?
+
       editor_setup
       @page_title = 'Edit Block: ' + @block.blocked_user.username
       render :edit
     else
-      flash[:success] = "Block updated!"
+      flash[:success] = "Block updated."
       redirect_to blocks_path
     end
   end
@@ -63,11 +60,9 @@ class BlocksController < ApplicationController
   def destroy
     begin
       @block.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "User could not be unblocked.",
-        array: @block.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_err(@block, :delete_failed)
+      log_error(e) unless @block.errors.present?
     else
       flash[:success] = "User unblocked."
     end

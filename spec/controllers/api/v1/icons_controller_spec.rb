@@ -28,7 +28,7 @@ RSpec.describe Api::V1::IconsController do
       post :s3_delete, params: { s3_key: "users/#{user.id}1/icons/hash_name.png" }
 
       expect(response).to have_http_status(403)
-      expect(response.json['errors'][0]['message']).to eq("That is not your icon.")
+      expect(response.json['errors'][0]['message']).to eq("You do not have permission to modify this icon.")
     end
 
     it "should not allow deleting a URL in use" do

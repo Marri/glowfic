@@ -60,7 +60,8 @@ RSpec.describe PasswordResetsController do
       expect_any_instance_of(PasswordReset).to receive(:generate_auth_token).and_return(nil)
       post :create, params: { username: user.username, email: user.email }
       expect(response).to render_template('new')
-      expect(flash[:error]).to eq("Password reset could not be saved.")
+      expect(flash[:error][:message]).to eq("Password reset could not be created because of the following problems:")
+      expect(flash[:error][:array]).to eq(["Auth token can't be blank"])
     end
 
     it "resends link if reset already present" do
@@ -154,28 +155,28 @@ RSpec.describe PasswordResetsController do
     it "requires password" do
       token = create(:password_reset)
       put :update, params: { id: token.auth_token, password_confirmation: 'newpass' }
-      expect(flash[:error][:message]).to eq("Could not update password.")
+      expect(flash[:error][:message]).to eq("Password could not be updated because of the following problems:")
       expect(response).to render_template('show')
     end
 
     it "requires long enough password" do
       token = create(:password_reset)
       put :update, params: { id: token.auth_token, password: 'new', password_confirmation: 'new' }
-      expect(flash[:error][:message]).to eq("Could not update password.")
+      expect(flash[:error][:message]).to eq("Password could not be updated because of the following problems:")
       expect(response).to render_template('show')
     end
 
     it "requires password confirmation" do
       token = create(:password_reset)
       put :update, params: { id: token.auth_token, password: 'newpass' }
-      expect(flash[:error][:message]).to eq("Could not update password.")
+      expect(flash[:error][:message]).to eq("Password could not be updated because of the following problems:")
       expect(response).to render_template('show')
     end
 
     it "requires password and confirmation to match" do
       token = create(:password_reset)
       put :update, params: { id: token.auth_token, password: 'newpass', password_confirmation: 'notnewpass' }
-      expect(flash[:error][:message]).to eq("Could not update password.")
+      expect(flash[:error][:message]).to eq("Password could not be updated because of the following problems:")
       expect(response).to render_template('show')
     end
 
@@ -184,7 +185,7 @@ RSpec.describe PasswordResetsController do
       expect(token.user.authenticate('newpass')).to eq(false)
       put :update, params: { id: token.auth_token, password: 'newpass', password_confirmation: 'newpass' }
       expect(response).to redirect_to(root_url)
-      expect(flash[:success]).to eq("Password successfully changed.")
+      expect(flash[:success]).to eq("Password changed.")
       expect(token.reload).to be_used
       expect(token.user.authenticate('newpass')).to eq(true)
     end

@@ -12,7 +12,7 @@ class Api::V1::IconsController < Api::ApiController
   error 422, "Invalid parameters provided: s3 key is in use."
   def s3_delete
     unless params[:s3_key].starts_with?("users/#{current_user.id}/")
-      error = {message: "That is not your icon."}
+      error = {message: "You do not have permission to modify this icon."}
       render json: {errors: [error]}, status: :forbidden and return
     end
 

@@ -17,16 +17,15 @@ class TemplatesController < ApplicationController
     @template.user = current_user
     begin
       @template.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Your template could not be saved because of the following problems:",
-        array: @template.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@template, :create_failed)
+      log_error(e) unless @template.errors.present?
+
       editor_setup
       @page_title = "New Template"
       render :new
     else
-      flash[:success] = "Template saved successfully."
+      flash[:success] = "Template created."
       redirect_to template_path(@template)
     end
   end
@@ -48,16 +47,15 @@ class TemplatesController < ApplicationController
   def update
     begin
       @template.update!(permitted_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Your template could not be saved because of the following problems:",
-        array: @template.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@template, :update_failed)
+      log_error(e) unless @template.errors.present?
+
       editor_setup
       @page_title = 'Edit Template: ' + @template.name_was
       render :edit
     else
-      flash[:success] = "Template saved successfully."
+      flash[:success] = "Template updated."
       redirect_to template_path(@template)
     end
   end
@@ -65,14 +63,12 @@ class TemplatesController < ApplicationController
   def destroy
     begin
       @template.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Template could not be deleted.",
-        array: @template.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_err(@template, :delete_failed)
+      log_error(e) unless @template.errors.present?
       redirect_to template_path(@template)
     else
-      flash[:success] = "Template deleted successfully."
+      flash[:success] = "Template deleted."
       redirect_to user_characters_path(current_user)
     end
   end
@@ -103,7 +99,7 @@ class TemplatesController < ApplicationController
 
   def require_permission
     return true if @template.user_id == current_user.id
-    flash[:error] = "That is not your template."
+    flash[:error] = "You do not have permission to modify this template."
     redirect_to user_characters_path(current_user)
   end
 

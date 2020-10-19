@@ -8,7 +8,7 @@ RSpec.feature "Edit a single continuity", type: :feature do
     fill_in 'Continuity Name', with: 'Edited board'
     click_button 'Save'
     expect(page).to have_no_selector('.error')
-    expect(page).to have_selector('.success', text: 'Continuity saved!')
+    expect(page).to have_selector('.success', text: 'Continuity updated.')
     expect(page).to have_text("Edited board")
   end
 end

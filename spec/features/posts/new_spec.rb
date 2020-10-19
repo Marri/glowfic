@@ -18,7 +18,7 @@ RSpec.feature "Creating posts", :type => :feature do
     fill_in "post_content", with: "test content"
     click_button "Post"
     expect(page).to have_no_selector(".error")
-    expect(page).to have_selector('.success', text: 'successfully posted.')
+    expect(page).to have_selector('.success', exact_text: 'Post created.')
     expect(page).to have_selector('.post-container', count: 1)
     expect(page).to have_selector('#post-title', exact_text: 'test subject')
 
@@ -57,7 +57,7 @@ RSpec.feature "Creating posts", :type => :feature do
     click_button 'Post'
 
     expect(page).to have_no_selector(".error")
-    expect(page).to have_selector('.success', text: 'successfully posted.')
+    expect(page).to have_selector('.success', exact_text: 'Post created.')
     expect(page).to have_selector('.post-container', count: 1)
     expect(page).to have_selector('#post-title', exact_text: 'other subject')
 
@@ -80,7 +80,7 @@ RSpec.feature "Creating posts", :type => :feature do
     fill_in "post_content", with: "test content"
     click_button "Post"
 
-    expect(page).to have_selector('.error', text: "Your post could not be saved because of the following problems:\nBoard must exist")
+    expect(page).to have_selector('.error', text: "Post could not be created because of the following problems:\nBoard must exist")
     expect(page).to have_selector('#post-editor')
     within('#post-editor') do
       expect(page).to have_field('Subject', with: 'test subject')

@@ -21,15 +21,14 @@ class IndexesController < ApplicationController
 
     begin
       @index.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Index could not be created.",
-        array: @index.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@index, :create_failed)
+      log_error(e) unless @index.errors.present?
+
       @page_title = 'New Index'
       render :new
     else
-      flash[:success] = "Index created!"
+      flash[:success] = "Index created."
       redirect_to index_path(@index) and return
     end
   end
@@ -53,15 +52,14 @@ class IndexesController < ApplicationController
   def update
     begin
       @index.update!(permitted_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Index could not be saved because of the following problems:",
-        array: @index.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@index, :update_failed)
+      log_error(e) unless @index.errors.present?
+
       editor_setup
       render :edit
     else
-      flash[:success] = "Index saved!"
+      flash[:success] = "Index updated."
       redirect_to index_path(@index)
     end
   end
@@ -69,11 +67,9 @@ class IndexesController < ApplicationController
   def destroy
     begin
       @index.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Index could not be deleted.",
-        array: @index.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_err(@index, :delete_failed)
+      log_error(e) unless @index.errors.present?
       redirect_to index_path(@index)
     else
       redirect_to indexes_path
@@ -92,7 +88,7 @@ class IndexesController < ApplicationController
 
   def require_permission
     unless @index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
+      flash[:error] = "You do not have permission to modify this index."
       redirect_to index_path(@index)
     end
   end

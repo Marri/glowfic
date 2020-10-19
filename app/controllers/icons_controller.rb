@@ -20,7 +20,7 @@ class IconsController < UploadingController
       end
 
       unless gallery.user_id == current_user.id
-        flash[:error] = "That is not your gallery."
+        flash[:error] = "You do not have permission to modify this gallery."
         redirect_to user_galleries_path(current_user) and return
       end
 
@@ -68,11 +68,10 @@ class IconsController < UploadingController
   def update
     begin
       @icon.update!(permitted_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Your icon could not be saved due to the following problems:",
-        array: @icon.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@icon, :update_failed)
+      log_error(e) unless @icon.errors.present?
+
       @page_title = 'Edit icon: ' + @icon.keyword_was
       use_javascript('galleries/update_existing')
       use_javascript('galleries/uploader')
@@ -108,7 +107,7 @@ class IconsController < UploadingController
     end
 
     if new_icon && new_icon.user_id != current_user.id
-      flash[:error] = "That is not your icon."
+      flash[:error] = "You do not have permission to modify this icon."
       redirect_to replace_icon_path(@icon) and return
     end
 
@@ -126,14 +125,12 @@ class IconsController < UploadingController
     gallery = @icon.galleries.first if @icon.galleries.count == 1
     begin
       @icon.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Icon could not be deleted.",
-        array: @icon.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_err(@icon, :delete_failed)
+      log_error(e) unless @icon.errors.present?
       redirect_to icon_path(@icon)
     else
-      flash[:success] = "Icon deleted successfully."
+      flash[:success] = "Icon deleted."
       redirect_to gallery_path(gallery) and return if gallery
       redirect_to user_galleries_path(current_user)
     end
@@ -141,9 +138,10 @@ class IconsController < UploadingController
 
   def avatar
     if current_user.update(avatar: @icon)
-      flash[:success] = "Avatar has been set!"
+      flash[:success] = "Avatar set."
     else
-      flash[:error] = "Something went wrong."
+      @icon.errors.merge!(current_user.errors)
+      render_err(@icon, :update_failed, model_name: 'Avatar')
     end
     redirect_to icon_path(@icon)
   end
@@ -163,7 +161,7 @@ class IconsController < UploadingController
 
   def require_permission
     if @icon.user_id != current_user.id
-      flash[:error] = "That is not your icon."
+      flash[:error] = "You do not have permission to modify this icon."
       redirect_to user_galleries_path(current_user)
     end
   end

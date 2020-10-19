@@ -270,7 +270,7 @@ RSpec.describe TagsController do
       login
       get :edit, params: { id: tag.id }
       expect(response).to redirect_to(tag_url(tag))
-      expect(flash[:error]).to eq("You do not have permission to edit this tag.")
+      expect(flash[:error]).to eq("You do not have permission to modify this tag.")
     end
 
     it "allows admin to edit the tag" do
@@ -308,7 +308,7 @@ RSpec.describe TagsController do
       tag = create(:label, owned: true)
       put :update, params: { id: tag.id }
       expect(response).to redirect_to(tag_url(tag))
-      expect(flash[:error]).to eq("You do not have permission to edit this tag.")
+      expect(flash[:error]).to eq("You do not have permission to modify this tag.")
     end
 
     it "requires valid params" do
@@ -316,7 +316,7 @@ RSpec.describe TagsController do
       login_as(create(:admin_user))
       put :update, params: { id: tag.id, tag: {name: nil} }
       expect(response.status).to eq(200)
-      expect(flash[:error][:message]).to eq("Tag could not be saved because of the following problems:")
+      expect(flash[:error][:message]).to eq("Setting could not be updated because of the following problems:")
     end
 
     it "allows admin to update the tag" do
@@ -325,7 +325,7 @@ RSpec.describe TagsController do
       login_as(create(:admin_user))
       put :update, params: { id: tag.id, tag: {name: name} }
       expect(response).to redirect_to(tag_url(tag))
-      expect(flash[:success]).to eq("Tag saved!")
+      expect(flash[:success]).to eq("Tag updated.")
       expect(tag.reload.name).to eq(name)
     end
 
@@ -359,7 +359,7 @@ RSpec.describe TagsController do
       login
       delete :destroy, params: { id: tag.id }
       expect(response).to redirect_to(tag_url(tag))
-      expect(flash[:error]).to eq("You do not have permission to edit this tag.")
+      expect(flash[:error]).to eq("You do not have permission to modify this tag.")
     end
 
     it "allows admin to destroy the tag" do
@@ -376,7 +376,7 @@ RSpec.describe TagsController do
       expect_any_instance_of(Tag).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: tag.id }
       expect(response).to redirect_to(tag_url(tag))
-      expect(flash[:error]).to eq({message: "Tag could not be deleted.", array: []})
+      expect(flash[:error]).to eq("Label could not be deleted.")
       expect(Tag.find_by(id: tag.id)).not_to be_nil
     end
   end

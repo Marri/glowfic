@@ -14,7 +14,7 @@ class UsersController < ApplicationController
 
   def show
     unless (@user = User.active.find_by_id(params[:id]))
-      flash[:error] = "User could not be found."
+      flash[:error] = t_err(:not_found)
       redirect_to users_path and return
     end
 
@@ -47,12 +47,13 @@ class UsersController < ApplicationController
 
     begin
       @user.save!
-    rescue ActiveRecord::RecordInvalid
+    rescue ActiveRecord::RecordInvalid => e
       signup_prep
       flash.now[:error] = {
         message: "There was a problem completing your sign up.",
         array: @user.errors.full_messages
       }
+      log_error(e) unless @user.errors.present?
       render :new
     else
       flash[:success] = "User created! You have been logged in."
@@ -74,16 +75,15 @@ class UsersController < ApplicationController
 
     begin
       current_user.update!(user_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "There was a problem updating your account.",
-        array: current_user.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(current_user, :update_failed, model_name: 'Account settings')
+      log_error(e) unless current_user.errors.present?
+
       use_javascript('users/edit')
       @page_title = 'Edit Account'
       render :edit
     else
-      flash[:success] = "Changes saved successfully."
+      flash[:success] = t_success(:saved, model: 'Account settings')
       redirect_to edit_user_path(current_user)
     end
   end
@@ -107,7 +107,7 @@ class UsersController < ApplicationController
       @page_title = 'Edit Account'
       render :edit
     else
-      flash[:success] = "Changes saved successfully."
+      flash[:success] = "Changes saved."
       redirect_to edit_user_path(current_user)
     end
   end
@@ -142,7 +142,7 @@ class UsersController < ApplicationController
 
   def require_own_user
     unless params[:id] == current_user.id.to_s
-      flash[:error] = "You do not have permission to edit that user."
+      flash[:error] = "You do not have permission to modify this user."
       redirect_to(continuities_path)
     end
   end
@@ -216,7 +216,7 @@ class UsersController < ApplicationController
       }
       render 'about/accept_tos'
     else
-      flash[:success] = "Acceptance saved successfully. Thank you!"
+      flash[:success] = "Acceptance saved. Thank you."
       redirect_to session[:previous_url] || root_url
     end
   end

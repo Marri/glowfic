@@ -39,16 +39,15 @@ class BoardsController < ApplicationController
 
     begin
       @board.save!
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Continuity could not be created.",
-        array: @board.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@board, :create_failed)
+      log_error(e) unless @board.errors.present?
+
       @page_title = 'New Continuity'
       editor_setup
       render :new
     else
-      flash[:success] = "Continuity created!"
+      flash[:success] = "Continuity created."
       redirect_to continuities_path
     end
   end
@@ -77,18 +76,17 @@ class BoardsController < ApplicationController
   def update
     begin
       @board.update!(permitted_params)
-    rescue ActiveRecord::RecordInvalid
-      flash.now[:error] = {
-        message: "Continuity could not be created.",
-        array: @board.errors.full_messages
-      }
+    rescue ActiveRecord::RecordInvalid => e
+      render_err.now(@board, :update_failed)
+      log_error(e) unless @board.errors.present?
+
       @page_title = 'Edit Continuity: ' + @board.name_was
       editor_setup
       use_javascript('board_sections')
       @board_sections = @board.board_sections.ordered
       render :edit
     else
-      flash[:success] = "Continuity saved!"
+      flash[:success] = "Continuity updated."
       redirect_to continuity_path(@board)
     end
   end
@@ -96,11 +94,9 @@ class BoardsController < ApplicationController
   def destroy
     begin
       @board.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Continuity could not be deleted.",
-        array: @board.errors.full_messages
-      }
+    rescue ActiveRecord::RecordNotDestroyed => e
+      render_err(@board, :delete_failed)
+      log_error(e) unless @board.errors.present?
       redirect_to continuity_path(@board)
     else
       flash[:success] = "Continuity deleted."
@@ -165,7 +161,7 @@ class BoardsController < ApplicationController
 
   def require_permission
     unless @board.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit that continuity."
+      flash[:error] = "You do not have permission to modify this continuity."
       redirect_to continuity_path(@board) and return
     end
   end

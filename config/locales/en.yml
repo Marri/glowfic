@@ -30,6 +30,62 @@
 # available at http://guides.rubyonrails.org/i18n.html.
 
 en:
+  actioncontroller:
+    errors:
+      formats:
+        final: "%{str}."
+        intro: "%{str} because of the following problems:"
+      messages:
+        not_found: "%{model_name} could not be found"
+        create_failed: "%{model_name} could not be created"
+        delete_failed: "%{model_name} could not be deleted"
+        update_failed: "%{model_name} could not be updated"
+    success:
+      formats:
+        final: "%{str}."
+      messages:
+        saved: "%{model_name} saved"
+    avatar:
+      errors:
+        messages:
+          update_failed: "Avatar could not be set"
+    block:
+      errors:
+        messages:
+          create_failed: "User could not be blocked"
+          delete_failed: "User could not be unblocked"
+    character:
+      errors:
+        messages:
+          duplicate_failed: "Character could not be duplicated"
+    favorite:
+      errors:
+        messages:
+          create_failed: "Favorite could not be saved"
+    index_post:
+      errors:
+        messages:
+          create_failed: "Post could not be added to index"
+          delete_failed: "Post could not be removed from index"
+          update_failed: "Index could not be updated"
+    reply_draft:
+      errors:
+        messages:
+          create_failed: "Draft could not be saved"
+  activerecord:
+    models:
+      character_alias:
+        one: Alias
+        other: Aliases
+      board_section:
+        one: Section
+        other: Sections
+      board:
+        one: Continuity
+        other: Continuities
+      news:
+        one: News post
+        other: News posts
   hello: "Hello world"
   will_paginate:
     previous_label: "&lsaquo; Previous"
