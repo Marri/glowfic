@@ -53,7 +53,9 @@ module ApplicationHelper
 
   def pretty_time(time, format: nil)
     return unless time
-    time.strftime(format || current_user.try(:time_display) || TIME_FORMAT)
+    content_tag(:time, datetime: time.utc.iso8601, title: time.utc.strftime("%Y-%m-%d %H:%M %Z")) do
+      time.strftime(format || current_user.try(:time_display) || TIME_FORMAT)
+    end
   end
 
   def fun_name(user)

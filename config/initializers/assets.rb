@@ -22,6 +22,8 @@ Rails.application.configure do
   config.assets.precompile << "messages.js"
   config.assets.precompile << "paginator.js"
   config.assets.precompile << "reorder.js"
+  config.assets.precompile << "application_deferred.js"
+  config.assets.precompile << "datetimes.js"
 
   config.assets.precompile += %w( layouts/*.css tinymce.css )
 end

@@ -52,6 +52,7 @@
     %link{rel: 'manifest', href: asset_path('favicons/manifest.json')}
 
     = include_gon
+    = javascript_include_tag 'application_deferred'.freeze, defer: :defer
   %body
     #holder
       #header

@@ -13,7 +13,9 @@
     .message= generate_short(message.message)
     .float-right
       - if message.created_at
-        .message-time Sent #{pretty_time(message.created_at)}
+        .message-time
+          Sent
+          = pretty_time(message.created_at)
 
 .post-container.message-expanded{class: exp_klass, id: "expanded-#{message.id}"}
   - if message.id && local_assigns[:message_counter].present?
@@ -22,7 +24,9 @@
         .float-left.text Click to collapse
         .float-right
           - if message.created_at
-            .message-time Sent #{pretty_time(message.created_at)}
+            .message-time
+              Sent
+              = pretty_time(message.created_at)
   .padding-10
     .post-info-box
       - if message.sender.try(:avatar)

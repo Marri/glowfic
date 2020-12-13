@@ -15,9 +15,11 @@
         &laquo; Back
       %br
       .details.float-right
-        Generated: #{pretty_time(@post.flat_post.updated_at)}
+        Generated:
+        = pretty_time(@post.flat_post.updated_at)
       .details
-        Post last updated: #{pretty_time(@post.tagged_at)}
+        Post last updated:
+        = pretty_time(@post.tagged_at)
       .content-header
         %span#post-title= @post.subject
       - if @post.description.present?

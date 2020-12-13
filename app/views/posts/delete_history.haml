@@ -10,7 +10,9 @@
   %br
 
   .subber
-    Reply deleted #{pretty_time(@audit.created_at)} by #{user_link(@audit.user)}
+    Reply deleted
+    = pretty_time(@audit.created_at)
+    by #{user_link(@audit.user)}
     - if @deleted.editable_by?(current_user)
       = link_to restore_reply_path(id: @audit.auditable_id), method: :post do
         %button{style: 'float: right; margin: 0;'} Restore
