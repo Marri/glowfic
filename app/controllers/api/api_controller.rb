@@ -2,7 +2,7 @@ class Api::ApiController < ActionController::Base
   include Rails::Pagination
   include Authentication::Api
 
-  protect_from_forgery with: :exception
+  protect_from_forgery with: :null_session
   before_action :check_token
   around_action :set_timezone
   around_action :handle_param_validation
