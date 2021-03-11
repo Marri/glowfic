@@ -1,10 +1,17 @@
 source 'https://rubygems.org'
 
-ruby '2.6.5'
+ruby '2.6.6'
 
 gem 'api-pagination'
 gem 'apipie-rails'
-gem 'audited', '~> 4.9.0' # check for migrations after update with `rails generate audited:upgrade`
+
+# when upgrading check:
+# - for migrations with `rails generate audited:upgrade`
+# - that the method set_audit_user has not changed, since we duplicate it in
+#   ApplicationRecord for use in callbacks to send audit user ids to background jobs.
+#   (currently https://github.com/collectiveidea/audited/blob/v4.9.0/lib/audited/audit.rb#L175)
+gem 'audited', '~> 4.9.0'
+
 gem 'aws-sdk-rails', '~> 2'
 gem 'aws-sdk-s3', '~> 1'
 gem 'aws-sdk-ses', '~> 1'
@@ -18,6 +25,8 @@ gem 'httparty'
 gem 'jquery-fileupload-rails'
 gem 'jquery-rails', '>= 4.3.4'
 gem 'jquery-ui-rails'
+gem 'json', '>= 2.3.0'
+gem 'jwt'
 gem 'newrelic_rpm'
 gem 'nilify_blanks'
 gem 'nokogiri'
@@ -30,7 +39,6 @@ gem 'redis-rails'
 gem 'resque'
 gem 'resque_mailer'
 gem 'sanitize'
-gem 'sassc', '~> 2.1' # pin sassc until it stops causing schema:load problems (potentially related to https://github.com/sass/sassc-ruby/issues/146)
 gem 'sassc-rails'
 gem 'select2-rails'
 gem 'sprockets', '~> 3.7' # pin sprockets until we deal with its major upgrade
@@ -43,6 +51,7 @@ group :production do
   gem 'puma'
   gem 'rack-cors'
   gem 'rack-timeout', '>= 0.6.0'
+  gem 'resque-heroku-signals'
 end
 
 group :development do
@@ -61,7 +70,7 @@ group :development, :test do
   gem 'byebug'
   gem 'database_cleaner'
   gem 'dotenv-rails'
-  gem "html-proofer"
+  gem 'html-proofer'
   gem 'rake', '~> 12.0'
   gem 'rspec-rails'
   gem 'seed_dump', '~> 3.2'
@@ -74,7 +83,7 @@ group :test do
   gem 'rails-controller-testing'
   gem 'resque_spec'
   gem 'selenium-webdriver'
-  gem 'simplecov'
+  gem 'simplecov', '~> 0.17.1'
   gem 'timecop'
   gem 'webdrivers', '~> 4.0'
   gem 'webmock'

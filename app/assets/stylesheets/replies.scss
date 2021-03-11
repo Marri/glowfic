@@ -305,6 +305,20 @@ div.post-subheader { width: 100%; }
   }
 }
 
+.private-note-editor {
+  #post_private_note {
+    width: 100%;
+    height: calc(100% - 50px);
+  }
+}
+
+.loading {
+  width: 16px;
+  height: 16px;
+}
+
+.post-note-editor { margin: 5px; }
+
 .details {
   display: inline;
   font-size: $font_size_smaller;
@@ -490,7 +504,9 @@ div.post-subheader { width: 100%; }
 /* Handle post tables */
 .post-completed {
   text-align: center;
-  width: 50px;
+  min-width: 50px;
+  max-width: 70px;
+  white-space: nowrap;
 }
 
 .post-check-box {
@@ -502,6 +518,13 @@ div.post-subheader { width: 100%; }
     height: 13px;
     margin: 0px;
     vertical-align: middle;
+  }
+}
+@media (pointer: coarse) {
+  .mobile-target {
+    display: inline-block;
+    padding-bottom: 8px;
+    padding-right: 8px;
   }
 }
 

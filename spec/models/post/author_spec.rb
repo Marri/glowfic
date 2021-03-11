@@ -1,4 +1,4 @@
-RSpec.describe PostAuthor do
+RSpec.describe Post::Author do
   describe "validations" do
     it 'succeeds' do
       expect(create(:post_author)).to be_valid

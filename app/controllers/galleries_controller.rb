@@ -36,7 +36,7 @@ class GalleriesController < UploadingController
   def create
     @gallery = Gallery.new(permitted_params)
     @gallery.user = current_user
-    @gallery.gallery_groups = process_tags(GalleryGroup, :gallery, :gallery_group_ids)
+    @gallery.gallery_groups = process_tags(GalleryGroup, obj_param: :gallery, id_param: :gallery_group_ids)
 
     begin
       @gallery.save!
@@ -114,7 +114,7 @@ class GalleriesController < UploadingController
 
     begin
       Gallery.transaction do
-        @gallery.gallery_groups = process_tags(GalleryGroup, :gallery, :gallery_group_ids)
+        @gallery.gallery_groups = process_tags(GalleryGroup, obj_param: :gallery, id_param: :gallery_group_ids)
         @gallery.save!
       end
     rescue ActiveRecord::RecordInvalid

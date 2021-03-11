@@ -406,7 +406,7 @@ RSpec.describe BoardsController do
 
     it "moves posts to sandboxes" do
       board = create(:board)
-      create(:board, id: 3) # sandbox
+      create(:board, id: Board::ID_SANDBOX)
       section = create(:board_section, board: board)
       post = create(:post, board: board, section: section)
       login_as(board.creator)
@@ -416,7 +416,7 @@ RSpec.describe BoardsController do
       expect(response).to redirect_to(continuities_url)
       expect(flash[:success]).to eq('Continuity deleted.')
       post.reload
-      expect(post.board_id).to eq(3)
+      expect(post.board_id).to eq(Board::ID_SANDBOX)
       expect(post.section).to be_nil
       expect(BoardSection.find_by_id(section.id)).to be_nil
     end
@@ -478,9 +478,9 @@ RSpec.describe BoardsController do
       board = create(:board)
       user = create(:user)
       read_post = create(:post, user: user, board: board)
-      read_post.mark_read(user, now - 1.day, true)
+      read_post.mark_read(user, at_time: now - 1.day, force: true)
       unread_post = create(:post, user: user, board: board)
-      unread_post.mark_read(create(:user), now - 1.day, true)
+      unread_post.mark_read(create(:user), at_time: now - 1.day, force: true)
 
       expect(Board.find(board.id).last_read(user)).to be_nil # reload to reset cached @view
       expect(Post.find(read_post.id).last_read(user)).to be_the_same_time_as(now - 1.day)

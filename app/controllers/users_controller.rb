@@ -18,7 +18,7 @@ class UsersController < ApplicationController
       redirect_to users_path and return
     end
 
-    ids = PostAuthor.where(user_id: @user.id, joined: true).pluck(:post_id)
+    ids = Post::Author.where(user_id: @user.id, joined: true).pluck(:post_id)
     @posts = posts_from_relation(Post.where(id: ids).ordered)
     @page_title = @user.username
     @meta_og = og_data
@@ -156,10 +156,10 @@ class UsersController < ApplicationController
 
   def og_data
     board_ids = BoardAuthor.where(user_id: @user.id, cameo: false).select(:board_id).distinct.pluck(:board_id)
-    boards = Board.where(creator: @user).or(Board.where(id: board_ids))
-    board_count = boards.count
+    boards = Board.where(id: board_ids).ordered.pluck(:name)
+    board_count = boards.length
     if board_count > 0
-      desc = "Continuity".pluralize(board_count) + ": " + generate_short(boards.pluck(:name) * ', ')
+      desc = "Continuity".pluralize(board_count) + ": " + generate_short(boards * ', ')
     else
       desc = "No continuities."
     end

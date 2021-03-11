@@ -526,3 +526,7 @@ The copy box can't be invisible/hidden or copy fails but opacity works
   th.sub { width: 150px; }
   textarea { height: 400px; }
 }
+
+.no-close .ui-dialog-titlebar-close {
+  display: none;
+}

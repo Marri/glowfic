@@ -17,7 +17,7 @@
       %th.subber.padding-10{colspan: col_count}
         = form_tag tags_path, method: :get do
           Search for a tag:
-          = text_field_tag :name, params[:name], id: 'tag-search-name', placeholder: 'Exact name (case-insensitive)'
+          = text_field_tag :name, params[:name], id: 'tag-search-name', placeholder: 'Name (case-insensitive)'
           = select_tag :view, options_for_select(@tag_options, @view), include_blank: '— Choose Type —', id: 'tag-view'
           = submit_tag "Search", class: 'button', id: 'tag-search'
     %tr

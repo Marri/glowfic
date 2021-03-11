@@ -49,7 +49,7 @@ GalleryTag.create!([
 ])
 
 puts "Attaching settings to each other..."
-TagTag.create!([
+Tag::SettingTag.create!([
   { tagged_id: 6, tag_id: 12 },
   { tagged_id: 12, tag_id: 5 },
   { tagged_id: 8, tag_id: 5 },

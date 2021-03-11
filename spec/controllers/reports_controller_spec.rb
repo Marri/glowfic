@@ -122,7 +122,7 @@ RSpec.describe ReportsController do
 
       it "works with logged in" do
         user = create(:user)
-        DailyReport.mark_read(user, 3.days.ago.to_date)
+        DailyReport.mark_read(user, at_time: 3.days.ago.to_date)
         create(:post_view, user: user)
         login_as(user)
         get :show, params: { id: 'daily' }
@@ -172,7 +172,7 @@ RSpec.describe ReportsController do
             viewed_time = 2.days.ago
             expect_time = viewed_time
             Time.use_zone(place) do
-              DailyReport.mark_read(user, before_time.to_date)
+              DailyReport.mark_read(user, at_time: before_time.to_date)
             end
 
             login_as(user)
@@ -190,7 +190,7 @@ RSpec.describe ReportsController do
             viewed_time = 3.days.ago
             expect_time = before_time
             Time.use_zone(place) do
-              DailyReport.mark_read(user, before_time.to_date)
+              DailyReport.mark_read(user, at_time: before_time.to_date)
             end
 
             login_as(user)

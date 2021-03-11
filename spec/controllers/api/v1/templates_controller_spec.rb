@@ -12,7 +12,7 @@ RSpec.describe Api::V1::TemplatesController do
 
     it "works logged in" do
       create_search_templates
-      login
+      api_login
       get :index
       expect(response).to have_http_status(200)
       expect(response.json['results'].count).to eq(8)

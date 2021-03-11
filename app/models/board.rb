@@ -2,6 +2,7 @@ class Board < ApplicationRecord
   include Presentable
   include Viewable
 
+  ID_SANDBOX = 3
   ID_SITETESTING = 4
 
   has_many :posts, dependent: false # This is handled in callbacks
@@ -47,8 +48,7 @@ class Board < ApplicationRecord
   private
 
   def move_posts_to_sandbox
-    # TODO don't hard code sandbox board_id
-    UpdateModelJob.perform_later(Post.to_s, {board_id: id}, {board_id: 3, section_id: nil})
+    UpdateModelJob.perform_later(Post.to_s, {board_id: id}, {board_id: ID_SANDBOX, section_id: nil}, audited_user_id)
   end
 
   def add_creator_to_authors
@@ -59,11 +59,11 @@ class Board < ApplicationRecord
     # this should ONLY be called by an admin for emergency fixes
     board_sections.ordered.each_with_index do |section, index|
       next if section.section_order == index
-      section.update_columns(section_order: index)
+      section.update_columns(section_order: index) # rubocop:disable Rails/SkipsModelValidations
     end
     posts.where(section_id: nil).ordered_in_section.each_with_index do |post, index|
       next if post.section_order == index
-      post.update_columns(section_order: index)
+      post.update_columns(section_order: index) # rubocop:disable Rails/SkipsModelValidations
     end
   end
 end

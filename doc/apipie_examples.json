@@ -152,7 +152,7 @@
             "id": 1,
             "subject": "test subject 1",
             "created_at": "2019-01-02T03:04:05.000Z",
-            "status": 0,
+            "status": "active",
             "section_order": 0,
             "description": "",
             "tagged_at": "2019-01-02T03:04:05.000Z",
@@ -1276,7 +1276,7 @@
         "id": 1,
         "subject": "test subject 28",
         "created_at": "2019-12-25T21:34:56.000Z",
-        "status": 0,
+        "status": "active",
         "section_order": 0,
         "description": "",
         "tagged_at": "2019-12-25T21:34:56.000Z",
@@ -1303,6 +1303,105 @@
           "url": "http://www.fakeicon.com",
           "keyword": "totally fake 11"
         }
+      },
+      "code": "200",
+      "show_in_doc": 1,
+      "recorded": true
+    }
+  ],
+  "posts#update": [
+    {
+      "verb": "PATCH",
+      "path": "/api/v1/posts/0",
+      "versions": [
+        "1.0"
+      ],
+      "query": null,
+      "request_data": {
+      },
+      "response_data": {
+        "errors": [
+          {
+            "message": "You must be logged in to view that page."
+          }
+        ]
+      },
+      "code": "401",
+      "show_in_doc": 1,
+      "recorded": true
+    },
+    {
+      "verb": "PATCH",
+      "path": "/api/v1/posts/0",
+      "versions": [
+        "1.0"
+      ],
+      "query": null,
+      "request_data": {
+      },
+      "response_data": {
+        "errors": [
+          {
+            "message": "Post could not be found."
+          }
+        ]
+      },
+      "code": "404",
+      "show_in_doc": 1,
+      "recorded": true
+    },
+    {
+      "verb": "PATCH",
+      "path": "/api/v1/posts/1",
+      "versions": [
+        "1.0"
+      ],
+      "query": null,
+      "request_data": {
+      },
+      "response_data": {
+        "errors": [
+          {
+            "message": "You do not have permission to perform this action."
+          }
+        ]
+      },
+      "code": "403",
+      "show_in_doc": 1,
+      "recorded": true
+    },
+    {
+      "verb": "PATCH",
+      "path": "/api/v1/posts/1",
+      "versions": [
+        "1.0"
+      ],
+      "query": null,
+      "request_data": {
+      },
+      "response_data": {
+        "errors": [
+          {
+            "message": "Missing parameter private_note"
+          }
+        ]
+      },
+      "code": "422",
+      "show_in_doc": 1,
+      "recorded": true
+    },
+    {
+      "verb": "PATCH",
+      "path": "/api/v1/posts/1",
+      "versions": [
+        "1.0"
+      ],
+      "query": null,
+      "request_data": {
+        "private_note": "Shiny new note"
+      },
+      "response_data": {
+        "private_note": "<p>Shiny new note</p>"
       },
       "code": "200",
       "show_in_doc": 1,
@@ -1367,7 +1466,7 @@
           "icon": null,
           "user": {
             "id": 1,
-            "username": "JohnDoe135"
+            "username": "JohnDoe144"
           }
         },
         {
@@ -1380,7 +1479,7 @@
           "icon": null,
           "user": {
             "id": 1,
-            "username": "JohnDoe135"
+            "username": "JohnDoe144"
           }
         },
         {
@@ -1401,7 +1500,7 @@
           },
           "user": {
             "id": 3,
-            "username": "JohnDoe137"
+            "username": "JohnDoe146"
           }
         }
       ],
@@ -1741,15 +1840,15 @@
         "results": [
           {
             "id": 1,
-            "subject": "test subject 51",
+            "subject": "test subject 54",
             "created_at": "2019-12-25T21:34:56.000Z",
-            "status": 0,
+            "status": "active",
             "section_order": 0,
             "description": "",
             "tagged_at": "2019-12-25T21:34:56.000Z",
             "board": {
               "id": 1,
-              "name": "test board 49"
+              "name": "test board 52"
             },
             "section": {
               "id": 1,
@@ -1759,7 +1858,7 @@
             "authors": [
               {
                 "id": 1,
-                "username": "JohnDoe154"
+                "username": "JohnDoe163"
               }
             ],
             "num_replies": 0

@@ -89,8 +89,29 @@ RSpec.describe DailyReport do
       Time.zone = old
     end
 
+    it "does not perform time zone fuckery" do
+      # 2am UTC 5/21 is 10pm EDT 5/20
+      mismatch_time = DateTime.new(2020, 5, 21, 2, 30, 0).utc
+
+      # create post unambiguously on 5/20
+      post = Timecop.freeze(mismatch_time - 12.hours) do
+        create(:post)
+      end
+
+      # only the second reply is on 5/21 in EDT
+      Timecop.freeze(mismatch_time) { create(:reply, post: post) }
+      Timecop.freeze(mismatch_time + 6.hours) { create(:reply, post: post) }
+
+      Time.use_zone('America/New_York') do
+        report = DailyReport.new("2020-05-21".to_date)
+        posts = report.posts({first_updated_at: :desc})
+        expect(posts.to_a.size).to eq(1)
+        expect(posts[0].first_updated_at).to be_the_same_time_as(mismatch_time + 6.hours)
+      end
+    end
+
     it "returns all necessary posts" do
-      report_time = DateTime.new(2020, 04, 04, 3, 0, 0)
+      report_time = DateTime.new(2020, 4, 4, 3, 0, 0)
       new_today_replies = nil
       new_today_no_replies = nil
       new_yesterday_replies = nil
@@ -121,7 +142,6 @@ RSpec.describe DailyReport do
         expect(report.posts.map(&:id)).to match_array(posts.map(&:id))
       end
     end
-
   end
 
   describe "#badge_for" do
@@ -131,12 +151,12 @@ RSpec.describe DailyReport do
 
     it "respects timezone" do
       # Hawaii 7pm April 3 UTC 5am April 4
-      date = DateTime.new(2020, 04, 04, 5, 0, 0)
+      date = DateTime.new(2020, 4, 4, 5, 0, 0)
       later_date = date + 2.days
       user = create(:user)
 
       Time.use_zone('UTC') do
-        DailyReport.mark_read(user, date.to_date)
+        DailyReport.mark_read(user, at_time: date.to_date)
       end
 
       Timecop.freeze(later_date) do

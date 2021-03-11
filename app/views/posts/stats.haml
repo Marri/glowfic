@@ -34,7 +34,7 @@
       %th.sub.width-150 Audience
       %td{class: cycle('odd', 'even')}
         = privacy_state(@post.privacy)
-        - if @post.access_list?
+        - if @post.privacy_access_list?
           \-
           = safe_join(@post.post_viewers.map(&:user).map{ |u| user_link(u) }, ', ')
     %tr
@@ -55,7 +55,7 @@
             %li
               = link_to character.name, character_path(character)
               = surround '(', ')' do
-                = link_to "#{count} times", search_replies_path(post_id: @post.id, character_id: character.id, commit: true)
+                = link_to "#{count} times", search_replies_path(post_id: @post.id, character_id: character.id, commit: true, sort: :created_new)
 
     - if @post.settings.present?
       %tr

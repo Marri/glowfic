@@ -61,7 +61,7 @@ RSpec.describe IndexesController do
     end
 
     it "requires visible index" do
-      index = create(:index, privacy: Concealable::PRIVATE)
+      index = create(:index, privacy: :private)
       get :show, params: { id: index.id }
       expect(response).to redirect_to(indexes_url)
       expect(flash[:error]).to eq('You do not have permission to view this index.')
@@ -75,7 +75,7 @@ RSpec.describe IndexesController do
     end
 
     it "works logged in" do
-      index = create(:index, privacy: Concealable::PRIVATE)
+      index = create(:index, privacy: :private)
       login_as(index.user)
       get :show, params: { id: index.id }
       expect(response).to have_http_status(200)

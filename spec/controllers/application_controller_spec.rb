@@ -153,7 +153,7 @@ RSpec.describe ApplicationController do
 
     context "when logged in" do
       it "returns empty array if no visible posts" do
-        hidden_post = create(:post, privacy: Concealable::PRIVATE)
+        hidden_post = create(:post, privacy: :private)
         user = create(:user)
         login_as(user)
         expect(hidden_post).not_to be_visible_to(user)
@@ -164,10 +164,10 @@ RSpec.describe ApplicationController do
       end
 
       it "filters array if mixed visible and not visible posts" do
-        hidden_post = create(:post, privacy: Concealable::PRIVATE)
-        public_post = create(:post, privacy: Concealable::PUBLIC)
+        hidden_post = create(:post, privacy: :private)
+        public_post = create(:post, privacy: :public)
         user = create(:user)
-        own_post = create(:post, user: user, privacy: Concealable::PUBLIC)
+        own_post = create(:post, user: user, privacy: :public)
         login_as(user)
 
         relation = Post.where(id: [hidden_post.id, public_post.id, own_post.id])
@@ -177,6 +177,7 @@ RSpec.describe ApplicationController do
 
       it "sets opened_ids and unread_ids properly" do
         user = create(:user)
+        other_user = create(:user)
         login_as(user)
         time = Time.zone.now - 5.minutes
         unopened2, partread, read1, read2, hidden_unread, hidden_partread = posts = Timecop.freeze(time) do
@@ -202,6 +203,8 @@ RSpec.describe ApplicationController do
           create(:reply, post: hidden_partread) # hidden_partread_reply
 
           read2.mark_read(user)
+          partread.reload
+          partread.mark_read(other_user)
         end
 
         hidden_unread.ignore(user)
@@ -213,11 +216,45 @@ RSpec.describe ApplicationController do
         expect(assigns(:opened_ids)).to match_array([partread, read1, read2, hidden_partread].map(&:id))
         expect(assigns(:unread_ids)).to match_array([partread, hidden_partread].map(&:id))
       end
+
+      it "can calculate unread count" do
+        user = create(:user)
+        other_user = create(:user)
+
+        unread_post = create(:post, num_replies: 3)
+        read_post = create(:post, num_replies: 2)
+        one_unread = create(:post)
+        two_unread = create(:post, num_replies: 1)
+
+        read_post.mark_read(user)
+        one_unread.mark_read(user)
+        one_unread.reload
+        one_unread.mark_read(other_user)
+        two_unread.mark_read(user)
+
+        create(:reply, post: one_unread)
+        create_list(:reply, 2, post: two_unread)
+
+        two_unread.reload
+        two_unread.mark_read(other_user)
+
+        posts = [unread_post, read_post, one_unread, two_unread]
+        relation = Post.where(id: posts.map(&:id))
+        login_as(user)
+        fetched_posts = controller.send(:posts_from_relation, relation, with_unread: true)
+        expect(fetched_posts).to match_array(posts)
+        expect(assigns(:opened_ids)).to match_array([read_post.id, one_unread.id, two_unread.id])
+        expect(assigns(:unread_ids)).to match_array([one_unread.id, two_unread.id])
+        expect(assigns(:unread_counts)).to eq({
+          one_unread.id => 1,
+          two_unread.id => 2,
+        })
+      end
     end
 
     context "when logged out" do
       it "returns empty array if no visible posts" do
-        hidden_post = create(:post, privacy: Concealable::PRIVATE)
+        hidden_post = create(:post, privacy: :private)
 
         relation = Post.where(id: hidden_post.id)
         fetched_posts = controller.send(:posts_from_relation, relation)
@@ -225,9 +262,9 @@ RSpec.describe ApplicationController do
       end
 
       it "filters array if mixed visible and not visible posts" do
-        hidden_post = create(:post, privacy: Concealable::PRIVATE)
-        public_post = create(:post, privacy: Concealable::PUBLIC)
-        conste_post = create(:post, privacy: Concealable::REGISTERED)
+        hidden_post = create(:post, privacy: :private)
+        public_post = create(:post, privacy: :public)
+        conste_post = create(:post, privacy: :registered)
 
         relation = Post.where(id: [hidden_post.id, public_post.id, conste_post.id])
         fetched_posts = controller.send(:posts_from_relation, relation)
@@ -255,6 +292,19 @@ RSpec.describe ApplicationController do
       relation = Post.where(id: default_post_ids)
       expect(controller.send(:posts_from_relation, relation.order(tagged_at: :asc), with_pagination: false).ids).to eq(default_post_ids)
       expect(controller.send(:posts_from_relation, relation.order(tagged_at: :desc), with_pagination: false).ids).to eq(default_post_ids.reverse)
+    end
+
+    it "uses an accurate custom post_count with joins and groups" do
+      create(:post, privacy: :private) # hidden
+      replyless = create(:post)
+      replyful = create(:post)
+      create_list(:reply, 2, post: replyful)
+
+      login
+      relation = Post.select("posts.*").left_joins(:replies).group("posts.id")
+      result = controller.send(:posts_from_relation, relation, max: true)
+      expect(result.to_a).to match_array([replyless, replyful])
+      expect(result.total_entries).to eq(2)
     end
 
     it "has more tests" do
@@ -395,6 +445,18 @@ RSpec.describe ApplicationController do
       user.save!
       get :index
       expect(response.json['logged_in']).to eq(false)
+    end
+  end
+
+  describe "#check_permanent_user" do
+    it "sets the user from cookie" do
+      current_zone = Time.zone.name
+      different_zone = ActiveSupport::TimeZone.all.detect { |z| z.name != current_zone }.name
+      user = create(:user, timezone: different_zone)
+      cookies.signed[:user_id] = user.id
+
+      get :index
+      expect(response.json['zone']).to eq(different_zone)
     end
   end
 end

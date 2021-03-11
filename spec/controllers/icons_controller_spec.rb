@@ -17,7 +17,7 @@ RSpec.describe IconsController do
 
     it "requires valid icons" do
       icon = create(:icon)
-      icon.destroy!
+      Audited.audit_class.as_user(icon.user) { icon.destroy! }
       user_id = login
       delete :delete_multiple, params: { marked_ids: [0, '0', 'abc', -1, '-1', icon.id] }
       expect(response).to redirect_to(user_galleries_url(user_id))
@@ -270,8 +270,8 @@ RSpec.describe IconsController do
       let(:icon) { create(:icon) }
       let(:post) { create(:post, icon: icon, user: icon.user) }
       let(:reply) { create(:reply, icon: icon, user: icon.user, post: create(:post)) }
-      let(:private_post) { create(:post, icon: icon, user: icon.user, privacy: Concealable::PRIVATE) }
-      let(:registered_post) { create(:post, icon: icon, user: icon.user, privacy: Concealable::REGISTERED) }
+      let(:private_post) { create(:post, icon: icon, user: icon.user, privacy: :private) }
+      let(:registered_post) { create(:post, icon: icon, user: icon.user, privacy: :registered) }
 
       before(:each) do
         create(:reply, post: post, user: icon.user, icon: icon)
@@ -288,7 +288,7 @@ RSpec.describe IconsController do
         expect(assigns(:posts_used)).to eq(4)
       end
 
-      it "fetches correct counts when logged out" do
+      it "fetches correct counts when logged in" do
         login
         get :show, params: { id: icon.id }
         expect(response).to have_http_status(200)
@@ -296,7 +296,7 @@ RSpec.describe IconsController do
         expect(assigns(:posts_used)).to eq(3)
       end
 
-      it "fetches corect counts when logged in" do
+      it "fetches corect counts when logged out" do
         get :show, params: { id: icon.id }
         expect(response).to have_http_status(200)
         expect(assigns(:times_used)).to eq(3)

@@ -31,19 +31,11 @@ RSpec.describe Block, type: :model do
     end
 
     it "should require a valid hide_them" do
-      block = build(:block, hide_them: -1)
-      expect(block).not_to be_valid
-      expect {
-        block.save!
-      }.to raise_error(ActiveRecord::RecordInvalid)
+      expect { build(:block, hide_them: -1) }.to raise_error(ArgumentError)
     end
 
     it "should require a valid hide_me" do
-      block = build(:block, hide_me: -1)
-      expect(block).not_to be_valid
-      expect {
-        block.save!
-      }.to raise_error(ActiveRecord::RecordInvalid)
+      expect { build(:block, hide_me: -1) }.to raise_error(ArgumentError)
     end
 
     it "should require an option to be set" do
@@ -79,19 +71,19 @@ RSpec.describe Block, type: :model do
 
   context "when hiding own content" do
     it "should allow full blocking" do
-      block = create(:block, hide_me: Block::ALL)
+      block = create(:block, hide_me: :all)
       expect(block.hide_my_posts?).to be(true)
-      expect(block.hide_my_content?).to be(true)
+      expect(block.hide_me_all?).to be(true)
     end
 
     it "should allow posts-only blocking" do
-      block = create(:block, hide_me: Block::POSTS)
+      block = create(:block, hide_me: :posts)
       expect(block.hide_my_posts?).to be(true)
-      expect(block.hide_my_content?).to be(false)
+      expect(block.hide_me_all?).to be(false)
     end
 
     it "should allow no blocking" do
-      block = create(:block, hide_me: Block::NONE)
+      block = create(:block, hide_me: :none)
       expect(block.hide_my_posts?).to be(false)
       expect(block.hide_my_posts?).to be(false)
     end
@@ -99,21 +91,21 @@ RSpec.describe Block, type: :model do
 
   context "when hiding their content" do
     it "should allow full blocking" do
-      block = create(:block, hide_them: Block::ALL)
+      block = create(:block, hide_them: :all)
       expect(block.hide_their_posts?).to be(true)
-      expect(block.hide_their_content?).to be(true)
+      expect(block.hide_them_all?).to be(true)
     end
 
     it "should allow posts-only blocking" do
-      block = create(:block, hide_them: Block::POSTS)
+      block = create(:block, hide_them: :posts)
       expect(block.hide_their_posts?).to be(true)
-      expect(block.hide_their_content?).to be(false)
+      expect(block.hide_them_all?).to be(false)
     end
 
     it "should allow no blocking" do
-      block = create(:block, hide_them: Block::NONE)
+      block = create(:block, hide_them: :none)
       expect(block.hide_their_posts?).to be(false)
-      expect(block.hide_their_posts?).to be(false)
+      expect(block.hide_them_all?).to be(false)
     end
   end
 

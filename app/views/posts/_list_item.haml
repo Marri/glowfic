@@ -8,18 +8,18 @@
       = image_tag "icons/hourglass.png", class: 'vmid', title: "Thread On Hiatus", alt: 'Hiatused'
     - elsif post.abandoned?
       = image_tag "icons/book_grey.png", class: 'vmid', title: "Thread Abandoned", alt: 'Abandoned'
-    - if post.access_list? || post.private?
-      = privacy_icon(post.privacy)
+    - if post.privacy_access_list? || post.privacy_private?
+      = privacy_icon(post.privacy.to_sym)
     - if !current_user.try(:hide_warnings) && post.has_content_warnings?
       = image_tag "icons/exclamation.png", class: 'vmid', title: "Content Warning: " + post.content_warnings.pluck(:name).join(', '), alt: 'Has Warnings'
   %td.post-subject.vtop{class: klass}
     - if logged_in?
       - if unread_post?(post, unread_ids) || (@show_unread && !opened_post?(post, opened_ids))
         = link_to unread_path(post) do
-          = image_tag unread_img, class: 'vmid', title: 'First Unread', alt: 'First Unread'
+          = image_tag unread_img, class: 'vmid mobile-target', title: 'First Unread', alt: 'First Unread'
       - elsif @show_unread
         = link_to unread_path(post) do
-          = image_tag lastlink_img, class: 'vmid', title: 'First Unread', alt: 'Jump To End'
+          = image_tag lastlink_img, class: 'vmid mobile-target', title: 'First Unread', alt: 'Jump To End'
     - if logged_in? && @opened_ids.present? && !@opened_ids.include?(post.id)
       %b= link_to post.subject, post_path(post), title: strip_tags(post.description)&.html_safe
     - else
@@ -47,7 +47,7 @@
   - if logged_in? && local_assigns[:show_unread_count]
     %td.width-70.vtop{class: klass}
       - if @opened_ids.include?(post.id) && unread_ids.include?(post.id)
-        = Reply.where(post_id: post.id).where('created_at > ?', post.last_read(current_user)).count
+        = @unread_counts.fetch(post.id, 0)
       - else
         \-
   %td.post-time.vtop{class: klass}

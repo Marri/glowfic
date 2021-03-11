@@ -42,6 +42,7 @@ require 'factory_bot_rails'
 require 'rails_helper'
 require 'support/spec_test_helper'
 require 'support/spec_feature_helper'
+require 'support/api_test_helper'
 
 require 'webdrivers'
 require 'selenium/webdriver'
@@ -93,6 +94,7 @@ RSpec.configure do |config|
 
   config.include FactoryBot::Syntax::Methods
   config.include SpecTestHelper, :type => :controller
+  config.include ApiTestHelper, :type => :controller
   config.include SpecFeatureHelper, :type => :feature
 
   config.filter_run :show_in_doc => true if ENV['APIPIE_RECORD']
@@ -159,9 +161,9 @@ RSpec.configure do |config|
     user = FactoryBot.create(:user)
     5.times do
       board = FactoryBot.create(:board, creator: user)
-      board.destroy
+      Audited.audit_class.as_user(user) { board.destroy! }
     end
-    user.destroy
+    user.destroy!
   end
 
   if ENV['APIPIE_RECORD']

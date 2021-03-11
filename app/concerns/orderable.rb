@@ -6,7 +6,7 @@ module Orderable
     after_save :reorder_others_after
     after_destroy :reorder_others_before
 
-    scope :ordered_manually, -> { order('section_order asc') }
+    scope :ordered_manually, -> { order('section_order asc') } unless respond_to?(:ordered_manually)
 
     def order
       section_order

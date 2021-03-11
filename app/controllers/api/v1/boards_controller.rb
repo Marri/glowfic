@@ -36,7 +36,7 @@ class Api::V1::BoardsController < Api::ApiController
       render json: {errors: [error]}, status: :not_found and return
     end
 
-    queryset = Post.where(privacy: Concealable::PUBLIC, board_id: board.id).with_reply_count.select('posts.*')
+    queryset = Post.privacy_public.where(board_id: board.id).with_reply_count.select('posts.*')
     posts = paginate queryset.includes(:board, :joined_authors, :section), per_page: 25
     render json: {results: posts}
   end

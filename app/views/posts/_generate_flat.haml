@@ -28,7 +28,7 @@
         .right-align>
           .padding-5>
             = precede 'Posted '.freeze do
-              %span.post-posted=pretty_time(reply.created_at, ApplicationHelper::TIME_FORMAT)
+              %span.post-posted=pretty_time(reply.created_at, format: ApplicationHelper::TIME_FORMAT)
             - if reply.created_at.to_i != reply.last_updated.to_i
               = precede ' | Updated '.freeze do
-                %span.post-updated=pretty_time(reply.last_updated, ApplicationHelper::TIME_FORMAT)
+                %span.post-updated=pretty_time(reply.last_updated, format: ApplicationHelper::TIME_FORMAT)

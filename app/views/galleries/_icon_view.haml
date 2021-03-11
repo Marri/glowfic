@@ -1,5 +1,5 @@
 = form_tag delete_multiple_icons_path, method: :delete do
-  = render partial: 'galleries/icon_item', collection: icons.pluck(:id, :keyword, :url), locals: {is_owner: is_owner, skip_forms: skip_forms}
+  = render partial: 'galleries/icon_item', collection: icons, locals: {is_owner: is_owner, skip_forms: skip_forms}
   - if is_owner && !skip_forms
     .clear.centered.icons-remove
       - if gallery

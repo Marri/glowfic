@@ -144,9 +144,7 @@ class Character < ApplicationRecord
   end
 
   def valid_galleries
-    if galleries.present? && galleries.detect{|g| g.user_id != user.id}
-      errors.add(:galleries, "must be yours")
-    end
+    errors.add(:galleries, "must be yours") if galleries.present? && galleries.detect{|g| g.user_id != user.id}
   end
 
   def valid_default_icon
@@ -156,8 +154,8 @@ class Character < ApplicationRecord
   end
 
   def clear_char_ids
-    UpdateModelJob.perform_later(Post.to_s, {character_id: id}, {character_id: nil})
-    UpdateModelJob.perform_later(Reply.to_s, {character_id: id}, {character_id: nil})
+    UpdateModelJob.perform_later(Post.to_s, {character_id: id}, {character_id: nil}, audited_user_id)
+    UpdateModelJob.perform_later(Reply.to_s, {character_id: id}, {character_id: nil}, audited_user_id)
   end
 
   def strip_spaces

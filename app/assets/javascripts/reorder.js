@@ -133,7 +133,7 @@ function syncRowOrders(orderBox, path, param) {
   // and restrict to relevant section_id if given
   if (window.gon && window.gon.section_id) json.section_id = window.gon.section_id;
 
-  $.post(path, json, function(resp) {
+  $.authenticatedPost(path, json, function(resp) {
     // Check the list doesn't have new elements, warn but don't block if it does
     if (orderedRows.length !== resp[param].length) {
       var sectionWarning = getOrCreateWarningBox(orderBox);

@@ -6,7 +6,7 @@
 # use the Viewable concern. This should be abstract enough to work.
 
 class Report < Object
-  def self.mark_read(user, at_time)
+  def self.mark_read(user, at_time:)
     view = view_for(user)
 
     if view.new_record?

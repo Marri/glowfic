@@ -7,17 +7,14 @@ class BoardSection < ApplicationRecord
 
   validates :name, presence: true
 
-  after_destroy :clear_post_values
+  after_destroy :clear_section_ids
 
   scope :ordered, -> { order(section_order: :asc) }
 
   private
 
-  def clear_post_values
-    Post.where(section_id: id).find_each do |post|
-      post.section_id = nil
-      post.save
-    end
+  def clear_section_ids
+    UpdateModelJob.perform_later(Post.to_s, {section_id: id}, {section_id: nil}, audited_user_id)
   end
 
   def ordered_attributes

@@ -34,7 +34,7 @@ RSpec.describe User do
 
   describe "emails" do
     def generate_emailless_user
-      user = build(:user, email: '')
+      user = build(:user, email: nil)
       user.send(:encrypt_password)
       user.save!(validate: false)
       user
@@ -129,7 +129,7 @@ RSpec.describe User do
       blocker = create(:user)
       unblocked = create(:user)
       only_posts = create(:user)
-      create(:block, blocking_user: blocker, blocked_user: only_posts, hide_them: Block::POSTS, block_interactions: false)
+      create(:block, blocking_user: blocker, blocked_user: only_posts, hide_them: :posts, block_interactions: false)
       blockees = create_list(:user, 3)
       blockees.each { |b| create(:block, blocking_user: blocker, blocked_user: b, block_interactions: true) }
       expect(blocker.can_interact_with?(unblocked)).to be(true)
@@ -138,6 +138,33 @@ RSpec.describe User do
       expect(blocker.user_ids_uninteractable).to match_array(blockees.map(&:id))
       expect(blocker).not_to have_interaction_blocked(only_posts)
       expect(blocker).to have_interaction_blocked(blockees.first)
+    end
+
+    describe "content" do
+      let(:user) { create(:user) }
+      let(:blocking_post_user) { create(:user) }
+      let(:blocking_content_user) { create(:user) }
+      let(:blocked_post_user) { create(:user) }
+      let(:blocked_content_user) { create(:user) }
+      let(:irrelevant_blocker1) { create(:user) }
+      let(:irrelevant_blocker2) { create(:user) }
+
+      before(:each) {
+        create(:block, blocking_user: blocking_post_user, blocked_user: user, hide_me: :posts)
+        create(:block, blocking_user: blocking_content_user, blocked_user: user, hide_me: :all)
+        create(:block, blocking_user: user, blocked_user: blocked_post_user, hide_them: :posts)
+        create(:block, blocking_user: user, blocked_user: blocked_content_user, hide_them: :all)
+        create(:block, blocking_user: irrelevant_blocker1, blocked_user: user, block_interactions: true)
+        create(:block, blocking_user: irrelevant_blocker2, blocked_user: user, hide_them: :posts)
+      }
+
+      it "correctly handles all hidden post users" do
+        expect(user.hidden_post_users).to match_array([blocking_post_user, blocking_content_user, blocked_post_user, blocked_content_user].map(&:id))
+      end
+
+      it "correctly handles just blocking post users" do
+        expect(user.blocking_post_users).to match_array([blocking_post_user, blocking_content_user].map(&:id))
+      end
     end
   end
 
@@ -190,11 +217,11 @@ RSpec.describe User do
     before(:each) do
       allow(Rails).to receive(:cache).and_return(memory_store)
       Rails.cache.clear
-      create(:post, privacy: Concealable::ACCESS_LIST)
-      create(:post, privacy: Concealable::PRIVATE)
+      create(:post, privacy: :access_list)
+      create(:post, privacy: :private)
       create(:post)
-      create(:post, user: user, privacy: Concealable::ACCESS_LIST)
-      create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [create(:user).id])
+      create(:post, user: user, privacy: :access_list)
+      create(:post, privacy: :access_list, viewer_ids: [create(:user).id])
       PostViewer.create!(post: create(:post), user: create(:user))
     end
 
@@ -203,7 +230,7 @@ RSpec.describe User do
     end
 
     context "with a visible post" do
-      let (:visible_post) { create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id, create(:user).id]) }
+      let (:visible_post) { create(:post, privacy: :access_list, viewer_ids: [user.id, create(:user).id]) }
 
       before(:each) { visible_post }
 
@@ -212,8 +239,8 @@ RSpec.describe User do
       end
 
       it "records the correct visible posts" do
-        second_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id] + create_list(:user, 3).map(&:id))
-        third_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id])
+        second_visible = create(:post, privacy: :access_list, viewer_ids: [user.id] + create_list(:user, 3).map(&:id))
+        third_visible = create(:post, privacy: :access_list, viewer_ids: [user.id])
         expect(user.visible_posts).to match_array([visible_post.id, second_visible.id, third_visible.id])
         expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
       end
@@ -230,7 +257,7 @@ RSpec.describe User do
 
       it "handles being added to an access list" do
         expect(user.visible_posts).to eq([visible_post.id])
-        second_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: create_list(:user, 3).map(&:id))
+        second_visible = create(:post, privacy: :access_list, viewer_ids: create_list(:user, 3).map(&:id))
         ids = second_visible.viewer_ids + [user.id]
         second_visible.update!(viewer_ids: ids)
         expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
@@ -240,14 +267,14 @@ RSpec.describe User do
       it "handles a new access-listed post" do
         expect(user.visible_posts).to eq([visible_post.id])
         expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
-        second_visible = create(:post, privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id] + create_list(:user, 3).map(&:id))
+        second_visible = create(:post, privacy: :access_list, viewer_ids: [user.id] + create_list(:user, 3).map(&:id))
         expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(false)
         expect(user.visible_posts).to match_array([visible_post.id, second_visible.id])
       end
 
       it "handles a post becoming access-listed" do
         public_post = create(:post)
-        public_post.update!(privacy: Concealable::ACCESS_LIST, viewer_ids: [user.id])
+        public_post.update!(privacy: :access_list, viewer_ids: [user.id])
         expect(Post.visible_to(user)).to include(visible_post)
       end
 
@@ -255,21 +282,21 @@ RSpec.describe User do
         public_post = create(:post)
         PostViewer.create!(post: public_post, user: user)
         expect(user.visible_posts).to match_array([visible_post.id, public_post.id])
-        public_post.update!(privacy: Concealable::ACCESS_LIST)
+        public_post.update!(privacy: :access_list)
         expect(Post.visible_to(user)).to include(visible_post)
       end
 
       it "handles an access listed post becoming public" do
         expect(user.visible_posts).to eq([visible_post.id])
         expect(cache.exist?(PostViewer.cache_string_for(user.id))).to be(true)
-        visible_post.update!(privacy: Concealable::PUBLIC)
+        visible_post.update!(privacy: :public)
         expect(Post.all.visible_to(user)).to include(visible_post)
       end
 
       it "handles an access listed post becoming private" do
         expect(user.visible_posts).to eq([visible_post.id])
         expect(Post.visible_to(user)).to include(visible_post)
-        visible_post.update!(privacy: Concealable::PRIVATE)
+        visible_post.update!(privacy: :private)
         expect(Post.visible_to(user)).not_to include(visible_post)
       end
     end

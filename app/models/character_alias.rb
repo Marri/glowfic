@@ -13,7 +13,7 @@ class CharacterAlias < ApplicationRecord
   private
 
   def clear_alias_ids
-    UpdateModelJob.perform_later(Reply.to_s, {character_alias_id: id}, {character_alias_id: nil})
-    UpdateModelJob.perform_later(Post.to_s, {character_alias_id: id}, {character_alias_id: nil})
+    UpdateModelJob.perform_later(Reply.to_s, {character_alias_id: id}, {character_alias_id: nil}, audited_user_id)
+    UpdateModelJob.perform_later(Post.to_s, {character_alias_id: id}, {character_alias_id: nil}, audited_user_id)
   end
 end

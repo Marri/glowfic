@@ -54,6 +54,7 @@
     %tr.gallery-subheader
       %th.sub Unsorted icons without a gallery will appear here. They can still be individually assigned to a character with no galleries.
   - icons ||= gallery ? gallery.icons : @user.galleryless_icons
+  - icons = icons.pluck(:id, :keyword, :url, :credit)
   - if page_view == 'list' && icons.present?
     = render partial_type, gallery: gallery, icons: icons, is_owner: is_owner, skip_forms: skip_forms
   - else

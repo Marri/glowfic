@@ -13,16 +13,16 @@ EXCLUDED_SCHEMA = {
   Setting: ['created_at', 'updated_at', 'description'],
   CharacterTag: ['created_at', 'updated_at'],
   GalleryTag: ['created_at', 'updated_at'],
-  TagTag: ['created_at', 'updated_at', 'suggested'],
+  Tag::SettingTag => ['created_at', 'updated_at', 'suggested'],
   PostTag: ['created_at', 'updated_at', 'suggested'],
   'Audited::Audit': [],
-  PostAuthor: ['created_at', 'updated_at'],
+  Post::Author => ['created_at', 'updated_at'],
   Message: ['created_at', 'updated_at'],
-  Post::View: ['created_at', 'updated_at', 'ignored', 'notify_message', 'notify_email', 'warnings_hidden'],
+  Post::View => ['created_at', 'updated_at', 'ignored', 'notify_message', 'notify_email', 'warnings_hidden'],
 }
 
 MODELS = [Icon, Template, Character, CharacterAlias, Gallery, CharactersGallery, GalleriesIcon, Post, Reply, ContentWarning, GalleryGroup,
-          Setting, CharacterTag, GalleryTag, TagTag, PostTag, Post::View]
+          Setting, CharacterTag, GalleryTag, Tag::SettingTag, PostTag, Post::View]
 
 FILES = {
   # Icon: [Icon],
@@ -32,7 +32,7 @@ FILES = {
          'FlatPost.regenerate_all'],
   # Reply: [Reply],
   Tag: [ContentWarning, GalleryGroup, Setting, 'puts "Assigning tags to characters..."', CharacterTag, 'puts "Assigning tags to galleries..."',
-        GalleryTag, 'puts "Attaching settings to each other..."', TagTag, 'puts "Attaching tags to posts..."', PostTag]
+        GalleryTag, 'puts "Attaching settings to each other..."', Tag::SettingTag, 'puts "Attaching tags to posts..."', PostTag]
 }
 
 def dump(model)
@@ -51,7 +51,7 @@ def sort(file)
   `mv -f db/seeds/tmp #{file}`
 end
 
-def clean(file, expand = false)
+def clean(file, expand=false)
   sort(file)
   lines = []
   File.readlines(file).each do |line|

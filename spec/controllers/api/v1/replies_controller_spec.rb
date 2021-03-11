@@ -8,7 +8,7 @@ RSpec.describe Api::V1::RepliesController do
     end
 
     it "requires access to post", :show_in_doc do
-      post = create(:post, privacy: Concealable::PRIVATE)
+      post = create(:post, privacy: :private)
       get :index, params: { post_id: post.id }
       expect(response).to have_http_status(403)
       expect(response.json['errors'][0]['message']).to eq("You do not have permission to perform this action.")

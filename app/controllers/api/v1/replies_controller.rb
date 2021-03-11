@@ -10,7 +10,7 @@ class Api::V1::RepliesController < Api::ApiController
   error 403, "Post is not visible to the user"
   error 404, "Post not found"
   def index
-    return unless (post = find_object(Post, :post_id))
+    return unless (post = find_object(Post, param: :post_id))
     access_denied and return unless post.visible_to?(current_user)
 
     replies = post.replies

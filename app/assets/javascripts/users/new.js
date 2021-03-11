@@ -16,7 +16,7 @@ $(document).ready(function() {
   });
 
   $("#user_password_confirmation").blur(function() {
-    $("#signup-password-conf .user-alert").hide();
+    $("#signup-password-confirmation .user-alert").hide();
     validateConfirmation();
   });
 
@@ -47,7 +47,7 @@ function validateUsername() {
     return false;
   }
 
-  $.get('/api/v1/users', {'q': username, 'match': 'exact'}, function(resp, status, xhr) {
+  $.authenticatedGet('/api/v1/users', {'q': username, 'match': 'exact'}, function(resp, status, xhr) {
     var total = xhr.getResponseHeader('Total');
     if (total > 0) {
       addAlertAfter('username', 'That username has already been taken.');
@@ -68,32 +68,29 @@ function validateEmail() {
 }
 
 function validatePassword() {
-  var password = $("#user_password").val();
-  var conf = $("#user_password_confirmation").val();
-  var success = true;
-  if (password === '') {
-    addAlertAfter('password', 'Please choose a password.');
-    success = false;
-  }
-  if (conf !== password) {
-    addAlertAfter('password-conf', 'Your passwords do not match.');
-    success = false;
-  }
-  return success;
+  return validatePasswordField('password', 'password_confirmation', 'choose');
 }
 
 function validateConfirmation() {
-  var password = $("#user_password").val();
-  var conf = $("#user_password_confirmation").val();
+  return validatePasswordField('password_confirmation', 'password', 'confirm');
+}
+
+function validatePasswordField(primaryField, secondaryField, verb) {
+  var primary = $("#user_"+primaryField).val();
+  var secondary = $("#user_"+secondaryField).val();
   var success = true;
-  if (conf === '') {
-    addAlertAfter('password-conf', 'Please confirm your password.');
+
+  if (primary === '') {
+    var addAfterId = primaryField.replace("_", "-");
+    addAlertAfter(addAfterId, 'Please '+verb+' your password.');
     success = false;
   }
-  if (conf !== password) {
-    addAlertAfter('password-conf', 'Your passwords do not match.');
+
+  if (secondary !== primary) {
+    addAlertAfter('password-confirmation', 'Your passwords do not match.');
     success = false;
   }
+
   return success;
 }
 

@@ -61,6 +61,13 @@ RSpec.describe TagsController do
       expect(assigns(:tags)).to eq([setting1, setting2, tag1, tag2, warning1, warning2])
     end
 
+    it "performs a full-text match on tag names" do
+      warning2 = create(:content_warning, name: 'dubcon')
+      warning1 = create(:content_warning, name: 'con')
+      get :index, params: { name: 'con' }
+      expect(assigns(:tags)).to eq([warning1, warning2])
+    end
+
     it 'checks for valid tag type' do
       get :index, params: { view: 'NotATagType' }
       expect(response).to redirect_to(tags_path)
@@ -320,6 +327,16 @@ RSpec.describe TagsController do
       expect(response).to redirect_to(tag_url(tag))
       expect(flash[:success]).to eq("Tag saved!")
       expect(tag.reload.name).to eq(name)
+    end
+
+    it "allows update of setting tags" do
+      tag = create(:setting)
+      parent_tag = create(:setting)
+      login_as(tag.user)
+      expect(tag.parent_settings).to be_empty
+      put :update, params: { id: tag.id, tag: {name: 'newname', parent_setting_ids: ["", parent_tag.id.to_s]} }
+      expect(tag.reload.name).to eq('newname')
+      expect(Setting.find(tag.id).parent_settings).to eq([parent_tag])
     end
   end
 

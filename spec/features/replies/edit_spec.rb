@@ -34,7 +34,7 @@ RSpec.feature "Creating replies", :type => :feature do
     expect(page).to have_no_selector('.post-container')
     within('#post-editor') do
       fill_in 'reply_content', with: 'other text'
-      click_button 'Save'
+      click_button 'submit_button'
     end
 
     expect(page).to have_no_selector('.error')
@@ -78,7 +78,7 @@ RSpec.feature "Creating replies", :type => :feature do
     within('#post-editor') do
       expect(page).to have_field('reply_content', with: 'other text')
       fill_in 'reply_content', with: 'third text'
-      click_button 'Save'
+      click_button 'submit_button'
     end
 
     expect(page).to have_no_selector('.error')

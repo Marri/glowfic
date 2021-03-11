@@ -30,6 +30,8 @@ body {
  * Correct `block` display not defined for `main` in IE 11.
  */
 
+/* summary removed from this list due to display: block causing issues with some browsers. */
+
 article,
 aside,
 details,
@@ -41,8 +43,7 @@ hgroup,
 main,
 menu,
 nav,
-section,
-summary {
+section {
   display: block;
 }
 

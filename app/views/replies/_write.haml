@@ -26,14 +26,31 @@
       = submit_tag "Preview", class: 'button', id: 'preview_button', name: 'button_preview', data: { disable_with: 'Previewing...' }
       - if reply.new_record?
         = submit_tag "Save Draft", class: 'button', id: 'draft_button', data: { disable_with: 'Drafting...' }, name: 'button_draft'
-    - if reply.post.author_for(current_user)&.private_note.present?
+    - if reply.post.author_for(current_user).present?
       %hr.clear
-      %b Your Post Notes
-      &nbsp;
-      = link_to edit_post_path(reply.post, anchor: 'post-notes') do
-        = image_tag "icons/pencil.png".freeze, title: 'Edit', alt: 'Edit'
-      %br
-      = sanitize_written_content(reply.post.author_for(current_user).private_note)
+      .post-note-editor
+        .loading.float-right.hidden
+          = image_tag 'icons/loading.gif', title: 'Loading...', class: 'vmid', alt: 'Loading...'
+        .saveerror.float-right.hidden
+          = image_tag "icons/exclamation.png", title: 'Error', class: 'vmid', alt: ''
+          Error, please try again
+        .saveconf.float-right.hidden
+          = image_tag "icons/accept.png", title: 'Saved', class: 'vmid', alt: ''
+          Saved
+        %b Your Author Notes
+        = image_tag "icons/pencil.png".freeze, title: 'Edit', alt: 'Edit', class: 'edit-private-notes pointer'
+        %br
+        .private-note
+          - if (note = reply.post.author_for(current_user).private_note).present?
+            = sanitize_written_content(note)
+          - else
+            %em (You haven't written a note yet!)
+        .private-note-editor.hidden
+          = text_area_tag :private_note, params[:private_note] || reply.post.author_for(current_user).private_note, id: 'post_private_note'
+          = submit_tag 'Save', class: 'save-private-note button'
+          = submit_tag 'Discard Changes', class: 'discard-private-note button'
+        #dialog-confirm{title: "Your author note has unsaved changes!"}
+          %p What would you like to do with your unsaved changes?
     - else
       %br
     = render 'posts/editor_help'

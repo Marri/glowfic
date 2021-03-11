@@ -8,7 +8,7 @@
           %th.subber Times Used
           %th.subber Posts In
           %th.subber
-        = render partial: 'galleries/list_item', collection: icons.pluck(:id, :keyword, :credit), locals: {is_owner: is_owner, skip_forms: skip_forms}
+        = render partial: 'galleries/list_item', collection: icons, locals: {is_owner: is_owner, skip_forms: skip_forms}
         - if is_owner && !skip_forms
           %tr
             %th.form-table-ender{colspan: 5}

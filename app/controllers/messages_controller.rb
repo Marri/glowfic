@@ -77,7 +77,7 @@ class MessagesController < ApplicationController
       @messages.each do |m|
         next unless m.unread?
         next unless m.recipient_id == current_user.id
-        m.update(unread: false)
+        m.update(unread: false, read_at: m.read_at || Time.zone.now)
       end
     end
     @message = Message.new
@@ -95,7 +95,7 @@ class MessagesController < ApplicationController
     if params[:commit] == "Mark Read"
       messages.each do |message|
         next unless message.recipient_id == current_user.id
-        message.update(unread: false)
+        message.update(unread: false, read_at: message.read_at || Time.zone.now)
       end
     elsif params[:commit] == "Mark Unread"
       messages.each do |message|
@@ -107,7 +107,7 @@ class MessagesController < ApplicationController
         box_attr = "visible_#{box}"
         user_id_attr = (box == 'inbox') ? 'recipient_id' : 'sender_id'
         Message.where(thread_id: message.thread_id, "#{user_id_attr}": current_user.id).each do |thread_message|
-          thread_message.update(box_attr => false, unread: false)
+          thread_message.update(box_attr => false, unread: false, read_at: thread_message.read_at || Time.zone.now)
         end
       end
     else

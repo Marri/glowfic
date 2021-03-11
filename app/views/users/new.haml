@@ -25,7 +25,7 @@
           .user-alert.hidden
             = image_tag 'icons/exclamation.png', alt: '!', title: '', class: 'vmid'
             %span.msg
-      %tr#signup-password-conf
+      %tr#signup-password-confirmation
         %th.sub.vtop Confirm
         %td.odd
           = f.password_field :password_confirmation, placeholder: "Confirm Password"

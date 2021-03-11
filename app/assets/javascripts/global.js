@@ -172,13 +172,38 @@ function createTagSelect(tagType, selector, formType, scope) {
 
 function createSelect2(selector, options) {
   if (!options.width) { options.width = '100%'; }
-
-  if (options.ajax) {
-    options.ajax.delay = 200;
-    options.ajax.dataType = 'json';
-    options.ajax.cache = true;
-    if (!options.ajax.data) { options.ajax.data = queryTransform; }
-  }
-
+  if (options.ajax) addAjaxOptions(options);
   $(selector).select2(options);
 }
+
+function addAjaxOptions(options) {
+  options.ajax.delay = 200;
+  options.ajax.dataType = 'json';
+  options.ajax.cache = true;
+  if (gon.logged_in) options.ajax.headers = {'Authorization': 'Bearer '+gon.api_token};
+  if (!options.ajax.data) { options.ajax.data = queryTransform; }
+}
+
+$.authenticatedGet = function(url, data, success, dataType) {
+  return $.authenticatedAjax({
+    url: url,
+    data: data,
+    success: success,
+    dataType: dataType
+  });
+};
+
+$.authenticatedPost = function(url, data, success, dataType) {
+  return $.authenticatedAjax({
+    url: url,
+    data: data,
+    success: success,
+    dataType: dataType,
+    type: "POST",
+  });
+};
+
+$.authenticatedAjax = function(options) {
+  if (gon.logged_in) options.headers = {'Authorization': 'Bearer '+gon.api_token};
+  return $.ajax(options);
+};

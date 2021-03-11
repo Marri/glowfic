@@ -3,7 +3,6 @@ class Block < ApplicationRecord
   belongs_to :blocked_user, class_name: 'User', optional: false
 
   validates :blocking_user_id, uniqueness: { scope: :blocked_user_id }
-  validates :hide_them, :hide_me, inclusion: { in: 0..2 }
   validate :not_blocking_self
   validate :option_chosen
 
@@ -12,10 +11,21 @@ class Block < ApplicationRecord
   scope :ordered, -> { includes(:blocked_user).sort_by { |block| [block.blocked_user.username.downcase] } }
 
   after_create :mark_messages_read
+  after_commit :invalidate_caches
 
-  NONE = 0
-  POSTS = 1
-  ALL = 2
+  enum hide_me: {
+    none: 0,
+    posts: 1,
+    all: 2
+  }, _prefix: true
+
+  enum hide_them: {
+    none: 0,
+    posts: 1,
+    all: 2
+  }, _prefix: true
+
+  CACHE_VERSION = 4
 
   def editable_by?(user)
     return false unless user
@@ -23,19 +33,15 @@ class Block < ApplicationRecord
   end
 
   def hide_my_posts?
-    self.hide_me != NONE
-  end
-
-  def hide_my_content?
-    self.hide_me == ALL
+    !hide_me_none?
   end
 
   def hide_their_posts?
-    self.hide_them != NONE
+    !hide_them_none?
   end
 
-  def hide_their_content?
-    self.hide_them == ALL
+  def self.cache_string_for(user_id, string='blocked')
+    "#{Rails.env}.#{CACHE_VERSION}.#{string}_posts.#{user_id}"
   end
 
   private
@@ -55,5 +61,10 @@ class Block < ApplicationRecord
       message.unread = false
       message.save
     end
+  end
+
+  def invalidate_caches
+    Rails.cache.delete(Block.cache_string_for(self.blocking_user.id, 'hidden'))
+    Rails.cache.delete(Block.cache_string_for(self.blocked_user.id, 'blocked'))
   end
 end

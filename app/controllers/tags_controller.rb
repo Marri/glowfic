@@ -46,7 +46,7 @@ class TagsController < ApplicationController
 
     begin
       Tag.transaction do
-        @tag.parent_settings = process_tags(Setting, :tag, :parent_setting_ids) if @tag.is_a?(Setting)
+        @tag.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids) if @tag.is_a?(Setting)
         @tag.save!
       end
     rescue ActiveRecord::RecordInvalid
@@ -112,7 +112,7 @@ class TagsController < ApplicationController
     desc = []
     desc << generate_short(@tag.description) if @tag.description.present?
     stats = []
-    post_count = @tag.posts.where(privacy: Concealable::PUBLIC).count
+    post_count = @tag.posts.privacy_public.count
     stats << "#{post_count} " + "post".pluralize(post_count) if post_count > 0
     gallery_count = @tag.galleries.count
     stats << "#{gallery_count} " + "gallery".pluralize(gallery_count) if gallery_count > 0

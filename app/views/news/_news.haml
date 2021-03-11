@@ -2,6 +2,8 @@
 .post-container.news-container{class: cycle('even', 'odd')}
   .padding-10
     .post-edit-box
+      = link_to news_path(news), rel: 'alternate'.freeze do
+        = image_tag "icons/link.png".freeze, title: 'Permalink'.freeze, alt: 'Permalink'.freeze
       - if news.editable_by?(current_user)
         = link_to edit_news_path(news) do
           = image_tag "icons/pencil.png".freeze, title: 'Edit'.freeze, alt: 'Edit'.freeze

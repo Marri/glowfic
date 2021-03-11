@@ -1,16 +1,12 @@
+//= require posts/edit_notes
 /* global gon, tinyMCE, resizeScreenname, createTagSelect, createSelect2 */
+
 var tinyMCEInit = false, shownIcons = [];
-var PRIVACY_ACCESS = 2; // TODO don't hardcode
 var iconSelectBox;
 
 $(document).ready(function() {
   setupMetadataEditor();
   iconSelectBox = $('#reply-icon-selector');
-
-  var formButtons = $("#submit_button, #draft_button, #preview_button");
-  formButtons.click(function() {
-    formButtons.not(this).data('disable-with', '').prop('disabled', true);
-  });
 
   if ($("#post-editor .view-button").length > 0) setupWritableEditor();
 });
@@ -48,7 +44,7 @@ function setupMetadataEditor() {
   createTagSelect("Setting", "setting", "post");
   createTagSelect("ContentWarning", "content_warning", "post");
 
-  if (String($("#post_privacy").val()) !== String(PRIVACY_ACCESS)) {
+  if ($("#post_privacy").val() !== 'access_list') {
     $("#access_list").hide();
   }
 
@@ -56,7 +52,7 @@ function setupMetadataEditor() {
   $("#post_board_id").change(function() { setSections(); });
 
   $("#post_privacy").change(function() {
-    if (String($(this).val()) === String(PRIVACY_ACCESS)) {
+    if ($(this).val() === 'access_list') {
       $("#access_list").show();
     } else {
       $("#access_list").hide();
@@ -443,7 +439,7 @@ function getAndSetCharacterData(characterId, options) {
   }
 
   var postID = $("#reply_post_id").val();
-  $.getJSON('/api/v1/characters/' + characterId, {post_id: postID}, function(resp) {
+  $.authenticatedGet('/api/v1/characters/' + characterId, {post_id: postID}, function(resp) {
     setFormData(characterId, resp, options);
   });
 }
@@ -480,7 +476,7 @@ function setIcon(id, url, title, alt) {
 
 function setSections() {
   var boardId = $("#post_board_id").val();
-  $.get("/api/v1/boards/"+boardId, {}, function(resp) {
+  $.authenticatedGet("/api/v1/boards/"+boardId, {}, function(resp) {
     var sections = resp.board_sections;
     if (sections.length > 0) {
       $("#section").show();

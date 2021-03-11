@@ -30,8 +30,8 @@ class Api::V1::UsersController < Api::ApiController
   def posts
     return unless (user = find_object(User))
 
-    post_ids = PostAuthor.where(user: user).pluck(:post_id)
-    queryset = Post.where(privacy: Concealable::PUBLIC, id: post_ids).with_reply_count.select('posts.*')
+    post_ids = Post::Author.where(user: user).pluck(:post_id)
+    queryset = Post.privacy_public.where(id: post_ids).with_reply_count.select('posts.*')
     posts = paginate queryset.includes(:board, :joined_authors, :section), per_page: 25
     render json: {results: posts}
   end

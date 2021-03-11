@@ -106,7 +106,7 @@ $(document).ready(function() {
     if (newId.substring(0, 1) === '_') return; // skip uncreated tags
 
     // fetch galleryGroup galleryIds
-    $.get('/api/v1/tags/'+newId, {user_id: gon.user_id}, function(resp) {
+    $.authenticatedGet('/api/v1/tags/'+newId, {user_id: gon.user_id}, function(resp) {
       var ids = resp.gallery_ids;
       galleryGroups[resp.id] = {gallery_ids: ids};
 
@@ -162,7 +162,7 @@ function findGalleryInGroups(galleryId) {
 }
 
 function displayGallery(newId) {
-  $.get('/api/v1/galleries/'+newId, function(resp) {
+  $.authenticatedGet('/api/v1/galleries/'+newId, {}, function(resp) {
     var galleryObj = $("<div>").attr({id: 'gallery'+newId}).data('id', newId);
     galleryObj.append("<br />");
     galleryObj.append($("<b>").attr({class: 'gallery-name'}).append(resp.name));
@@ -199,10 +199,10 @@ function bindIcons(obj) {
 
 function updateIcon(id) {
   if (gon.character_id) {
-    $.ajax({
+    $.authenticatedAjax({
       url: '/api/v1/characters/'+gon.character_id,
       type: 'PUT',
-      data: {character: {default_icon_id: id}}
+      data: {character: {default_icon_id: id}},
     });
   } else {
     $("#character_default_icon_id").val(id);

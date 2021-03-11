@@ -1,5 +1,101 @@
 RSpec.describe PostsController do
+  shared_examples "logged out post list" do
+    it "does not show user-only posts" do
+      posts = create_list(:post, 2)
+      create_list(:post, 2, privacy: :registered)
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(Post.all.count).to eq(4)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+  end
+
+  shared_examples "logged in post list" do
+    let(:user) { create(:user) }
+    let(:posts) { create_list(:post, 3) }
+
+    before(:each) {
+      login_as(user)
+      posts
+    }
+
+    it "does not show access-locked or private threads" do
+      create(:post, privacy: :private)
+      create(:post, privacy: :access_list)
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+
+    it "shows access-locked and private threads if you have access" do
+      posts << create(:post, user: user, privacy: :private)
+      posts << create(:post, user: user, privacy: :access_list)
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+
+    it "does not show posts with blocked or blocking authors" do
+      post1 = create(:post, authors_locked: true)
+      post2 = create(:post, authors_locked: true)
+      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+
+    it "shows posts with a blocked (but not blocking) author with show_blocked" do
+      post1 = create(:post, authors_locked: true)
+      post2 = create(:post, authors_locked: true)
+      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+      params[:show_blocked] = true
+      posts << post1
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+
+    it "shows your own posts with blocked or but not blocking authors" do
+      post1 = create(:post, authors_locked: true, author_ids: [user.id])
+      create(:reply, post: post1, user: user)
+      post2 = create(:post, authors_locked: true, author_ids: [user.id])
+      create(:reply, post: post2, user: user)
+      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+      posts << post2
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+
+    it "shows unlocked posts with incomplete blocking" do
+      post1 = create(:post)
+      post2 = create(:post)
+      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts + [post1, post2])
+    end
+
+    it "does not show unlocked posts with full blocking" do
+      post1 = create(:post)
+      post2 = create(:post)
+      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :all)
+      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :all)
+      get controller_action, params: params
+      expect(response.status).to eq(200)
+      expect(assigns(assign_variable)).to match_array(posts)
+    end
+  end
+
   describe "GET index" do
+    let(:controller_action) { "index" }
+    let(:params) { { } }
+    let(:assign_variable) { :posts }
+
     it "has a 200 status code" do
       get :index
       expect(response.status).to eq(200)
@@ -53,6 +149,14 @@ RSpec.describe PostsController do
         expect(response.body).to include('title="A &amp; B do a thing"')
       end
     end
+
+    context "when logged out" do
+      include_examples "logged out post list"
+    end
+
+    context "when logged in" do
+      include_examples "logged in post list"
+    end
   end
 
   describe "GET search" do
@@ -74,6 +178,10 @@ RSpec.describe PostsController do
     end
 
     context "searching" do
+      let(:controller_action) { "search" }
+      let(:params) { { commit: true } }
+      let(:assign_variable) { :search_results }
+
       it "finds all when no arguments given" do
         create_list(:post, 4)
         get :search, params: { commit: true }
@@ -112,7 +220,7 @@ RSpec.describe PostsController do
       end
 
       it "restricts to visible posts" do
-        create(:post, subject: 'contains stars', privacy: Concealable::PRIVATE)
+        create(:post, subject: 'contains stars', privacy: :private)
         post = create(:post, subject: 'visible contains stars')
         get :search, params: { commit: true, subject: 'stars' }
         expect(assigns(:search_results)).to match_array([post])
@@ -175,6 +283,14 @@ RSpec.describe PostsController do
         create(:reply, post: posts[1])
         get :search, params: { commit: true }
         expect(assigns(:search_results)).to eq([posts[1], posts[2], posts[3], posts[0]])
+      end
+
+      context "when logged out" do
+        include_examples "logged out post list"
+      end
+
+      context "when logged in" do
+        include_examples "logged in post list"
       end
     end
   end
@@ -401,14 +517,14 @@ RSpec.describe PostsController do
             button_preview: true,
             post: {
               subject: 'test subject',
-              privacy: Concealable::ACCESS_LIST,
+              privacy: :access_list,
               board_id: board.id,
               unjoined_author_ids: [coauthor.id],
               viewer_ids: [coauthor.id, create(:user).id],
               content: 'test content',
             },
           }
-        }.not_to change { [PostAuthor.count, PostViewer.count, BoardAuthor.count] }
+        }.not_to change { [Post::Author.count, PostViewer.count, BoardAuthor.count] }
 
         expect(flash[:error]).to be_nil
         expect(assigns(:page_title)).to eq('Previewing: ' + assigns(:post).subject.to_s)
@@ -487,7 +603,7 @@ RSpec.describe PostsController do
               private_note: 'there is a note!'
             }
           }
-        }.to change { PostAuthor.count }.by(2)
+        }.to change { Post::Author.count }.by(2)
       end
 
       post = assigns(:post).reload
@@ -523,7 +639,7 @@ RSpec.describe PostsController do
               unjoined_author_ids: ['']
             }
           }
-        }.to change { PostAuthor.count }.by(1)
+        }.to change { Post::Author.count }.by(1)
       end
 
       post = assigns(:post).reload
@@ -707,7 +823,7 @@ RSpec.describe PostsController do
             character_id: char.id,
             icon_id: icon.id,
             character_alias_id: calias.id,
-            privacy: Concealable::ACCESS_LIST,
+            privacy: :access_list,
             viewer_ids: [viewer.id],
             setting_ids: [setting1.id, '_'+setting2.name, '_other'],
             content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
@@ -731,7 +847,7 @@ RSpec.describe PostsController do
       expect(post.character_id).to eq(char.id)
       expect(post.icon_id).to eq(icon.id)
       expect(post.character_alias_id).to eq(calias.id)
-      expect(post.privacy).to eq(Concealable::ACCESS_LIST)
+      expect(post).to be_privacy_access_list
       expect(post.viewers).to match_array([viewer])
       expect(post.reload).to be_visible_to(viewer)
       expect(post.reload).not_to be_visible_to(create(:user))
@@ -761,12 +877,75 @@ RSpec.describe PostsController do
         post: {
           subject: 'subject',
           board_id: create(:board).id,
-          privacy: Concealable::REGISTERED,
+          privacy: :registered,
           content: 'content',
         }
       }
       post = assigns(:post)
       expect(post.flat_post).not_to be_nil
+    end
+
+    context "with blocks" do
+      let(:user) { create(:user) }
+      let(:blocked) { create(:user) }
+      let(:blocking) { create(:user) }
+      let(:other_user) { create(:user) }
+      let(:memory_store) { ActiveSupport::Cache.lookup_store(:memory_store) }
+
+      before(:each) do
+        create(:block, blocking_user: user, blocked_user: blocked, hide_me: :posts)
+        create(:block, blocking_user: blocking, blocked_user: user, hide_them: :posts)
+        allow(Rails).to receive(:cache).and_return(memory_store)
+        Rails.cache.clear
+      end
+
+      it "regenerates blocked and hidden posts for poster" do
+        expect(blocking.hidden_posts).to be_empty
+        expect(blocked.blocked_posts).to be_empty
+
+        login_as(user)
+
+        post :create, params: {
+          post: {
+            subject: "subject",
+            user_id: user.id,
+            board_id: create(:board).id,
+            authors_locked: true,
+            unjoined_author_ids: [other_user.id],
+          }
+        }
+
+        expect(Rails.cache.exist?(Block.cache_string_for(blocking.id, 'hidden'))).to be(false)
+        expect(Rails.cache.exist?(Block.cache_string_for(blocked.id, 'blocked'))).to be(false)
+
+        post = assigns(:post)
+        expect(blocking.hidden_posts).to eq([post.id])
+        expect(blocked.blocked_posts).to eq([post.id])
+      end
+
+      it "regenerates blocked and hidden posts for coauthor" do
+        expect(blocking.hidden_posts).to be_empty
+        expect(blocked.blocked_posts).to be_empty
+
+        login_as(other_user)
+
+        post :create, params: {
+          post: {
+            subject: "subject",
+            user_id: other_user.id,
+            board_id: create(:board).id,
+            authors_locked: true,
+            unjoined_author_ids: [user.id],
+          }
+        }
+
+        expect(Rails.cache.exist?(Block.cache_string_for(blocking.id, 'hidden'))).to be(false)
+        expect(Rails.cache.exist?(Block.cache_string_for(blocked.id, 'blocked'))).to be(false)
+
+        post = assigns(:post)
+        expect(blocking.hidden_posts).to eq([post.id])
+        expect(blocked.blocked_posts).to eq([post.id])
+      end
     end
   end
 
@@ -791,7 +970,7 @@ RSpec.describe PostsController do
     end
 
     it "requires permission" do
-      post = create(:post, privacy: Concealable::PRIVATE)
+      post = create(:post, privacy: :private)
       get :show, params: { id: post.id }
       expect(response).to redirect_to(continuities_url)
       expect(flash[:error]).to eq("You do not have permission to view this post.")
@@ -884,6 +1063,34 @@ RSpec.describe PostsController do
       expect(assigns(:page)).to eq(1)
       expect(response).to have_http_status(200)
       expect(response).to render_template(:show)
+    end
+
+    it "calculates audits" do
+      Reply.auditing_enabled = true
+      Post.auditing_enabled = true
+      post = create(:post)
+
+      replies = Audited.audit_class.as_user(post.user) do
+        create_list(:reply, 6, post: post, user: post.user)
+      end
+
+      Audited.audit_class.as_user(post.user) do
+        replies[1].touch # rubocop:disable Rails/SkipsModelValidations
+        replies[3].update!(character: create(:character, user: post.user))
+        replies[2].update!(content: 'new content')
+        1.upto(5) { |i| replies[4].update!(content: 'message' + i.to_s) }
+      end
+      Audited.audit_class.as_user(create(:mod_user)) do
+        replies[5].update!(content: 'new content')
+      end
+
+      counts = replies.map(&:id).zip([1, 1, 2, 2, 6, 2]).to_h
+      counts[:post] = 1
+
+      get :show, params: { id: post.id }
+      expect(assigns(:audits)).to eq(counts)
+      Reply.auditing_enabled = false
+      Post.auditing_enabled = false
     end
 
     context "with render_views" do
@@ -989,7 +1196,7 @@ RSpec.describe PostsController do
         third_reply = post.replies.ordered[2]
         second_last_reply = post.replies.ordered[-2]
         user = create(:user)
-        post.mark_read(user, third_reply.created_at)
+        post.mark_read(user, at_time: third_reply.created_at)
         expect(post.first_unread_for(user)).to eq(second_last_reply)
         login_as(user)
         get :show, params: { id: post.id, at_id: 'unread', per_page: 1 }
@@ -1024,7 +1231,7 @@ RSpec.describe PostsController do
         Timecop.freeze(reply1.created_at + 1.second) do create(:reply, post: post, user: post.user) end # second reply
         Timecop.freeze(reply1.created_at + 2.seconds) do create(:reply, post: post, user: post.user) end # third reply
         user = create(:user)
-        post.mark_read(user, reply1.created_at)
+        post.mark_read(user, at_time: reply1.created_at)
         login_as(user)
         get :show, params: { id: post.id, page: 'unread', per_page: 1 }
         expect(assigns(:page)).to eq(2)
@@ -1105,99 +1312,6 @@ RSpec.describe PostsController do
         expect(assigns(:reply)).to be_nil
       end
     end
-
-    it "gives correct next and previous posts" do
-      user = create(:user)
-      board = create(:board, creator: user)
-      section = create(:board_section, board: board)
-      create(:post, user: user, board: board, section: section)
-      prev = create(:post, user: user, board: board, section: section)
-      post = create(:post, user: user, board: board, section: section)
-      nextp = create(:post, user: user, board: board, section: section)
-      create(:post, user: user, board: board, section: section)
-      expect([prev, post, nextp].map(&:section_order)).to eq([1, 2, 3])
-
-      get :show, params: { id: post.id }
-
-      expect(assigns(:prev_post)).to eq(prev)
-      expect(assigns(:next_post)).to eq(nextp)
-    end
-
-    it "gives the correct previous post with an intermediate private post" do
-      user = create(:user)
-      board = create(:board, creator: user)
-      section = create(:board_section, board: board)
-      extra = create(:post, user: user, board: board, section: section)
-      prev = create(:post, user: user, board: board, section: section)
-      hidden = create(:post, board: board, section: section, privacy: Concealable::PRIVATE)
-      post = create(:post, user: user, board: board, section: section)
-      expect([extra, prev, hidden, post].map(&:section_order)).to eq([0, 1, 2, 3])
-
-      get :show, params: { id: post.id }
-
-      expect(assigns(:prev_post)).to eq(prev)
-      expect(assigns(:next_post)).to be_nil
-    end
-
-    it "gives the correct next post with an intermediate private post" do
-      user = create(:user)
-      board = create(:board, creator: user)
-      section = create(:board_section, board: board)
-      post = create(:post, user: user, board: board, section: section)
-      hidden = create(:post, board: board, section: section, privacy: Concealable::PRIVATE)
-      nextp = create(:post, user: user, board: board, section: section)
-      extra = create(:post, user: user, board: board, section: section)
-      expect([post, hidden, nextp, extra].map(&:section_order)).to eq([0, 1, 2, 3])
-
-      get :show, params: { id: post.id }
-
-      expect(assigns(:next_post)).to eq(nextp)
-      expect(assigns(:prev_post)).to be_nil
-    end
-
-    it "does not give previous with only a non-visible post in section" do
-      user = create(:user)
-      board = create(:board, creator: user)
-      section = create(:board_section, board: board)
-      hidden = create(:post, board: board, section: section, privacy: Concealable::PRIVATE)
-      post = create(:post, user: user, board: board, section: section)
-      hidden.update!(section_order: 0)
-      post.update!(section_order: 1)
-
-      get :show, params: { id: post.id }
-
-      expect(assigns(:prev_post)).to be_nil
-    end
-
-    it "does not give next with only a non-visible post in section" do
-      user = create(:user)
-      board = create(:board, creator: user)
-      section = create(:board_section, board: board)
-      post = create(:post, user: user, board: board, section: section)
-      hidden = create(:post, board: board, section: section, privacy: Concealable::PRIVATE)
-      post.update!(section_order: 0)
-      hidden.update!(section_order: 1)
-
-      get :show, params: { id: post.id }
-
-      expect(assigns(:next_post)).to be_nil
-    end
-
-    it "handles very large mostly-hidden sections as expected" do
-      user = create(:user)
-      board = create(:board, creator: user)
-      section = create(:board_section, board: board)
-      prev = create(:post, user: user, board: board, section: section)
-      create_list(:post, 10, board: board, section: section, privacy: Concealable::PRIVATE)
-      post = create(:post, user: user, board: board, section: section)
-      create_list(:post, 10, board: board, section: section, privacy: Concealable::PRIVATE)
-      nextp = create(:post, user: user, board: board, section: section)
-
-      get :show, params: { id: post.id }
-
-      expect(assigns(:prev_post)).to eq(prev)
-      expect(assigns(:next_post)).to eq(nextp)
-    end
     # TODO WAY more tests
   end
 
@@ -1219,10 +1333,30 @@ RSpec.describe PostsController do
       get :history, params: { id: create(:post).id }
       expect(response.status).to eq(200)
     end
+
+    context "with render_view" do
+      render_views
+
+      it "works" do
+        Post.auditing_enabled = true
+        post = create(:post)
+        post.update!(privacy: :access_list)
+        post.update!(board: create(:board))
+        post.update!(content: 'new content')
+
+        login_as(post.user)
+
+        get :history, params: { id: post.id }
+
+        expect(response.status).to eq(200)
+        Post.auditing_enabled = false
+      end
+    end
   end
 
   describe "GET delete_history" do
     before(:each) { Reply.auditing_enabled = true }
+
     after(:each) { Reply.auditing_enabled = false }
 
     it "requires login" do
@@ -1263,7 +1397,7 @@ RSpec.describe PostsController do
       reply.destroy!
       restore(reply)
       get :delete_history, params: { id: post.id }
-      expect(assigns(:audits).count).to eq(0)
+      expect(assigns(:deleted_audits).count).to eq(0)
     end
 
     it "only selects more recent restore" do
@@ -1277,7 +1411,7 @@ RSpec.describe PostsController do
       reply.save!
       reply.destroy!
       get :delete_history, params: { id: post.id }
-      expect(assigns(:audits).count).to eq(1)
+      expect(assigns(:deleted_audits).count).to eq(1)
       expect(assigns(:audit).audited_changes['content']).to eq('new content')
     end
 
@@ -1419,7 +1553,7 @@ RSpec.describe PostsController do
     end
 
     it "requires post be visible to user" do
-      post = create(:post, privacy: Concealable::PRIVATE)
+      post = create(:post, privacy: :private)
       user = create(:user)
       login_as(user)
       expect(post.visible_to?(user)).not_to eq(true)
@@ -1430,7 +1564,7 @@ RSpec.describe PostsController do
     end
 
     it "requires notes from moderators" do
-      post = create(:post, privacy: Concealable::PRIVATE)
+      post = create(:post, privacy: :private)
       login_as(create(:admin_user))
       put :update, params: { id: post.id }
       expect(response).to render_template(:edit)
@@ -1438,7 +1572,7 @@ RSpec.describe PostsController do
     end
 
     it "does not require note from coauthors" do
-      post = create(:post, privacy: Concealable::ACCESS_LIST)
+      post = create(:post, privacy: :access_list)
       user = create(:user)
       post.viewers << user
       post.authors << user
@@ -1450,7 +1584,7 @@ RSpec.describe PostsController do
 
     it "stores note from moderators" do
       Post.auditing_enabled = true
-      post = create(:post, privacy: Concealable::PRIVATE)
+      post = create(:post, privacy: :private)
       admin = create(:admin_user)
       login_as(admin)
       put :update, params: {
@@ -1591,7 +1725,7 @@ RSpec.describe PostsController do
         expect(post.last_read(post.user)).to be_the_same_time_as(post.tagged_at)
       end
 
-      Post.statuses.keys.each do |status|
+      Post.statuses.each_key do |status|
         context "to #{status}" do
           let(:post) { create(:post) }
 
@@ -1730,7 +1864,7 @@ RSpec.describe PostsController do
         post = create(:post)
         reply = create(:reply, post: post)
         user = create(:user)
-        post.mark_read(user, post.read_time_for([reply]))
+        post.mark_read(user, at_time: post.read_time_for([reply]))
         time_read = post.reload.last_read(user)
 
         login_as(user)
@@ -1748,7 +1882,7 @@ RSpec.describe PostsController do
         reply = create(:reply, post: post)
         user = create(:user)
         login_as(user)
-        post.mark_read(user, post.read_time_for([reply]))
+        post.mark_read(user, at_time: post.read_time_for([reply]))
         time_read = post.reload.last_read(user)
 
         post.ignore(user)
@@ -1815,6 +1949,7 @@ RSpec.describe PostsController do
       end
 
       it "sets expected variables" do
+        Post.auditing_enabled = true
         user = create(:user)
         login_as(user)
         post = create(:post, user: user, subject: 'old', content: 'example')
@@ -1859,6 +1994,7 @@ RSpec.describe PostsController do
         expect(assigns(:post).icon).to eq(icon)
         expect(assigns(:post).character_alias).to eq(calias)
         expect(assigns(:page_title)).to eq('Previewing: test')
+        expect(assigns(:audits)).to eq({post: 1})
 
         # editor_setup:
         expect(assigns(:javascripts)).to include('posts/editor')
@@ -1901,6 +2037,7 @@ RSpec.describe PostsController do
         expect(post.character).to be_nil
         expect(post.icon).to be_nil
         expect(post.character_alias).to be_nil
+        Post.auditing_enabled = false
       end
 
       it "does not crash without arguments" do
@@ -1922,7 +2059,7 @@ RSpec.describe PostsController do
 
         coauthor = create(:user)
         board = create(:board, creator: user, authors_locked: true)
-        post = create(:post, user: user, board: board, authors_locked: true, privacy: Concealable::ACCESS_LIST)
+        post = create(:post, user: user, board: board, authors_locked: true, privacy: :access_list)
 
         expect {
           put :update, params: {
@@ -1933,7 +2070,7 @@ RSpec.describe PostsController do
               viewer_ids: [coauthor.id, create(:user).id],
             },
           }
-        }.not_to change { [PostAuthor.count, PostViewer.count, BoardAuthor.count] }
+        }.not_to change { [Post::Author.count, PostViewer.count, BoardAuthor.count] }
 
         expect(flash[:error]).to be_nil
         expect(assigns(:page_title)).to eq('Previewing: ' + assigns(:post).subject.to_s)
@@ -2029,7 +2166,7 @@ RSpec.describe PostsController do
                 unjoined_author_ids: [other_user.id]
               }
             }
-          }.to change { PostAuthor.count }.by(1)
+          }.to change { Post::Author.count }.by(1)
         end
 
         expect(response).to redirect_to(post_url(post))
@@ -2286,7 +2423,7 @@ RSpec.describe PostsController do
             character_id: char.id,
             character_alias_id: calias.id,
             icon_id: icon.id,
-            privacy: Concealable::ACCESS_LIST,
+            privacy: :access_list,
             viewer_ids: [viewer.id],
             setting_ids: [setting.id],
             content_warning_ids: [warning.id],
@@ -2306,7 +2443,7 @@ RSpec.describe PostsController do
         expect(post.character_id).to eq(char.id)
         expect(post.character_alias_id).to eq(calias.id)
         expect(post.icon_id).to eq(icon.id)
-        expect(post.privacy).to eq(Concealable::ACCESS_LIST)
+        expect(post).to be_privacy_access_list
         expect(post.viewers).to match_array([viewer])
         expect(post.settings).to eq([setting])
         expect(post.content_warnings).to eq([warning])
@@ -2429,6 +2566,108 @@ RSpec.describe PostsController do
         expect(Post.find_by_id(post.id).author_for(reply.user).private_note).not_to be_nil
       end
     end
+
+    context "with blocks" do
+      let(:user) { create(:user) }
+      let(:blocked) { create(:user) }
+      let(:blocking) { create(:user) }
+      let(:other_user) { create(:user) }
+      let(:memory_store) { ActiveSupport::Cache.lookup_store(:memory_store) }
+
+      before(:each) do
+        create(:block, blocking_user: user, blocked_user: blocked, hide_me: :posts)
+        create(:block, blocking_user: blocking, blocked_user: user, hide_them: :posts)
+        allow(Rails).to receive(:cache).and_return(memory_store)
+        Rails.cache.clear
+      end
+
+      it "regenerates blocked and hidden posts for poster" do
+        post = create(:post, user: user, authors_locked: false, unjoined_authors: [other_user])
+
+        expect(blocking.hidden_posts).to be_empty
+        expect(blocked.blocked_posts).to be_empty
+
+        login_as(user)
+
+        put :update, params: {
+          id: post.id,
+          post: { authors_locked: true }
+        }
+
+        expect(Rails.cache.exist?(Block.cache_string_for(blocking.id, 'hidden'))).to be(false)
+        expect(Rails.cache.exist?(Block.cache_string_for(blocked.id, 'blocked'))).to be(false)
+
+        expect(blocking.hidden_posts).to eq([post.id])
+        expect(blocked.blocked_posts).to eq([post.id])
+      end
+
+      it "regenerates blocked and hidden posts for coauthor" do
+        post = create(:post, user: other_user, authors_locked: false, unjoined_authors: [user])
+
+        expect(blocking.hidden_posts).to be_empty
+        expect(blocked.blocked_posts).to be_empty
+
+        login_as(other_user)
+
+        put :update, params: {
+          id: post.id,
+          post: { authors_locked: true }
+        }
+
+        expect(Rails.cache.exist?(Block.cache_string_for(blocking.id, 'hidden'))).to be(false)
+        expect(Rails.cache.exist?(Block.cache_string_for(blocked.id, 'blocked'))).to be(false)
+
+        expect(blocking.hidden_posts).to eq([post.id])
+        expect(blocked.blocked_posts).to eq([post.id])
+      end
+
+      it "regenerates blocked and hidden posts for new coauthor" do
+        post = create(:post, user: other_user, authors_locked: true)
+
+        expect(blocking.hidden_posts).to be_empty
+        expect(blocked.blocked_posts).to be_empty
+
+        login_as(other_user)
+
+        put :update, params: {
+          id: post.id,
+          post: {
+            unjoined_author_ids: [user.id]
+          }
+        }
+
+        expect(Rails.cache.exist?(Block.cache_string_for(blocking.id, 'hidden'))).to be(false)
+        expect(Rails.cache.exist?(Block.cache_string_for(blocked.id, 'blocked'))).to be(false)
+
+        expect(blocking.hidden_posts).to eq([post.id])
+        expect(blocked.blocked_posts).to eq([post.id])
+      end
+
+      it "regenerates blocked and hidden posts for removed coauthor" do
+        post = create(:post, user: other_user, unjoined_authors: [user], authors_locked: true)
+
+        expect(blocking.hidden_posts).to eq([post.id])
+        expect(blocked.blocked_posts).to eq([post.id])
+
+        login_as(other_user)
+
+        put :update, params: {
+          id: post.id,
+          post: {
+            unjoined_author_ids: ['']
+          }
+        }
+
+        post.reload
+        expect(post.unjoined_authors).to be_empty
+
+        expect(Rails.cache.exist?(Block.cache_string_for(blocking.id, 'hidden'))).to be(false)
+        expect(Rails.cache.exist?(Block.cache_string_for(blocked.id, 'blocked'))).to be(false)
+
+        expect(blocking.hidden_posts).to be_empty
+        expect(blocked.blocked_posts).to be_empty
+      end
+    end
   end
 
   describe "POST warnings" do
@@ -2439,7 +2678,7 @@ RSpec.describe PostsController do
     end
 
     it "requires permission" do
-      warn_post = create(:post, privacy: Concealable::PRIVATE)
+      warn_post = create(:post, privacy: :private)
       post :warnings, params: { id: warn_post.id }
       expect(response).to redirect_to(continuities_url)
       expect(flash[:error]).to eq("You do not have permission to view this post.")
@@ -2502,7 +2741,7 @@ RSpec.describe PostsController do
       expect(flash[:success]).to eq("Post deleted.")
     end
 
-    it "deletes PostAuthors" do
+    it "deletes Post::Authors" do
       user = create(:user)
       login_as(user)
       other_user = create(:user)
@@ -2510,8 +2749,8 @@ RSpec.describe PostsController do
       id1 = post.post_authors[0].id
       id2 = post.post_authors[1].id
       delete :destroy, params: { id: post.id }
-      expect(PostAuthor.find_by(id: id1)).to be_nil
-      expect(PostAuthor.find_by(id: id2)).to be_nil
+      expect(Post::Author.find_by(id: id1)).to be_nil
+      expect(Post::Author.find_by(id: id2)).to be_nil
     end
 
     it "handles destroy failure" do
@@ -2662,19 +2901,16 @@ RSpec.describe PostsController do
         expect(assigns(:posts)).to be_empty
       end
 
-      it "hides completed and abandoned threads" do
-        create(:reply, post_id: post.id, user_id: other_user.id)
-
+      it "hides completed threads" do
+        create(:reply, post: post, user: other_user)
         post.update!(status: :complete)
         get :owed
         expect(response.status).to eq(200)
         expect(assigns(:posts)).to be_empty
+      end
 
-        post.update!(status: :active)
-        get :owed
-        expect(response.status).to eq(200)
-        expect(assigns(:posts)).to match_array([post])
-
+      it "hides abandoned threads" do
+        create(:reply, post: post, user: other_user)
         post.update!(status: :abandoned)
         get :owed
         expect(response.status).to eq(200)
@@ -2765,6 +3001,10 @@ RSpec.describe PostsController do
   end
 
   describe "GET unread" do
+    let(:controller_action) { "unread" }
+    let(:params) { { } }
+    let(:assign_variable) { :posts }
+
     it "requires login" do
       get :unread
       expect(response).to redirect_to(root_url)
@@ -2802,8 +3042,8 @@ RSpec.describe PostsController do
         [reply2, reply3]
       end
 
-      opened_post1.mark_read(user, time)
-      opened_post2.mark_read(user, time)
+      opened_post1.mark_read(user, at_time: time)
+      opened_post2.mark_read(user, at_time: time)
       read_post1.mark_read(user)
       read_post2.mark_read(user)
       hidden_post.ignore(user)
@@ -2844,25 +3084,25 @@ RSpec.describe PostsController do
 
       # only post view exists
       post_unread_post = create(:post)
-      post_unread_post.mark_read(user, post_unread_post.created_at - 1.second, true)
+      post_unread_post.mark_read(user, at_time: post_unread_post.created_at - 1.second, force: true)
       post_read_post = create(:post)
       post_read_post.mark_read(user)
 
       # only board view exists
       board_unread_post = create(:post)
-      board_unread_post.board.mark_read(user, board_unread_post.created_at - 1.second, true)
+      board_unread_post.board.mark_read(user, at_time: board_unread_post.created_at - 1.second, force: true)
       board_read_post = create(:post)
       board_read_post.board.mark_read(user)
 
       # both exist
       both_unread_post = create(:post)
-      both_unread_post.mark_read(user, both_unread_post.created_at - 1.second, true)
-      both_unread_post.board.mark_read(user, both_unread_post.created_at - 1.second, true)
+      both_unread_post.mark_read(user, at_time: both_unread_post.created_at - 1.second, force: true)
+      both_unread_post.board.mark_read(user, at_time: both_unread_post.created_at - 1.second, force: true)
       both_board_read_post = create(:post)
-      both_board_read_post.mark_read(user, both_unread_post.created_at - 1.second, true)
+      both_board_read_post.mark_read(user, at_time: both_unread_post.created_at - 1.second, force: true)
       both_board_read_post.board.mark_read(user)
       both_post_read_post = create(:post)
-      both_post_read_post.board.mark_read(user, both_unread_post.created_at - 1.second, true)
+      both_post_read_post.board.mark_read(user, at_time: both_unread_post.created_at - 1.second, force: true)
       both_post_read_post.mark_read(user)
       both_read_post = create(:post)
       both_read_post.mark_read(user)
@@ -2870,7 +3110,7 @@ RSpec.describe PostsController do
 
       # board ignored
       board_ignored = create(:post)
-      board_ignored.mark_read(user, both_unread_post.created_at - 1.second, true)
+      board_ignored.mark_read(user, at_time: both_unread_post.created_at - 1.second, force: true)
       board_ignored.board.ignore(user)
 
       login_as(user)
@@ -2911,11 +3151,11 @@ RSpec.describe PostsController do
           [reply2, reply3]
         end
 
-        opened_post1.mark_read(user, time)
-        opened_post2.mark_read(user, time)
+        opened_post1.mark_read(user, at_time: time)
+        opened_post2.mark_read(user, at_time: time)
         read_post1.mark_read(user)
         read_post2.mark_read(user)
-        hidden_post.mark_read(user, time)
+        hidden_post.mark_read(user, at_time: time)
         hidden_post.ignore(user)
 
         expect(unread_post.reload.first_unread_for(user)).to eq(unread_post)
@@ -2934,6 +3174,10 @@ RSpec.describe PostsController do
         expect(assigns(:hide_quicklinks)).to eq(true)
       end
     end
+
+    context "when logged in" do
+      include_examples "logged in post list"
+    end
   end
 
   describe "POST mark" do
@@ -2945,7 +3189,7 @@ RSpec.describe PostsController do
 
     context "read" do
       it "skips invisible post" do
-        private_post = create(:post, privacy: Concealable::PRIVATE)
+        private_post = create(:post, privacy: :private)
         user = create(:user)
         expect(private_post.visible_to?(user)).not_to eq(true)
         login_as(user)
@@ -2975,7 +3219,7 @@ RSpec.describe PostsController do
 
     context "ignored" do
       it "skips invisible post" do
-        private_post = create(:post, privacy: Concealable::PRIVATE)
+        private_post = create(:post, privacy: :private)
         user = create(:user)
         expect(private_post.visible_to?(user)).not_to eq(true)
         login_as(user)
@@ -3020,8 +3264,8 @@ RSpec.describe PostsController do
 
         time2 = replies2.first.updated_at
         time3 = replies3.last.updated_at
-        post2.mark_read(user, time2)
-        post3.mark_read(user, time3)
+        post2.mark_read(user, at_time: time2)
+        post3.mark_read(user, at_time: time3)
 
         expect(post1.reload.last_read(user)).to be_nil
         expect(post2.reload.last_read(user)).to be_the_same_time_as(time2)
@@ -3040,7 +3284,7 @@ RSpec.describe PostsController do
     context "not owed" do
       it "ignores invisible posts" do
         user = create(:user)
-        private_post = create(:post, privacy: Concealable::PRIVATE, authors: [user])
+        private_post = create(:post, privacy: :private, authors: [user])
         expect(private_post.visible_to?(user)).not_to eq(true)
         expect(private_post.post_authors.find_by(user: user).can_owe).to eq(true)
         login_as(user)
@@ -3078,7 +3322,7 @@ RSpec.describe PostsController do
     context "newly owed" do
       it "ignores invisible posts" do
         user = create(:user)
-        private_post = create(:post, privacy: Concealable::PRIVATE, authors: [user])
+        private_post = create(:post, privacy: :private, authors: [user])
         expect(private_post.visible_to?(user)).not_to eq(true)
         private_post.author_for(user).update!(can_owe: false)
         login_as(user)

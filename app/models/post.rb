@@ -42,6 +42,7 @@ class Post < ApplicationRecord
   before_update :set_timestamps
   before_validation :set_last_user, on: :create
   after_commit :notify_followers, on: :create
+  after_commit :invalidate_caches, on: :update
 
   NON_EDITED_ATTRS = %w(id created_at updated_at edited_at tagged_at last_user_id last_reply_id section_order)
   NON_TAGGED_ATTRS = %w(icon_id character_alias_id character_id)
@@ -87,19 +88,20 @@ class Post < ApplicationRecord
   scope :visible_to, ->(user) {
     if user
       where(user_id: user.id)
-        .or(where(privacy: [Concealable::PUBLIC, Concealable::REGISTERED]))
-        .or(where(privacy: Concealable::ACCESS_LIST, id: user.visible_posts))
+        .or(where(privacy: [:public, :registered]))
+        .or(where(privacy: :access_list, id: user.visible_posts))
+        .where.not(id: user.blocked_posts)
     else
-      where(privacy: Concealable::PUBLIC)
+      where(privacy: :public)
     end
   }
 
   def visible_to?(user)
-    return true if public?
+    return false if user&.author_blocking?(self, author_ids)
+    return true if privacy_public?
     return false unless user
-    return true if registered_users?
-    return true if user.admin?
-    return user.id == user_id if private?
+    return true if privacy_registered? || user.admin?
+    return user.id == user_id if privacy_private?
     (post_viewers.pluck(:user_id) + [user_id]).include?(user.id)
   end
 
@@ -160,9 +162,7 @@ class Post < ApplicationRecord
       .pluck(:character_id)
 
     # add the post's character_id to the last one if it's not over the limit
-    if character_id.present? && user_id == user.id && recent_ids.length < count && !recent_ids.include?(character_id)
-      recent_ids << character_id
-    end
+    recent_ids << character_id if character_id.present? && user_id == user.id && recent_ids.length < count && !recent_ids.include?(character_id)
 
     # fetch the relevant characters and sort by their index in the recent list
     Character.where(id: recent_ids).includes(:default_icon).sort_by do |x|
@@ -251,11 +251,6 @@ class Post < ApplicationRecord
     replies.count
   end
 
-  def has_edit_audits?
-    return read_attribute(:has_edit_audits) if has_attribute?(:has_edit_audits)
-    audits.count > 1
-  end
-
   def last_user_deleted?
     return read_attribute(:last_user_deleted) if has_attribute?(:last_user_deleted)
     last_user.deleted?
@@ -266,19 +261,19 @@ class Post < ApplicationRecord
   end
 
   def prev_post(user)
-    return unless self.board.ordered?
-    adjacent_posts_for(user).reverse_order.find_by('section_order < ?', self.section_order)
+    adjacent_posts_for(user) { |relation| relation.reverse_order.find_by('section_order < ?', self.section_order) }
   end
 
   def next_post(user)
-    return unless self.board.ordered?
-    adjacent_posts_for(user).find_by('section_order > ?', self.section_order)
+    adjacent_posts_for(user) { |relation| relation.find_by('section_order > ?', self.section_order) }
   end
 
   private
 
   def adjacent_posts_for(user)
-    Post.where(board_id: self.board_id, section_id: self.section_id).visible_to(user).ordered_in_section
+    return unless board.ordered?
+    return unless section || board.board_sections.empty?
+    yield Post.where(board_id: self.board_id, section_id: self.section_id).visible_to(user).ordered_in_section
   end
 
   def valid_board
@@ -325,11 +320,16 @@ class Post < ApplicationRecord
   end
 
   def reset_warnings(_warning)
-    Post::View.where(post_id: id).update_all(warnings_hidden: false)
+    Post::View.where(post_id: id).update_all(warnings_hidden: false) # rubocop:disable Rails/SkipsModelValidations
   end
 
   def notify_followers
     return if is_import
     NotifyFollowersOfNewPostJob.perform_later(self.id, user_id)
+  end
+
+  def invalidate_caches
+    return unless saved_change_to_authors_locked?
+    Post::Author.clear_cache_for(authors)
   end
 end

@@ -12,7 +12,7 @@ RSpec.describe Api::V1::UsersController do
 
     it "works logged in" do
       create_search_users
-      login
+      api_login
       get :index
       expect(response).to have_http_status(200)
       expect(response.json['results'].count).to eq(9)
@@ -39,7 +39,7 @@ RSpec.describe Api::V1::UsersController do
 
     it "handles hiding unblockable users" do
       user = create(:user)
-      login_as(user)
+      api_login_as(user)
       create_list(:block, 2, blocking_user: user)
       create_list(:user, 3)
       get :index, params: { hide_unblockable: true }
@@ -48,7 +48,7 @@ RSpec.describe Api::V1::UsersController do
 
     it "does not hide unblockable users unless that parameter is sent" do
       user = create(:user)
-      login_as(user)
+      api_login_as(user)
       create_list(:block, 2, blocking_user: user)
       create_list(:user, 3)
       get :index
@@ -91,8 +91,8 @@ RSpec.describe Api::V1::UsersController do
 
     it 'filters non-public posts' do
       user = create(:user)
-      public_post = create(:post, privacy: Concealable::PUBLIC, user: user)
-      create(:post, privacy: Concealable::PRIVATE, user: user)
+      public_post = create(:post, privacy: :public, user: user)
+      create(:post, privacy: :private, user: user)
       get :posts, params: { id: user.id }
       expect(response).to have_http_status(200)
       expect(response.json['results'].size).to eq(1)

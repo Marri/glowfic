@@ -7,8 +7,8 @@
       &raquo;
       = link_to "#{@icon.user.username}'s Galleries", user_galleries_path(@icon.user)
   &raquo;
-  - if @icon.galleries.count == 1
-    = link_to @icon.galleries.first.name, gallery_path(@icon.galleries.first)
+  - if @galleries.present?
+    = link_to @galleries.first.name, url_for(@galleries.first)
   - else
     = link_to_if params[:view] != 'galleries', "(#{@icon.galleries.count} Galleries)", icon_path(@icon, view: 'galleries')
   &raquo;
@@ -47,7 +47,7 @@
         Posts
   %tr
     %td.centered{class: cycle('even', 'odd')}
-      = link_to search_replies_path(commit: true, icon_id: @icon.id) do
+      = link_to search_replies_path(commit: true, icon_id: @icon.id, sort: :created_new) do
         = image_tag "icons/table_multiple.png", alt: ''
         Replies
   - if @icon.user_id == current_user.try(:id)
@@ -77,8 +77,8 @@
     %thead
       %tr
         %th.table-title Galleries
-    - if @icon.galleries.exists?
-      = render partial: 'galleries/single', collection: @icon.galleries.ordered_by_name, as: :gallery, locals: {klass: 'subber', skip_forms: true, is_owner: @icon.user == current_user}
+    - if @galleries.present?
+      = render partial: 'galleries/single', collection: @galleries, as: :gallery, locals: {klass: 'subber', skip_forms: true, is_owner: @icon.user == current_user}
     - else
       %tbody
         %tr

@@ -1,31 +1,21 @@
 module Concealable
-  PUBLIC = 0
-  PRIVATE = 1
-  ACCESS_LIST = 2
-  REGISTERED = 3
+  extend ActiveSupport::Concern
 
-  def public?
-    privacy == PUBLIC
-  end
+  included do
+    enum privacy: {
+      public: 0,
+      private: 1,
+      access_list: 2,
+      registered: 3
+    }, _prefix: true
 
-  def registered_users?
-    privacy == REGISTERED
-  end
-
-  def access_list?
-    privacy == ACCESS_LIST
-  end
-
-  def private?
-    privacy == PRIVATE
-  end
-
-  def visible_to?(user)
-    # does not support access lists at this time
-    return true if public?
-    return false unless user
-    return true if registered_users?
-    return true if user.admin?
-    user.id == user_id
+    def visible_to?(user)
+      # does not support access lists at this time
+      return true if privacy_public?
+      return false unless user
+      return true if privacy_registered?
+      return true if user.admin?
+      user.id == user_id
+    end
   end
 end

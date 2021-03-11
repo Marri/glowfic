@@ -73,7 +73,7 @@ RSpec.describe Api::V1::TagsController do
     end
 
     context "when logged in" do
-      before(:each) { login }
+      before(:each) { api_login }
 
       it_behaves_like "index.json", false
     end

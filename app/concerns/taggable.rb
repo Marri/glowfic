@@ -1,7 +1,7 @@
 module Taggable
   private
 
-  def process_tags(klass, obj_param, id_param)
+  def process_tags(klass, obj_param:, id_param:)
     # fetch and clean tag ids
     ids = params.fetch(obj_param, {}).fetch(id_param, [])
     ids = ids.reject(&:blank?).map(&:to_s)

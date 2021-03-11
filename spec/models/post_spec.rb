@@ -502,7 +502,7 @@ RSpec.describe Post do
 
   describe "#visible_to?" do
     context "public" do
-      let(:post) { create(:post, privacy: Concealable::PUBLIC) }
+      let(:post) { create(:post, privacy: :public) }
 
       it "is visible to poster" do
         expect(post).to be_visible_to(post.user)
@@ -523,7 +523,7 @@ RSpec.describe Post do
     end
 
     context "private" do
-      let(:post) { create(:post, privacy: Concealable::PRIVATE) }
+      let(:post) { create(:post, privacy: :private) }
 
       it "is visible to poster" do
         expect(post).to be_visible_to(post.user)
@@ -544,7 +544,7 @@ RSpec.describe Post do
     end
 
     context "list" do
-      let(:post) { create(:post, privacy: Concealable::ACCESS_LIST) }
+      let(:post) { create(:post, privacy: :access_list) }
 
       it "is visible to poster" do
         expect(post).to be_visible_to(post.user)
@@ -571,7 +571,7 @@ RSpec.describe Post do
     end
 
     context "registered" do
-      let(:post) { create(:post, privacy: Concealable::REGISTERED) }
+      let(:post) { create(:post, privacy: :registered) }
 
       it "is visible to poster" do
         expect(post).to be_visible_to(post.user)
@@ -588,6 +588,28 @@ RSpec.describe Post do
 
       it "is not visible to logged out (nil) users" do
         expect(post).not_to be_visible_to(nil)
+      end
+    end
+
+    context "blocks" do
+      it "hides blocked posts" do
+        post = create(:post, authors_locked: true)
+        block = create(:block, blocking_user: post.user, hide_me: :posts)
+        expect(post.reload).not_to be_visible_to(block.blocked_user)
+      end
+
+      it "does not hide blocked users (so you can use show_blocked param)" do
+        post = create(:post, authors_locked: true)
+        block = create(:block, blocked_user: post.user, hide_them: :posts)
+        expect(post.reload).to be_visible_to(block.blocking_user)
+      end
+
+      it "does not hide coauthored posts when blocked" do
+        coauthor = create(:user)
+        post = create(:post, authors_locked: true, author_ids: [coauthor.id])
+        create(:reply, post: post, user: coauthor)
+        create(:block, blocking_user: post.user, blocked_user: coauthor, hide_me: :posts)
+        expect(post.reload).to be_visible_to(coauthor)
       end
     end
   end
@@ -747,7 +769,7 @@ RSpec.describe Post do
 
     it "resets with new warning without changing read time" do
       at_time = 3.days.ago
-      post.mark_read(user, at_time, true)
+      post.mark_read(user, at_time: at_time, force: true)
       post.content_warnings << create(:content_warning)
       expect(post.reload).to be_show_warnings_for(user)
       expect(post.last_read(user)).to be_the_same_time_as(at_time)
@@ -857,70 +879,6 @@ RSpec.describe Post do
       post = Post.where(id: post.id).joins(:last_user).select('posts.*, users.deleted as last_user_deleted').first
       post.last_user.archive
       expect(post.last_user_deleted?).to eq(false) # not reloaded loads cached false
-    end
-  end
-
-  describe "#has_edit_audits?" do
-    let(:user) { create(:user) }
-
-    before(:each) { Post.auditing_enabled = true }
-
-    after(:each) { Post.auditing_enabled = false }
-
-    it "is false if post has never been edited" do
-      post = nil
-      Audited.audit_class.as_user(user) do
-        post = create(:post, content: 'original', user: user)
-      end
-      expect(post.reload.has_edit_audits?).to eq(false)
-    end
-
-    it "is false if post has just been touched" do
-      post = nil
-      Audited.audit_class.as_user(user) do
-        post = create(:post, content: 'original', user: user)
-        post.touch # rubocop:disable Rails/SkipsModelValidations
-      end
-      expect(post.reload.has_edit_audits?).to eq(false)
-    end
-
-    it "is true if post has been edited in content" do
-      post = nil
-      Audited.audit_class.as_user(user) do
-        post = create(:post, content: 'original', user: user)
-        post.update!(content: 'blah')
-      end
-      expect(post.reload.has_edit_audits?).to eq(true)
-    end
-
-    it "is true if post has been edited in character" do
-      post = nil
-      Audited.audit_class.as_user(user) do
-        post = create(:post, content: 'original', user: user)
-        char = create(:character, user: user)
-        post.update!(character: char)
-      end
-      expect(post.reload.has_edit_audits?).to eq(true)
-    end
-
-    it "is true if post has been edited many times" do
-      post = nil
-      Audited.audit_class.as_user(user) do
-        post = create(:post, content: 'original', user: user)
-        1.upto(5) { |i| post.update!(description: 'message' + i.to_s) }
-      end
-      expect(post.reload.has_edit_audits?).to eq(true)
-    end
-
-    it "is true if post has been edited by moderator" do
-      post = nil
-      Audited.audit_class.as_user(user) do
-        post = create(:post, description: 'original')
-      end
-      Audited.audit_class.as_user(create(:mod_user)) do
-        post.update!(description: 'blah')
-      end
-      expect(post.reload.has_edit_audits?).to eq(true)
     end
   end
 
@@ -1040,10 +998,10 @@ RSpec.describe Post do
 
   describe "#visible_to" do
     it "logged out only shows public posts" do
-      create(:post, privacy: Concealable::PRIVATE)
-      create_list(:post, 2, privacy: Concealable::ACCESS_LIST)
-      create_list(:post, 2, privacy: Concealable::REGISTERED)
-      posts = create_list(:post, 3, privacy: Concealable::PUBLIC)
+      create(:post, privacy: :private)
+      create_list(:post, 2, privacy: :access_list)
+      create_list(:post, 2, privacy: :registered)
+      posts = create_list(:post, 3, privacy: :public)
       expect(Post.visible_to(nil)).to match_array(posts)
     end
 
@@ -1051,35 +1009,143 @@ RSpec.describe Post do
       let(:user) { create(:user) }
 
       it "shows constellation-only posts" do
-        posts = create_list(:post, 2, privacy: Concealable::REGISTERED)
+        posts = create_list(:post, 2, privacy: :registered)
         expect(Post.visible_to(user)).to match_array(posts)
       end
 
       it "shows own access-listed posts" do
-        posts = create_list(:post, 2, privacy: Concealable::ACCESS_LIST, user_id: user.id)
+        posts = create_list(:post, 2, privacy: :access_list, user_id: user.id)
         expect(Post.visible_to(user)).to match_array(posts)
       end
 
       it "shows access-listed posts with access" do
-        post = create(:post, privacy: Concealable::ACCESS_LIST)
+        post = create(:post, privacy: :access_list)
         PostViewer.create!(post: post, user: user)
         expect(Post.visible_to(user)).to eq([post])
       end
 
       it "does not show other access-listed posts" do
-        create_list(:post, 2, privacy: Concealable::ACCESS_LIST)
+        create_list(:post, 2, privacy: :access_list)
         expect(Post.visible_to(user)).to be_empty
       end
 
       it "shows own private posts" do
-        posts = create_list(:post, 2, privacy: Concealable::PRIVATE, user_id: user.id)
+        posts = create_list(:post, 2, privacy: :private, user_id: user.id)
         expect(Post.visible_to(user)).to match_array(posts)
       end
 
       it "does not show other private posts" do
-        create_list(:post, 2, privacy: Concealable::PRIVATE)
+        create_list(:post, 2, privacy: :private)
         expect(Post.visible_to(user)).to be_empty
       end
+    end
+  end
+
+  describe "adjacent posts" do
+    let(:user) { create(:user) }
+    let(:board) { create(:board, creator: user) }
+    let(:section) { create(:board_section, board: board) }
+
+    it "gives correct next and previous posts" do
+      create(:post, user: user, board: board, section: section)
+      prev = create(:post, user: user, board: board, section: section)
+      post = create(:post, user: user, board: board, section: section)
+      nextp = create(:post, user: user, board: board, section: section)
+      create(:post, user: user, board: board, section: section)
+      expect([prev, post, nextp].map(&:section_order)).to eq([1, 2, 3])
+
+      expect(post.prev_post(user)).to eq(prev)
+      expect(post.next_post(user)).to eq(nextp)
+    end
+
+    it "gives the correct previous post with an intermediate private post" do
+      extra = create(:post, user: user, board: board, section: section)
+      prev = create(:post, user: user, board: board, section: section)
+      hidden = create(:post, board: board, section: section, privacy: :private)
+      post = create(:post, user: user, board: board, section: section)
+      expect([extra, prev, hidden, post].map(&:section_order)).to eq([0, 1, 2, 3])
+
+      expect(post.prev_post(user)).to eq(prev)
+      expect(post.next_post(user)).to be_nil
+    end
+
+    it "gives the correct next post with an intermediate private post" do
+      post = create(:post, user: user, board: board, section: section)
+      hidden = create(:post, board: board, section: section, privacy: :private)
+      nextp = create(:post, user: user, board: board, section: section)
+      extra = create(:post, user: user, board: board, section: section)
+      expect([post, hidden, nextp, extra].map(&:section_order)).to eq([0, 1, 2, 3])
+
+      expect(post.next_post(user)).to eq(nextp)
+      expect(post.prev_post(user)).to be_nil
+    end
+
+    it "does not give previous with only a non-visible post in section" do
+      hidden = create(:post, board: board, section: section, privacy: :private)
+      post = create(:post, user: user, board: board, section: section)
+      hidden.update!(section_order: 0)
+      post.update!(section_order: 1)
+
+      expect(post.prev_post(user)).to be_nil
+    end
+
+    it "does not give next with only a non-visible post in section" do
+      post = create(:post, user: user, board: board, section: section)
+      hidden = create(:post, board: board, section: section, privacy: :private)
+      post.update!(section_order: 0)
+      hidden.update!(section_order: 1)
+
+      expect(post.next_post(user)).to be_nil
+    end
+
+    it "handles very large mostly-hidden sections as expected" do
+      prev = create(:post, user: user, board: board, section: section)
+      create_list(:post, 10, board: board, section: section, privacy: :private)
+      post = create(:post, user: user, board: board, section: section)
+      create_list(:post, 10, board: board, section: section, privacy: :private)
+      nextp = create(:post, user: user, board: board, section: section)
+
+      expect(post.prev_post(user)).to eq(prev)
+      expect(post.next_post(user)).to eq(nextp)
+    end
+
+    it "does not give next or previous on unordered boards" do
+      create(:post, board: board)
+      post = create(:post, board: board)
+      create(:post, board: board)
+
+      expect(post.prev_post(user)).to be_nil
+      expect(post.next_post(user)).to be_nil
+    end
+
+    it "handles sectionless on sectioned boards correctly" do
+      section
+
+      create(:post, user: user, board: board)
+      post = create(:post, user: user, board: board)
+      create(:post, user: user, board: board)
+
+      expect(post.prev_post(user)).to be_nil
+      expect(post.next_post(user)).to be_nil
+    end
+
+    it "handles ordered boards with no sections correctly" do
+      board.update!(authors_locked: true)
+      prev = create(:post, user: user, board: board)
+      post = create(:post, user: user, board: board)
+      nextp = create(:post, user: user, board: board)
+
+      expect(post.prev_post(user)).to eq(prev)
+      expect(post.next_post(user)).to eq(nextp)
+    end
+
+    it "handles first post and last posts in section" do
+      first = create(:post, user: user, board: board, section: section)
+      create_list(:post, 3, user: user, board: board, section: section)
+      last = create(:post, user: user, board: board, section: section)
+
+      expect(first.prev_post(user)).to be_nil
+      expect(last.next_post(user)).to be_nil
     end
   end
 

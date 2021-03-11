@@ -118,7 +118,7 @@ class Api::V1::CharactersController < Api::ApiController
 
   def find_post
     return unless params[:post_id].present?
-    return unless (@post = find_object(Post, :post_id, :unprocessable_entity))
+    return unless (@post = find_object(Post, param: :post_id, status: :unprocessable_entity))
     access_denied unless @post.visible_to?(current_user)
   end
 
@@ -126,12 +126,12 @@ class Api::V1::CharactersController < Api::ApiController
     return unless params[:template_id].present?
     # filter for templateless characters, so @template should remain nil without find_object raising a missing template error
     return if params[:template_id] == '0'
-    @template = find_object(Template, :template_id, :unprocessable_entity)
+    @template = find_object(Template, param: :template_id, status: :unprocessable_entity)
   end
 
   def find_user
     return unless params[:user_id].present?
-    @user = find_object(User, :user_id, :unprocessable_entity)
+    @user = find_object(User, param: :user_id, status: :unprocessable_entity)
   end
 
   def require_permission

@@ -77,24 +77,35 @@ RSpec.describe Reply do
       expect(UserMailer).to have_queue_size_of(0)
     end
 
-    it "sends to all other active authors if previous reply wasn't yours" do
+    it "does not send to authors with notifications off" do
       post = create(:post)
       expect(post.user.email_notifications).not_to eq(true)
+      create(:reply, post: post)
+      expect(UserMailer).to have_queue_size_of(0)
+    end
 
+    it "does not send to emailless users" do
       user = create(:user)
       user.update_columns(email: nil) # rubocop:disable Rails/SkipsModelValidations
-      create(:reply, user: user, post: post, skip_notify: true)
+      post = create(:post, user: user)
+      create(:reply, post: post)
+      expect(UserMailer).to have_queue_size_of(0)
+    end
 
+    it "does not send to users who have opted out of owed" do
+      user = create(:user, email_notifications: true)
+      post = create(:post, user: user)
+      post.opt_out_of_owed(user)
+      create(:reply, post: post)
+      expect(UserMailer).to have_queue_size_of(0)
+    end
+
+    it "sends to all other active authors if previous reply wasn't yours" do
       notified_user = create(:user, email_notifications: true)
-      create(:reply, user: notified_user, post: post, skip_notify: true)
+      post = create(:post, user: notified_user)
 
       another_notified_user = create(:user, email_notifications: true)
       create(:reply, user: another_notified_user, post: post, skip_notify: true)
-
-      # skips users who have the post set as ignored for tags owed purposes (or who can't tag)
-      a_user_who_doesnt_owe = create(:user, email_notifications: true)
-      create(:reply, user: a_user_who_doesnt_owe, post: post, skip_notify: true)
-      post.opt_out_of_owed(a_user_who_doesnt_owe)
 
       reply = create(:reply, post: post)
       expect(UserMailer).to have_queue_size_of(2)
@@ -112,85 +123,6 @@ RSpec.describe Reply do
       reply = create(:reply, post: post, user: notified_user)
       expect(UserMailer).to have_queue_size_of(1)
       expect(UserMailer).to have_queued(:post_has_new_reply, [another_notified_user.id, reply.id])
-    end
-  end
-
-  describe "#has_edit_audits?" do
-    shared_examples 'has_edit_audits' do |get_has_edit_audits|
-      let(:user) { create(:user) }
-      before(:each) { Reply.auditing_enabled = true }
-
-      after(:each) { Reply.auditing_enabled = false }
-
-      it "is false if reply has never been edited" do
-        reply = nil
-        Audited.audit_class.as_user(user) do
-          reply = create(:reply, content: 'original', user: user)
-        end
-        expect(get_has_edit_audits.call(reply.id)).to eq(false)
-      end
-
-      it "is false if reply has just been touched" do
-        reply = nil
-        Audited.audit_class.as_user(user) do
-          reply = create(:reply, content: 'original', user: user)
-          reply.touch # rubocop:disable Rails/SkipsModelValidations
-        end
-        expect(get_has_edit_audits.call(reply.id)).to eq(false)
-      end
-
-      it "is true if reply has been edited in content" do
-        reply = nil
-        Audited.audit_class.as_user(user) do
-          reply = create(:reply, content: 'original', user: user)
-          reply.update!(content: 'blah')
-        end
-        expect(get_has_edit_audits.call(reply.id)).to eq(true)
-      end
-
-      it "is true if reply has been edited in character" do
-        reply = nil
-        Audited.audit_class.as_user(user) do
-          reply = create(:reply, content: 'original', user: user)
-          char = create(:character, user: user)
-          reply.update!(character: char)
-        end
-        expect(get_has_edit_audits.call(reply.id)).to eq(true)
-      end
-
-      it "is true if reply has been edited many times" do
-        reply = nil
-        Audited.audit_class.as_user(user) do
-          reply = create(:reply, content: 'original', user: user)
-          1.upto(5) { |i| reply.update!(content: 'message' + i.to_s) }
-        end
-        expect(get_has_edit_audits.call(reply.id)).to eq(true)
-      end
-
-      it "is true if reply has been edited by moderator" do
-        reply = nil
-        Audited.audit_class.as_user(user) do
-          reply = create(:reply, content: 'original')
-        end
-        Audited.audit_class.as_user(create(:mod_user)) do
-          reply.update!(content: 'blah')
-        end
-        expect(get_has_edit_audits.call(reply.id)).to eq(true)
-      end
-    end
-
-    context "with 'edit audit count' scope" do
-      method = Proc.new do |reply_id|
-        Reply.with_edit_audit_counts.find_by(id: reply_id).has_edit_audits?
-      end
-      include_examples 'has_edit_audits', method
-    end
-
-    context "without 'edit audit count' scope" do
-      method = Proc.new do |reply_id|
-        Reply.find_by(id: reply_id).has_edit_audits?
-      end
-      include_examples 'has_edit_audits', method
     end
   end
 

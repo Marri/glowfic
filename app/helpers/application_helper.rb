@@ -33,9 +33,7 @@ module ApplicationHelper
   end
 
   def quick_switch_tag(image_url, short_text, hover_name, char_id)
-    if image_url.nil?
-      return content_tag :div, short_text, class: CHAR_ICON_FAKE, title: hover_name, data: { character_id: char_id }
-    end
+    return content_tag :div, short_text, class: CHAR_ICON_FAKE, title: hover_name, data: { character_id: char_id } if image_url.nil?
     image_tag image_url, class: CHAR_ICON, alt: hover_name, title: hover_name, data: { character_id: char_id }
   end
 
@@ -53,7 +51,7 @@ module ApplicationHelper
     'icons/swapgray.png'
   end
 
-  def pretty_time(time, format=nil)
+  def pretty_time(time, format: nil)
     return unless time
     time.strftime(format || current_user.try(:time_display) || TIME_FORMAT)
   end
@@ -191,16 +189,16 @@ module ApplicationHelper
   end
 
   def post_privacy_settings
-    { 'Public'              => Concealable::PUBLIC,
-      'Constellation Users' => Concealable::REGISTERED,
-      'Access List'         => Concealable::ACCESS_LIST,
-      'Private'             => Concealable::PRIVATE }
+    { 'Public'              => :public,
+      'Constellation Users' => :registered,
+      'Access List'         => :access_list,
+      'Private'             => :private }
   end
 
   def index_privacy_settings
-    { 'Public'              => Concealable::PUBLIC,
-      'Constellation Users' => Concealable::REGISTERED,
-      'Private'             => Concealable::PRIVATE }
+    { 'Public'              => :public,
+      'Constellation Users' => :registered,
+      'Private'             => :private }
   end
 
   def unread_post?(post, unread_ids)

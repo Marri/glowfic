@@ -434,14 +434,14 @@ RSpec.describe MessagesController do
         expect(message.reload.unread).to eq(false)
       end
 
-      it "works read for recipient" do
+      it "works unread for recipient" do
         message = create(:message, unread: true)
         login_as(message.recipient)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Unread" }
         expect(message.reload.unread).to eq(true)
       end
 
-      it "works unread for recipient" do
+      it "works read for recipient" do
         message = create(:message, unread: false)
         login_as(message.recipient)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Unread" }
@@ -470,14 +470,14 @@ RSpec.describe MessagesController do
         expect(message.reload.unread).to eq(true)
       end
 
-      it "works read for recipient" do
+      it "works unread for recipient" do
         message = create(:message, unread: true)
         login_as(message.recipient)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Read" }
         expect(message.reload.unread).to eq(false)
       end
 
-      it "works unread for recipient" do
+      it "works read for recipient" do
         message = create(:message, unread: false)
         login_as(message.recipient)
         post :mark, params: { marked_ids: [message.id.to_s], commit: "Mark Read" }

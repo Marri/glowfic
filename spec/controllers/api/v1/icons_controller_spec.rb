@@ -13,7 +13,7 @@ RSpec.describe Api::V1::IconsController do
     it "should require s3_key param" do
       handle_s3_bucket
       expect(S3_BUCKET).not_to receive(:delete_objects)
-      login
+      api_login
       post :s3_delete
       expect(response).to have_http_status(422)
       expect(response.json['errors'][0]['message']).to eq("Missing parameter s3_key")
@@ -22,7 +22,7 @@ RSpec.describe Api::V1::IconsController do
     it "should require your own icon" do
       handle_s3_bucket
       user = create(:user)
-      login_as(user)
+      api_login_as(user)
 
       expect(S3_BUCKET).not_to receive(:delete_objects)
       post :s3_delete, params: { s3_key: "users/#{user.id}1/icons/hash_name.png" }
@@ -34,7 +34,7 @@ RSpec.describe Api::V1::IconsController do
     it "should not allow deleting a URL in use" do
       handle_s3_bucket
       icon = create(:uploaded_icon)
-      login_as(icon.user)
+      api_login_as(icon.user)
       expect(S3_BUCKET).not_to receive(:delete_objects)
       post :s3_delete, params: { s3_key: icon.s3_key }
       expect(response).to have_http_status(422)
@@ -45,7 +45,7 @@ RSpec.describe Api::V1::IconsController do
       handle_s3_bucket
       user = create(:user)
       icon = build(:uploaded_icon, user: user)
-      login_as(user)
+      api_login_as(user)
       delete_key = {delete: {objects: [{key: icon.s3_key}], quiet: true}}
       expect(S3_BUCKET).to receive(:delete_objects).with(delete_key)
       post :s3_delete, params: { s3_key: icon.s3_key }

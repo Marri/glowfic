@@ -2,7 +2,7 @@ module Viewable
   extend ActiveSupport::Concern
 
   included do
-    def mark_read(user, at_time=nil, force=false)
+    def mark_read(user, at_time: nil, force: false)
       view = view_for(user)
 
       if view.new_record?

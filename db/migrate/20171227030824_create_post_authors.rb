@@ -18,7 +18,7 @@ class CreatePostAuthors < ActiveRecord::Migration[5.0]
 
       post.found_author_ids.each do |author_id|
         first_item = first_items[author_id]
-        PostAuthor.create!(post_id: post.id, user_id: author_id, can_owe: true, can_reply: true, joined: true, joined_at: first_item.created_at)
+        Post::Author.create!(post_id: post.id, user_id: author_id, can_owe: true, can_reply: true, joined: true, joined_at: first_item.created_at)
       end
     end
   end

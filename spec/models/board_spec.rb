@@ -123,11 +123,11 @@ RSpec.describe Board do
 
   it "deletes sections but moves posts to sandboxes" do
     board = create(:board)
-    create(:board, id: 3) # sandbox
+    create(:board, id: Board::ID_SANDBOX)
     section = create(:board_section, board: board)
     post = create(:post, board: board, section: section)
     perform_enqueued_jobs(only: UpdateModelJob) do
-      board.destroy
+      Audited.audit_class.as_user(board.creator) { board.destroy! }
     end
     post.reload
     expect(post.board_id).to eq(3)

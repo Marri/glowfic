@@ -11,7 +11,7 @@
       = select_tag :section_id, options_from_collection_for_select(BoardSection.where(board_id: params[:board_id]).ordered, :id, :name, params[:section_id]), include_blank: '— Choose Section —', id: 'post_section_id'
     %br
     = label_tag :status, "Status", style: "width: 150px; display: inline-block;"
-    = select_tag :status, options_for_select(Post.statuses.map{|k,v| [k.titlecase, v]}, params[:status] || Post.statuses[:complete]), style: 'margin-top: 5px;'
+    = select_tag :status, options_for_select(Post.statuses.map{|k,_v| [k.titlecase, k]}, params[:status] || :complete), style: 'margin-top: 5px;'
     %br
     = label_tag :threaded, "Threaded?", style: "width: 150px; display: inline-block;"
     = check_box_tag :threaded, "1", params[:threaded].present?

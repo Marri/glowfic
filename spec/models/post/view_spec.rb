@@ -51,4 +51,42 @@ RSpec.describe Post::View do
       expect(new_view.save).to eq(true)
     end
   end
+
+  describe "mark_favorite_read" do
+    include ActiveJob::TestHelper
+
+    let(:user) { create(:user) }
+    let(:post) { nil }
+
+    before(:each) do
+      clear_enqueued_jobs
+    end
+
+    def make_post
+      favorited_user = create(:user)
+      create(:favorite, user: user, favorite: favorited_user)
+
+      expect(user.messages.count).to eq(0)
+      post = perform_enqueued_jobs(only: NotifyFollowersOfNewPostJob) do
+        create(:post, user: favorited_user)
+      end
+      expect(user.messages.count).to eq(1)
+      expect(user.messages.first.unread).to be true
+      post
+    end
+
+    it "updates message if unread" do
+      post = make_post
+      post.mark_read(user)
+      expect(user.messages.first.unread).to eq(false)
+    end
+
+    it "does not update message if read" do
+      post = make_post
+      notification = user.messages.first
+      notification.update!(unread: false)
+      post.mark_read(user)
+      expect(user.messages.first.unread).to eq(false)
+    end
+  end
 end

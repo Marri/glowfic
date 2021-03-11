@@ -23,7 +23,7 @@ class ReportsController < ApplicationController
       @board_views = BoardView.where(user_id: current_user.id).select([:board_id, :ignored])
       @opened_ids = @opened_posts.map(&:post_id)
 
-      DailyReport.mark_read(current_user, @day) if !current_user.ignore_unread_daily_report? && @day.to_date < Time.zone.now.to_date
+      DailyReport.mark_read(current_user, at_time: @day) if !current_user.ignore_unread_daily_report? && @day.to_date < Time.zone.now.to_date
     end
 
     if @report_type == 'daily'

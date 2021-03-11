@@ -81,5 +81,14 @@ RSpec.describe GenerateFlatPostJob do
 
       GenerateFlatPostJob.perform_now(post.id)
     end
+
+    it "builds a FlatPost object if one does not exist" do
+      post = create(:post)
+      expect(post.flat_post).not_to be_nil
+      post.flat_post.destroy!
+
+      GenerateFlatPostJob.perform_now(post.id)
+      expect(FlatPost.find_by(post: post)).not_to be_nil
+    end
   end
 end

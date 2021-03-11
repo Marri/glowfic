@@ -209,7 +209,7 @@ FactoryBot.define do
     board
   end
 
-  factory :post_author do
+  factory :post_author, class: 'Post::Author' do
     user
     post
   end

@@ -2,6 +2,10 @@ class Reply < ApplicationRecord
   include Presentable
   include Writable
   include PgSearch::Model
+
+  # define this scope here or Orderable will redefine it
+  scope :ordered, -> { order(reply_order: :asc) }
+  scope :ordered_manually, -> { ordered }
   include Orderable
 
   belongs_to :post, inverse_of: :replies, optional: false
@@ -21,14 +25,6 @@ class Reply < ApplicationRecord
     using: { tsearch: { dictionary: "english", highlight: {MaxFragments: 10} } },
   )
 
-  scope :with_edit_audit_counts, -> {
-    select("(SELECT COUNT(*) FROM audits WHERE audits.auditable_id = replies.id AND audits.auditable_type = 'Reply') > 1 AS has_edit_audits")
-  }
-
-  scope :ordered, -> { order(reply_order: :asc) }
-
-  scope :ordered_manually, -> { ordered }
-
   scope :visible_to, ->(user) { where(post_id: Post.visible_to(user).select(:id)) }
 
   def post_page(per=25)
@@ -39,11 +35,6 @@ class Reply < ApplicationRecord
 
   def last_updated
     updated_at
-  end
-
-  def has_edit_audits?
-    return read_attribute(:has_edit_audits) if has_attribute?(:has_edit_audits)
-    audits.count > 1
   end
 
   def order

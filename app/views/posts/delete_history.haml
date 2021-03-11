@@ -1,10 +1,10 @@
 = render 'breadcrumbs', subtitle: 'Delete History', post: @post
 
 .content-header History of Deleted Replies
-= render 'posts/paginator', paginated: @audits
+= render 'posts/paginator', paginated: @deleted_audits
 %br
 
-- if @audits.present?
+- if @deleted_audits.present?
   .subber Preceding context
   = render partial: 'replies/single', collection: @preceding, as: :reply
   %br

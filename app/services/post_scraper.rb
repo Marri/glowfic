@@ -1,5 +1,4 @@
 class PostScraper < Object
-  SANDBOX_ID = Rails.env.production? ? 3 : 5
   BASE_ACCOUNTS = {
     'alicornucopia'      => 'Alicorn',
     'pythbox'            => 'Kappa',
@@ -24,9 +23,9 @@ class PostScraper < Object
   attr_accessor :url, :post, :html_doc
 
   def initialize(url, board_id=nil, section_id=nil, status=nil, threaded_import=false, console_import=false, subject=nil)
-    @board_id = board_id || SANDBOX_ID
+    @board_id = board_id || Board::ID_SANDBOX
     @section_id = section_id
-    @status = status || Post.statuses[:complete]
+    @status = status || :complete
     url += (url.include?('?') ? '&' : '?') + 'style=site' unless url.include?('style=site')
     url += '&view=flat' unless url.include?('view=flat') || threaded_import
     @url = url

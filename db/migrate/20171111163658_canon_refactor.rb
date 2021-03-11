@@ -16,9 +16,9 @@ class CanonRefactor < ActiveRecord::Migration[5.0]
       setting.characters << new_chars
 
       # update all non-loop Canon > Settings relationships to be Setting > Settings
-      same_tag = TagTag.where(tag_id: canon.id, tagged_id: setting.id).first
+      same_tag = Tag::SettingTag.where(tag_id: canon.id, tagged_id: setting.id).first
       same_tag.destroy! if same_tag.present?
-      TagTag.where(tag_id: canon.id).update_all(tag_id: setting.id)
+      Tag::SettingTag.where(tag_id: canon.id).update_all(tag_id: setting.id)
 
       # death to the canon
       canon.destroy!

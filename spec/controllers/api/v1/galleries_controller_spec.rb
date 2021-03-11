@@ -8,7 +8,7 @@ RSpec.describe Api::V1::GalleriesController do
       end
 
       it "returns galleryless icons for logged in user" do
-        login
+        api_login
         get :show, params: { id: '0' }
         expect(response).to have_http_status(200)
         expect(response.json['name']).to eq('Galleryless')
@@ -35,7 +35,7 @@ RSpec.describe Api::V1::GalleriesController do
       it "displays the gallery", :show_in_doc do
         gallery = create(:gallery)
         gallery.icons << create(:icon, user: gallery.user)
-        login_as(gallery.user)
+        api_login_as(gallery.user)
         get :show, params: { id: gallery.id }
         expect(response).to have_http_status(200)
         expect(response.json['name']).to eq(gallery.name)

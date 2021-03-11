@@ -3,7 +3,8 @@
 - content_for :flashes do
   .flash.error
     = image_tag "icons/exclamation.png".freeze, class: 'vmid'.freeze
-    Warning: blocking is not currently implemented. This page should remember any blocks you have created, but they will not take effect yet.
+    Warning: full blocking is not yet implemented, and will function the same as simply blocking posts.
+    Additionally, any threads not locked to their authors will not be covered by post blocking.
 
 %table
   %thead
@@ -26,16 +27,16 @@
           = user_link(block.blocked_user)
         %td.padding-5{class: klass}= block.block_interactions? ? 'Yes' : 'No'
         %td.padding-5{class: klass}
-          - if block.hide_their_content?
+          - if block.hide_them_all?
             All
-          - elsif block.hide_their_posts?
+          - elsif block.hide_them_posts?
             Posts
           - else
             None
         %td.padding-5{class: klass}
-          - if block.hide_my_content?
+          - if block.hide_me_all?
             All
-          - elsif block.hide_my_posts?
+          - elsif block.hide_me_posts?
             Posts
           - else
             None

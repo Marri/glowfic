@@ -81,7 +81,7 @@ RSpec.describe CharacterTag do
       expect(character.gallery_groups).to match_array([group])
       expect(other.gallery_groups).to match_array([group])
 
-      character.destroy!
+      Audited.audit_class.as_user(character.user) { character.destroy! }
       group.reload
       expect(other.reload.gallery_groups).to match_array([group])
     end

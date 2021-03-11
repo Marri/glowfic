@@ -25,7 +25,7 @@ class DailyReport < Report
       ]))
       .joins(
         "LEFT JOIN replies AS replies_today ON replies_today.post_id = posts.id AND " \
-        "replies_today.created_at between '#{range.begin}' AND '#{range.end}'",
+        "replies_today.created_at between '#{range.begin.utc}' AND '#{range.end.utc}'",
       )
       .group("posts.id")
       .order(sort)

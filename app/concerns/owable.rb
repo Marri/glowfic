@@ -2,19 +2,19 @@ module Owable
   extend ActiveSupport::Concern
 
   included do
-    has_many :post_authors, inverse_of: :post, dependent: :destroy
+    has_many :post_authors, inverse_of: :post, class_name: 'Post::Author', dependent: :destroy
     has_many :authors, class_name: 'User', through: :post_authors, source: :user, dependent: :destroy
 
     # list of users who owe replies on this post, whether or not they have posted yet
-    has_many :tagging_post_authors, -> { where(can_owe: true) }, class_name: 'PostAuthor', inverse_of: :post
+    has_many :tagging_post_authors, -> { where(can_owe: true) }, class_name: 'Post::Author', inverse_of: :post
     has_many :tagging_authors, class_name: 'User', through: :tagging_post_authors, source: :user, dependent: :destroy
 
     # quick way to pull author list without calculating from post + replies
-    has_many :joined_post_authors, -> { where(joined: true) }, class_name: 'PostAuthor', inverse_of: :post
+    has_many :joined_post_authors, -> { where(joined: true) }, class_name: 'Post::Author', inverse_of: :post
     has_many :joined_authors, class_name: 'User', through: :joined_post_authors, source: :user, dependent: :destroy
 
     # used in the post#write UI to handle inviting users
-    has_many :unjoined_post_authors, -> { where(joined: false) }, class_name: 'PostAuthor', inverse_of: :post
+    has_many :unjoined_post_authors, -> { where(joined: false) }, class_name: 'Post::Author', inverse_of: :post
     has_many :unjoined_authors, class_name: 'User', through: :unjoined_post_authors, source: :user, dependent: :destroy
 
     after_create :add_creator_to_authors

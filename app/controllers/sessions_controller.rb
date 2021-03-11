@@ -11,32 +11,20 @@ class SessionsController < ApplicationController
   end
 
   def create
-    user = User.find_by(username: params[:username])
-
-    if !user || user.deleted?
-      flash[:error] = "That username does not exist."
-    elsif user.suspended?
-      flash[:error] = "You could not be logged in."
-      begin
-        raise NameError.new("Login attempt by suspended user #{user.id}")
-      rescue NameError => e
-        ExceptionNotifier.notify_exception(e, env: request.env)
-      end
-    elsif user.password_resets.active.unused.exists?
-      flash[:error] = "The password for this account has been reset. Please check your email."
-    elsif user.authenticate(params[:password])
-      unless user.salt_uuid.present?
-        user.salt_uuid = SecureRandom.uuid
-        user.crypted = user.send(:crypted_password, params[:password])
-        user.save!
-      end
+    auth = Authentication.new
+    if auth.authenticate(params[:username], params[:password])
+      user = auth.user
       flash[:success] = "You are now logged in as #{user.username}. Welcome back!"
       session[:user_id] = user.id
+      session[:api_token] = {
+        value: auth.api_token,
+        expires: Authentication::EXPIRY.from_now.to_i
+      }
       cookies.permanent.signed[:user_id] = cookie_hash(user.id) if params[:remember_me].present?
       @current_user = user
       redirect_to continuities_path and return if session[:previous_url] == '/login'
     else
-      flash[:error] = "You have entered an incorrect password."
+      flash[:error] = auth.error
     end
     redirect_to session[:previous_url] || root_url
   end

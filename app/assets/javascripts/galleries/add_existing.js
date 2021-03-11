@@ -34,7 +34,7 @@ $(document).ready(function() {
     if ($("#icons-" + galleryId + " .icon").length > 0) { return; }
 
     // Load and bind icons if they have not already been loaded
-    $.get("/api/v1/galleries/" + galleryId, {}, function(resp) {
+    $.authenticatedGet("/api/v1/galleries/" + galleryId, {}, function(resp) {
       $.each(resp.icons, function(index, icon) {
         var iconDiv = $("<div>").attr({class: 'gallery-icon'});
         var iconImg = $("<img>").attr({src: icon.url, alt: icon.keyword, title: icon.keyword, 'class': 'icon add-gallery-icon', 'data-id': icon.id});

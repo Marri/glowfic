@@ -50,8 +50,8 @@
             .padding-5>
               - if @post.created_at
                 = precede 'Posted ' do
-                  %span.post-posted=pretty_time(@post.created_at, ApplicationHelper::TIME_FORMAT)
+                  %span.post-posted=pretty_time(@post.created_at, format: ApplicationHelper::TIME_FORMAT)
               - if @post.created_at.to_i != @post.last_updated.to_i
                 = precede ' | Updated ' do
-                  %span.post-updated=pretty_time(@post.last_updated, ApplicationHelper::TIME_FORMAT)
+                  %span.post-updated=pretty_time(@post.last_updated, format: ApplicationHelper::TIME_FORMAT)
       .flat-post-replies= @post.flat_post.content.try(:html_safe)

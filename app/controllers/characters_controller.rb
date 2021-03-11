@@ -39,8 +39,8 @@ class CharactersController < ApplicationController
   def create
     @character = Character.new(user: current_user)
     @character.assign_attributes(permitted_params)
-    @character.settings = process_tags(Setting, :character, :setting_ids)
-    @character.gallery_groups = process_tags(GalleryGroup, :character, :gallery_group_ids)
+    @character.settings = process_tags(Setting, obj_param: :character, id_param: :setting_ids)
+    @character.gallery_groups = process_tags(GalleryGroup, obj_param: :character, id_param: :gallery_group_ids)
     build_template
 
     begin
@@ -82,8 +82,8 @@ class CharactersController < ApplicationController
           render :edit and return
         end
 
-        @character.settings = process_tags(Setting, :character, :setting_ids)
-        @character.gallery_groups = process_tags(GalleryGroup, :character, :gallery_group_ids)
+        @character.settings = process_tags(Setting, obj_param: :character, id_param: :setting_ids)
+        @character.gallery_groups = process_tags(GalleryGroup, obj_param: :character, id_param: :gallery_group_ids)
         @character.save!
       end
     rescue ActiveRecord::RecordInvalid
@@ -249,13 +249,11 @@ class CharactersController < ApplicationController
       success_msg = " in the specified " + 'post'.pluralize(params[:post_ids].size)
     end
 
-    if @character.aliases.exists? && params[:orig_alias] != 'all'
-      wheres[:character_alias_id] = orig_alias.try(:id)
-    end
+    wheres[:character_alias_id] = orig_alias.try(:id) if @character.aliases.exists? && params[:orig_alias] != 'all'
 
-    UpdateModelJob.perform_later(Reply.to_s, wheres, updates)
+    UpdateModelJob.perform_later(Reply.to_s, wheres, updates, current_user.id)
     wheres[:id] = wheres.delete(:post_id) if params[:post_ids].present?
-    UpdateModelJob.perform_later(Post.to_s, wheres, updates)
+    UpdateModelJob.perform_later(Post.to_s, wheres, updates, current_user.id)
 
     flash[:success] = "All uses of this character#{success_msg} will be replaced."
     redirect_to character_path(@character)
@@ -341,9 +339,7 @@ class CharactersController < ApplicationController
     @groups = user.character_groups.order('name asc') + [new_group]
     use_javascript('characters/editor')
     gon.character_id = @character.try(:id) || ''
-    if @character.present? && @character.template.nil? && @character.user == current_user
-      @character.build_template(user: user)
-    end
+    @character.build_template(user: user) if @character.present? && @character.template.nil? && @character.user == current_user
     gon.user_id = user.id
     @aliases = @character.aliases.ordered if @character
     gon.mod_editing = (user != current_user)
@@ -377,7 +373,7 @@ class CharactersController < ApplicationController
     desc = [linked.join('. ')].reject(&:blank?)
     desc << generate_short(@character.description) if @character.description.present?
     reply_posts = Reply.where(character_id: @character.id).select(:post_id).distinct.pluck(:post_id)
-    posts_count = Post.where(character_id: @character.id).or(Post.where(id: reply_posts)).where(privacy: Concealable::PUBLIC).uniq.count
+    posts_count = Post.where(character_id: @character.id).or(Post.where(id: reply_posts)).privacy_public.uniq.count
     desc << "#{posts_count} #{'post'.pluralize(posts_count)}" if posts_count > 0
     data = {
       url: character_url(@character),

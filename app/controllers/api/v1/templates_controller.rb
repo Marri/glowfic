@@ -12,7 +12,7 @@ class Api::V1::TemplatesController < Api::ApiController
     queryset = Template.where("name LIKE ?", params[:q].to_s + '%').ordered
 
     if params[:user_id].present?
-      return unless find_object(User, :user_id, :unprocessable_entity)
+      return unless find_object(User, param: :user_id, status: :unprocessable_entity)
       queryset = queryset.where(user_id: params[:user_id])
     end
 

@@ -72,17 +72,19 @@ class Tag < ApplicationRecord
 
   def merge_with(other_tag)
     transaction do
+      # rubocop:disable Rails/SkipsModelValidations
       PostTag.where(tag_id: other_tag.id).where(post_id: post_tags.select(:post_id).distinct.pluck(:post_id)).delete_all
       PostTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
       CharacterTag.where(tag_id: other_tag.id).where(character_id: character_tags.select(:character_id).distinct.pluck(:character_id)).delete_all
       CharacterTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
       GalleryTag.where(tag_id: other_tag.id).where(gallery_id: gallery_tags.select(:gallery_id).distinct.pluck(:gallery_id)).delete_all
       GalleryTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
-      TagTag.where(tag_id: other_tag.id, tagged_id: self.id).delete_all
-      TagTag.where(tag_id: self.id, tagged_id: other_tag.id).delete_all
-      TagTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
-      TagTag.where(tagged_id: other_tag.id).update_all(tagged_id: self.id)
+      Tag::SettingTag.where(tag_id: other_tag.id, tagged_id: self.id).delete_all
+      Tag::SettingTag.where(tag_id: self.id, tagged_id: other_tag.id).delete_all
+      Tag::SettingTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
+      Tag::SettingTag.where(tagged_id: other_tag.id).update_all(tagged_id: self.id)
       other_tag.destroy
+      # rubocop:enable Rails/SkipsModelValidations
     end
   end
 end

@@ -56,7 +56,7 @@
           %th.sub Privacy
           %td{colspan: 3, class: cycle('even', 'odd')}
             Changed from
-            %b= privacy_state(audit.audited_changes['privacy'][0])
+            %b= privacy_state(Post.privacies.key(audit.audited_changes['privacy'][0]))
             to
             %b= privacy_state(cur.privacy)
       - if audit.action != 'destroy' && (audit.action == 'create' || (audit.audited_changes.keys & %w(character_alias_id character_id content description icon_id subject)).present?)

@@ -57,6 +57,16 @@
             = link_to favorites_path(user_id: @user.id), method: :post do
               = image_tag "icons/star_add.png", class: 'vmid', alt: ''
               Favorite
+      %tr
+        %td.centered{class: cycle('even', 'odd')}
+          - if (block = Block.find_by(blocking_user: current_user, blocked_user: @user))
+            = link_to edit_block_path(block) do
+              = image_tag "icons/user_delete.png", class: 'vmid', alt: ''
+              Manage Block
+          - else
+            = link_to new_block_path(block: {blocked_user_id: @user.id}) do
+              = image_tag "icons/user_delete.png", class: 'vmid', alt: ''
+              Block User
 
 
 - content_for :posts_title do

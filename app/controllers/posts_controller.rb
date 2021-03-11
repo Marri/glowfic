@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require 'will_paginate/array'
-
 class PostsController < WritableController
   include Taggable
 
@@ -11,7 +9,7 @@ class PostsController < WritableController
   before_action :editor_setup, only: [:new, :edit]
 
   def index
-    @posts = posts_from_relation(Post.ordered)
+    @posts = posts_from_relation(Post.ordered, show_blocked: !!params[:show_blocked])
     @page_title = 'Recent Threads'
   end
 
@@ -21,11 +19,11 @@ class PostsController < WritableController
     @page_title = 'Replies Owed'
 
     can_owe = (params[:view] != 'hidden')
-    ids = PostAuthor.where(user_id: current_user.id, can_owe: can_owe).group(:post_id).pluck(:post_id)
+    ids = Post::Author.where(user_id: current_user.id, can_owe: can_owe).group(:post_id).pluck(:post_id)
     @posts = Post.where(id: ids)
     unless params[:view] == 'hidden'
       drafts = ReplyDraft.where(post_id: @posts.select(:id)).where(user: current_user).pluck(:post_id)
-      solo = PostAuthor.where(post_id: ids).group(:post_id).having('count(post_id) < 2').pluck(:post_id)
+      solo = Post::Author.where(post_id: ids).group(:post_id).having('count(post_id) < 2').pluck(:post_id)
       @posts = @posts.where.not(last_user: current_user).or(@posts.where(id: (drafts + solo).uniq))
     end
     @posts = @posts.where.not(status: [:complete, :abandoned])
@@ -61,7 +59,7 @@ class PostsController < WritableController
       .or(with_post_view.where("date_trunc('second', post_views.read_at) < date_trunc('second', posts.tagged_at)"))
 
     @posts = with_post_view.or(no_post_view)
-    @posts = posts_from_relation(@posts.ordered)
+    @posts = posts_from_relation(@posts.ordered, with_unread: true, show_blocked: !!params[:show_blocked])
 
     @hide_quicklinks = true
     @page_title = @started ? 'Opened Threads' : 'Unread Threads'
@@ -132,9 +130,9 @@ class PostsController < WritableController
     preview and return if params[:button_preview].present?
 
     @post = current_user.posts.new(permitted_params)
-    @post.settings = process_tags(Setting, :post, :setting_ids)
-    @post.content_warnings = process_tags(ContentWarning, :post, :content_warning_ids)
-    @post.labels = process_tags(Label, :post, :label_ids)
+    @post.settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
+    @post.content_warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
+    @post.labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     begin
       @post.save!
@@ -164,14 +162,15 @@ class PostsController < WritableController
     audit_ids = @post.associated_audits.where(action: 'destroy').where(auditable_type: 'Reply') # all destroyed replies
     audit_ids = audit_ids.joins('LEFT JOIN replies ON replies.id = audits.auditable_id').where('replies.id IS NULL') # not restored
     audit_ids = audit_ids.group(:auditable_id).pluck(Arel.sql('MAX(audits.id)')) # only most recent per reply
-    @audits = Audited::Audit.where(id: audit_ids).paginate(per_page: 1, page: page)
+    @deleted_audits = Audited::Audit.where(id: audit_ids).paginate(per_page: 1, page: page)
 
-    if @audits.present?
-      @audit = @audits.first
+    if @deleted_audits.present?
+      @audit = @deleted_audits.first
       @deleted = Reply.new(@audit.audited_changes)
       @preceding = @post.replies.where('id < ?', @audit.auditable_id).order(id: :desc).limit(2).reverse
       @preceding = [@post] unless @preceding.present?
       @following = @post.replies.where('id > ?', @audit.auditable_id).order(id: :asc).limit(2)
+      @audits = {} # set to prevent crashes, but we don't need this calculated, we don't want to display edit history on this page
     end
   end
 
@@ -193,10 +192,10 @@ class PostsController < WritableController
     preview and return if params[:button_preview].present?
 
     @post.assign_attributes(permitted_params)
-    @post.board ||= Board.find(3)
-    settings = process_tags(Setting, :post, :setting_ids)
-    warnings = process_tags(ContentWarning, :post, :content_warning_ids)
-    labels = process_tags(Label, :post, :label_ids)
+    @post.board ||= Board.find_by(id: Board::ID_SANDBOX)
+    settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
+    warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
+    labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     is_author = @post.author_ids.include?(current_user.id)
     if current_user.id != @post.user_id && @post.audit_comment.blank? && !is_author
@@ -218,6 +217,7 @@ class PostsController < WritableController
         array: @post.errors.full_messages,
         message: "Your post could not be saved because of the following problems:"
       }
+      @audits = { post: @post.audits.count }
       editor_setup
       render :edit
     else
@@ -268,7 +268,7 @@ class PostsController < WritableController
     if params[:author_id].present?
       post_ids = nil
       params[:author_id].each do |author_id|
-        author_posts = PostAuthor.where(user_id: author_id, joined: true).pluck(:post_id)
+        author_posts = Post::Author.where(user_id: author_id, joined: true).pluck(:post_id)
         if post_ids.nil?
           post_ids = author_posts
         else
@@ -282,7 +282,7 @@ class PostsController < WritableController
       post_ids = Reply.where(character_id: params[:character_id]).select(:post_id).distinct.pluck(:post_id)
       @search_results = @search_results.where(character_id: params[:character_id]).or(@search_results.where(id: post_ids))
     end
-    @search_results = posts_from_relation(@search_results).paginate(page: page)
+    @search_results = posts_from_relation(@search_results, show_blocked: !!params[:show_blocked])
   end
 
   def warnings
@@ -309,11 +309,14 @@ class PostsController < WritableController
 
     @author_ids = params.fetch(:post, {}).fetch(:unjoined_author_ids, [])
     @viewer_ids = params.fetch(:post, {}).fetch(:viewer_ids, [])
-    @settings = process_tags(Setting, :post, :setting_ids)
-    @content_warnings = process_tags(ContentWarning, :post, :content_warning_ids)
-    @labels = process_tags(Label, :post, :label_ids)
+    @settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
+    @content_warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
+    @labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     @written = @post
+
+    @audits = { post: @post.audits.count } if @post.id.present?
+
     editor_setup
     @page_title = 'Previewing: ' + @post.subject.to_s
     render :preview
@@ -323,7 +326,7 @@ class PostsController < WritableController
     if params[:at_id].present?
       reply = Reply.find(params[:at_id])
       if reply && reply.post == @post
-        @post.mark_read(current_user, reply.created_at - 1.second, true)
+        @post.mark_read(current_user, at_time: reply.created_at - 1.second, force: true)
         flash[:success] = "Post has been marked as read until reply ##{reply.id}."
       end
       return redirect_to unread_posts_path
@@ -354,7 +357,7 @@ class PostsController < WritableController
     begin
       Post.transaction do
         @post.update!(status: params[:status])
-        @post.mark_read(current_user, @post.tagged_at)
+        @post.mark_read(current_user, at_time: @post.tagged_at)
       end
     rescue ActiveRecord::RecordInvalid
       flash[:error] = {

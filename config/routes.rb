@@ -130,7 +130,7 @@ Rails.application.routes.draw do
       resources :index_sections, only: [] do
         collection { post :reorder }
       end
-      resources :posts, only: [:index, :show] do
+      resources :posts, only: [:index, :show, :update] do
         resources :replies, only: :index
         collection { post :reorder }
       end
@@ -139,6 +139,8 @@ Rails.application.routes.draw do
       resources :users, only: :index do
         member { get :posts }
       end
+
+      match '/login' => 'sessions#create', as: :login, via: :post
     end
   end
 

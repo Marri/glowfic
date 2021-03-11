@@ -82,7 +82,7 @@ RSpec.describe RepliesController do
               post_id: reply_post.id
             }
           }
-        }.not_to change { [PostAuthor.count, BoardAuthor.count]}
+        }.not_to change { [Post::Author.count, BoardAuthor.count]}
 
         expect(flash[:success]).to be_present
       end
@@ -180,7 +180,7 @@ RSpec.describe RepliesController do
       reply_post = create(:post)
       login_as(reply_post.user)
       dupe_reply = create(:reply, user: reply_post.user, post: reply_post)
-      reply_post.mark_read(reply_post.user, dupe_reply.created_at + 1.second, true)
+      reply_post.mark_read(reply_post.user, at_time: dupe_reply.created_at + 1.second, force: true)
 
       post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id, content: dupe_reply.content} }
       expect(response).to have_http_status(200)
@@ -196,7 +196,7 @@ RSpec.describe RepliesController do
       login_as(user)
       character = create(:character)
       reply_post = create(:post)
-      reply_post.mark_read(user, reply_post.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
 
       expect(character.user_id).not_to eq(user.id)
       post :create, params: { reply: {character_id: character.id, post_id: reply_post.id} }
@@ -208,7 +208,7 @@ RSpec.describe RepliesController do
       user = create(:user)
       login_as(user)
       reply_post = create(:post)
-      reply_post.mark_read(user, reply_post.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
       char = create(:character, user: user)
       icon = create(:icon, user: user)
       calias = create(:alias, character: char)
@@ -241,7 +241,7 @@ RSpec.describe RepliesController do
       user = create(:user)
       login_as(user)
       reply_post = create(:post, user: user)
-      reply_post.mark_read(user, reply_post.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
 
       expect {
         post :create, params: { reply: {post_id: reply_post.id, content: 'test content!'} }
@@ -259,7 +259,7 @@ RSpec.describe RepliesController do
       user = create(:user)
       login_as(user)
       reply_post = create(:post)
-      reply_post.mark_read(user, reply_post.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
 
       expect {
         post :create, params: { reply: {post_id: reply_post.id, content: 'test content again!'} }
@@ -278,7 +278,7 @@ RSpec.describe RepliesController do
       login_as(user)
       reply_post = create(:post)
       reply_old = create(:reply, post: reply_post, user: user)
-      reply_post.mark_read(user, reply_old.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: reply_old.created_at + 1.second, force: true)
 
       expect {
         post :create, params: { reply: {post_id: reply_post.id, content: 'test content the third!'} }
@@ -297,7 +297,7 @@ RSpec.describe RepliesController do
       login_as(user)
       reply_post = create(:post)
       reply_old = create(:reply, post: reply_post, user: user)
-      reply_post.mark_read(user, reply_old.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: reply_old.created_at + 1.second, force: true)
       reply_post.update!(authors_locked: true)
 
       expect {
@@ -365,7 +365,7 @@ RSpec.describe RepliesController do
       expect(reply_post.tagging_authors.count).to eq(2)
       expect(reply_post.joined_authors).to include(user)
       expect(reply_post.joined_authors.count).to eq(2)
-      reply_post.mark_read(user, old_reply.created_at + 1.second, true)
+      reply_post.mark_read(user, at_time: old_reply.created_at + 1.second, force: true)
       expect {
         post :create, params: { reply: {post_id: reply_post.id, content: 'test content!'} }
       }.to change{Reply.count}.by(1)
@@ -431,7 +431,7 @@ RSpec.describe RepliesController do
       expect(reply.user_id).not_to eq(reply.post.user_id)
       expect(reply.post.visible_to?(reply.user)).to eq(true)
 
-      reply.post.privacy = Concealable::PRIVATE
+      reply.post.update!(privacy: :private)
       reply.post.save!
       reply.reload
       expect(reply.post.visible_to?(reply.user)).to eq(false)
@@ -492,8 +492,7 @@ RSpec.describe RepliesController do
       expect(reply.user_id).not_to eq(reply.post.user_id)
       expect(reply.post.visible_to?(reply.user)).to eq(true)
 
-      reply.post.privacy = Concealable::PRIVATE
-      reply.post.save!
+      reply.post.update!(privacy: :private)
       reply.reload
       expect(reply.post.visible_to?(reply.user)).to eq(false)
 
@@ -536,8 +535,7 @@ RSpec.describe RepliesController do
       expect(reply.user_id).not_to eq(reply.post.user_id)
       expect(reply.post.visible_to?(reply.user)).to eq(true)
 
-      reply.post.privacy = Concealable::PRIVATE
-      reply.post.save!
+      reply.post.update!(privacy: :private)
       reply.reload
       expect(reply.post.visible_to?(reply.user)).to eq(false)
 
@@ -602,7 +600,7 @@ RSpec.describe RepliesController do
       expect(reply.user_id).not_to eq(reply.post.user_id)
       expect(reply.post.visible_to?(reply.user)).to eq(true)
 
-      reply.post.privacy = Concealable::PRIVATE
+      reply.post.update!(privacy: :private)
       reply.post.save!
       reply.reload
       expect(reply.post.visible_to?(reply.user)).to eq(false)
@@ -683,18 +681,20 @@ RSpec.describe RepliesController do
       reply_post = create(:post)
       login_as(reply_post.user)
       create(:reply, post: reply_post)
-      reply = create(:reply, post: reply_post)
+      reply = create(:reply, post: reply_post, user: reply_post.user)
       expect(reply.reply_order).to eq(1)
       expect(reply_post.replies.ordered.last).to eq(reply)
       create(:reply, post: reply_post)
       expect(reply_post.replies.ordered.last).not_to eq(reply)
       reply_post.mark_read(reply_post.user)
       put :update, params: { id: reply.id, reply: {content: 'new content'} }
+      expect(flash[:success]).to eq("Post updated")
       expect(reply.reload.reply_order).to eq(1)
     end
 
     context "preview" do
       it "takes correct actions" do
+        Reply.auditing_enabled = true
         user = create(:user)
         reply_post = create(:post, user: user)
         reply = create(:reply, post: reply_post, user: user)
@@ -726,6 +726,7 @@ RSpec.describe RepliesController do
         expect(assigns(:post)).to eq(reply_post)
         expect(assigns(:reply)).to eq(reply)
         expect(ReplyDraft.count).to eq(0)
+        expect(assigns(:audits)).to eq({reply.id => 1})
 
         written = assigns(:written)
         expect(written).not_to be_a_new_record
@@ -751,6 +752,7 @@ RSpec.describe RepliesController do
         templateless = templates.last
         expect(templateless.name).to eq('Templateless')
         expect(templateless.plucked_characters).to eq([[char.id, char.name]])
+        Reply.auditing_enabled = false
       end
 
       it "takes correct actions for moderators" do
@@ -803,8 +805,7 @@ RSpec.describe RepliesController do
       expect(reply.user_id).not_to eq(reply.post.user_id)
       expect(reply.post.visible_to?(reply.user)).to eq(true)
 
-      reply.post.privacy = Concealable::PRIVATE
-      reply.post.save!
+      reply.post.update!(privacy: :private)
       reply.reload
       expect(reply.post.visible_to?(reply.user)).to eq(false)
 
@@ -871,7 +872,7 @@ RSpec.describe RepliesController do
       id = post_user.id
       expect(post_user.joined).to eq(true)
       delete :destroy, params: { id: reply.id }
-      expect(PostAuthor.find_by(id: id)).to be_nil
+      expect(Post::Author.find_by(id: id)).to be_nil
     end
 
     it "sets joined to false on deleting only reply when invited" do
@@ -917,6 +918,7 @@ RSpec.describe RepliesController do
 
   describe "POST restore" do
     before(:each) { Reply.auditing_enabled = true }
+
     after(:each) { Reply.auditing_enabled = false }
 
     it "requires login" do
@@ -1225,7 +1227,7 @@ RSpec.describe RepliesController do
       it "only shows from visible posts" do
         reply1 = create(:reply, content: 'contains forks')
         reply2 = create(:reply, content: 'visible contains forks')
-        reply1.post.update!(privacy: Concealable::PRIVATE)
+        reply1.post.update!(privacy: :private)
         expect(reply1.post.reload).not_to be_visible_to(nil) # logged out, not visible
         expect(reply2.post.reload).to be_visible_to(nil)
         get :search, params: { commit: true, subj_content: 'forks' }
@@ -1241,7 +1243,7 @@ RSpec.describe RepliesController do
 
       it "requires visible post if given" do
         reply1 = create(:reply)
-        reply1.post.update!(privacy: Concealable::PRIVATE)
+        reply1.post.update!(privacy: :private)
         expect(reply1.post.reload).not_to be_visible_to(nil)
         get :search, params: { commit: true, post_id: reply1.post_id }
         expect(assigns(:search_results)).to be_nil
@@ -1281,6 +1283,31 @@ RSpec.describe RepliesController do
         end
         get :search, params: { commit: true, sort: 'created_old' }
         expect(assigns(:search_results)).to eq([reply, reply2])
+      end
+
+      it "calculates audits" do
+        Reply.auditing_enabled = true
+        user = create(:user)
+
+        replies = Audited.audit_class.as_user(user) do
+          create_list(:reply, 6, user: user)
+        end
+
+        Audited.audit_class.as_user(user) do
+          replies[1].touch # rubocop:disable Rails/SkipsModelValidations
+          replies[3].update!(character: create(:character, user: user))
+          replies[2].update!(content: 'new content')
+          1.upto(5) { |i| replies[4].update!(content: 'message' + i.to_s) }
+        end
+        Audited.audit_class.as_user(create(:mod_user)) do
+          replies[5].update!(content: 'new content')
+        end
+
+        counts = replies.map(&:id).zip([1, 1, 2, 2, 6, 2]).to_h
+
+        get :search, params: { commit: true, sort: 'created_old' }
+        expect(assigns(:audits)).to eq(counts)
+        Reply.auditing_enabled = false
       end
     end
   end

@@ -78,7 +78,7 @@
     .even
       .details Notes written here are visible only to you. They will be displayed by the New Reply form.
       %br
-      = f.text_area :private_note, value: params[:private_note] || post.author_for(current_user)&.private_note
+      = f.text_area :private_note, value: params[:post].try(:[], :private_note) || post.author_for(current_user)&.private_note
 
   .subber Content
   - if post.id.present? && !post.editable_by?(current_user)

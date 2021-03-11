@@ -73,17 +73,21 @@ class WritableController < ApplicationController
       character_aliases.name as alias
     SQL
 
+    reply_count = @replies.count
+
     @replies = @replies
       .select(select)
       .joins(:user)
       .left_outer_joins(:character)
       .left_outer_joins(:icon)
       .left_outer_joins(:character_alias)
-      .with_edit_audit_counts
       .ordered
-      .paginate(page: cur_page, per_page: per)
+      .paginate(page: cur_page, per_page: per, total_entries: reply_count)
     redirect_to post_path(@post, page: @replies.total_pages, per_page: per) and return if cur_page > @replies.total_pages
     use_javascript('paginator')
+
+    @audits = @post.associated_audits.where(auditable_id: @replies.map(&:id)).group(:auditable_id).count
+    @audits[:post] = @post.audits.count
 
     @next_post = @post.next_post(current_user)
     @prev_post = @post.prev_post(current_user)
@@ -95,7 +99,7 @@ class WritableController < ApplicationController
     @meta_canonical = post_url(@post, canon_params)
 
     # show <meta property="og:..." content="..."> – for embed data
-    @meta_og = og_data_for_post(@post, self.page, @replies.total_pages, per)
+    @meta_og = og_data_for_post(@post, page: self.page, total_pages: @replies.total_pages, per_page: per)
     @meta_og[:url] = @meta_canonical
 
     use_javascript('posts/show')
@@ -113,7 +117,7 @@ class WritableController < ApplicationController
         @reply = @post.build_new_reply_for(current_user, reply_hash)
       end
 
-      @post.mark_read(current_user, @post.read_time_for(@replies))
+      @post.mark_read(current_user, at_time: @post.read_time_for(@replies))
     end
 
     @warnings = @post.content_warnings if display_warnings?
@@ -147,7 +151,7 @@ class WritableController < ApplicationController
     gon.no_icon_path = view_context.image_path('icons/no-icon.png')
   end
 
-  def og_data_for_post(post, page, total_pages, per_page)
+  def og_data_for_post(post, page: 1, total_pages:, per_page: 25)
     post_location = post.board.name
     post_location += ' » ' + post.section.name if post.section.present?
 

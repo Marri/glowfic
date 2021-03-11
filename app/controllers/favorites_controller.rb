@@ -12,12 +12,12 @@ class FavoritesController < ApplicationController
     end
 
     user_favorites = @favorites.where(favorite_type: User.to_s).select(:favorite_id)
-    author_posts = PostAuthor.where(user_id: user_favorites, joined: true).select(:post_id)
+    author_posts = Post::Author.where(user_id: user_favorites, joined: true).select(:post_id)
     board_favorites = @favorites.where(favorite_type: Board.to_s).select(:favorite_id)
     post_favorites = @favorites.where(favorite_type: Post.to_s).select(:favorite_id)
 
     @posts = Post.where(id: author_posts).or(Post.where(id: post_favorites)).or(Post.where(board_id: board_favorites))
-    @posts = posts_from_relation(@posts.ordered)
+    @posts = posts_from_relation(@posts.ordered, with_unread: true)
     @hide_quicklinks = true
   end
 

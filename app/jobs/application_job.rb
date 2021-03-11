@@ -5,7 +5,7 @@ class ApplicationJob < ActiveJob::Base
 
   def retry_on_term
     yield
-  rescue Resque::TermException
+  rescue Resque::TermException, Resque::DirtyExit
     Rails.logger.error("Performing #{self.class} was terminated. Retrying...")
     retry_job
   end

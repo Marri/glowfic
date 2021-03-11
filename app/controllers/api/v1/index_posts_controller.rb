@@ -1,6 +1,7 @@
 class Api::V1::IndexPostsController < Api::ApiController
   before_action :login_required
   resource_description do
+    name 'Index Posts'
     description 'Viewing and editing index posts'
   end
 

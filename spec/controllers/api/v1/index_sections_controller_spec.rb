@@ -15,7 +15,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       section_ids = [index_section2.id, index_section1.id]
 
-      login
+      api_login
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(403)
       expect(index_section1.reload.section_order).to eq(0)
@@ -35,7 +35,7 @@ RSpec.describe Api::V1::IndexSectionsController do
       expect(index_section3.reload.section_order).to eq(1)
 
       section_ids = [index_section3.id, index_section2.id, index_section1.id]
-      login_as(user)
+      api_login_as(user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(422)
       expect(response.json['errors'][0]['message']).to eq('Sections must be from one index')
@@ -52,7 +52,7 @@ RSpec.describe Api::V1::IndexSectionsController do
       expect(index_section2.reload.section_order).to eq(1)
       section_ids = [-1]
 
-      login_as(index.user)
+      api_login_as(index.user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(404)
       expect(response.json['errors'][0]['message']).to eq('Some sections could not be found: -1')
@@ -77,7 +77,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       section_ids = [index_section3.id, index_section1.id, index_section4.id, index_section2.id]
 
-      login_as(index.user)
+      api_login_as(index.user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(200)
       expect(response.json).to eq({'section_ids' => section_ids})
@@ -105,7 +105,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       section_ids = [index_section3.id, index_section1.id]
 
-      login_as(index.user)
+      api_login_as(index.user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(200)
       expect(response.json).to eq({'section_ids' => [index_section3.id, index_section1.id, index_section2.id, index_section4.id]})

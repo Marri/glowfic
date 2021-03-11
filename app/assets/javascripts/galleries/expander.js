@@ -65,7 +65,7 @@ function displayGallery(elem) {
 
   // Load and bind icons if they have not already been loaded
   elem.data('loading', true);
-  $.ajax({
+  $.authenticatedAjax({
     url: "/api/v1/galleries/" + galleryId,
     data: {user_id: gon.user_id}
   }).done(function(resp) {
