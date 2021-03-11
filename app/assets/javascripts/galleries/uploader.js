@@ -2,6 +2,7 @@
 
 var uploadedIcons = {};
 var formKey = '';
+var numFiles = 0;
 
 $(document).ready(function() {
   var form = $('form.icon-upload');
@@ -26,6 +27,7 @@ function randomString() {
 }
 
 function bindFileInput(fileInput, form, submitButton, formData) {
+  var limit = form.data('limit');
   var uploadArgs = {
     fileInput: fileInput,
     url: form.data('url'),
@@ -40,16 +42,10 @@ function bindFileInput(fileInput, form, submitButton, formData) {
     imageMaxHeight: 400,
 
     add: function(e, data) {
+      if (exceedsMaxFiles(limit, fileInput, data)) return;
       var fileType = data.files[0].type;
-      if (!fileType.startsWith('image/')) {
-        alert("You must upload files with an image filetype such as .png or .jpg - please retry with a valid file.");
-        unsetLoadingIcon();
-        return;
-      } else if (fileType === 'image/tiff') {
-        alert("Unfortunately, .tiff files are only supported by Safari - please retry with a valid file.");
-        unsetLoadingIcon();
-        return;
-      }
+      if (invalidFileType(fileType)) return;
+
       if (typeof addCallback !== 'undefined') addCallback();
 
       formData["Content-Type"] = fileType;
@@ -119,12 +115,49 @@ function bindFileInput(fileInput, form, submitButton, formData) {
   fileInput.fileupload(uploadArgs);
 }
 
+function exceedsMaxFiles(limit, fileInput, data) {
+  if (typeof limit === 'undefined' || limit <= 1) return false;
+
+  var numUploading = fileInput[0].files.length;
+  var isFirstFile = (fileInput[0].files[0] === data.files[0]);
+  var isLastFile = (fileInput[0].files[numUploading - 1] === data.files[0]);
+
+  return checkMaxFiles(limit, fileInput, isFirstFile, isLastFile);
+}
+
+function checkMaxFiles(limit, fileInput, isFirstFile, isLastFile) {
+  var numUploading = fileInput[0].files.length;
+  if (isFirstFile) numFiles += numUploading;
+  if (numFiles <= limit) return false;
+
+  if (isFirstFile) alert("You cannot upload more than "+limit+" files at once. Please try again.");
+  if (isLastFile) {
+    numFiles -= numUploading;
+    fileInput.val(null);
+  }
+  return true;
+}
+
+function invalidFileType(fileType) {
+  if (!fileType.startsWith('image/')) {
+    alert("You must upload files with an image filetype such as .png or .jpg - please retry with a valid file.");
+    unsetLoadingIcon();
+    return true;
+  } else if (fileType === 'image/tiff') {
+    alert("Unfortunately, .tiff files are only supported by Safari - please retry with a valid file.");
+    unsetLoadingIcon();
+    return true;
+  }
+  return false;
+}
+
 function unsetLoadingIcon() {
   if ($(".loading-icon").length) $(".loading-icon").hide();
   if ($(".uploading-icon").length) $(".uploading-icon").show().removeClass('uploading-icon');
 }
 
 function deleteUnusedIcons(keys) {
+  numFiles -= keys.length;
   $(keys).each(function(index, key) {
     $.authenticatedPost('/api/v1/icons/s3_delete', {s3_key: key});
   });
