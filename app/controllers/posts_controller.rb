@@ -175,6 +175,21 @@ class PostsController < WritableController
   end
 
   def stats
+    post_location = @post.board.name
+    post_location += ' » ' + @post.section.name if @post.section.present?
+    post_location += ' » Stats'
+
+    post_description = generate_short(@post.description)
+    post_description += ' ('
+    post_description += helpers.author_links(@post, linked: false)
+    post_description += ')'
+    post_description.strip!
+
+    @meta_og = {
+      title: @post.subject + ' · ' + post_location,
+      description: post_description,
+      url: stats_post_url(@post)
+    }
   end
 
   def edit
