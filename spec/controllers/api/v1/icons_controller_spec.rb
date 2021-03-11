@@ -1,9 +1,6 @@
-require "support/s3_bucket_helper"
-
 RSpec.describe Api::V1::IconsController do
   describe "POST s3_delete", show_in_doc: true do
     it "should require login" do
-      handle_s3_bucket
       expect(S3_BUCKET).not_to receive(:delete_objects)
       post :s3_delete
       expect(response).to have_http_status(401)
@@ -11,7 +8,6 @@ RSpec.describe Api::V1::IconsController do
     end
 
     it "should require s3_key param" do
-      handle_s3_bucket
       expect(S3_BUCKET).not_to receive(:delete_objects)
       api_login
       post :s3_delete
@@ -20,7 +16,6 @@ RSpec.describe Api::V1::IconsController do
     end
 
     it "should require your own icon" do
-      handle_s3_bucket
       user = create(:user)
       api_login_as(user)
 
@@ -32,7 +27,6 @@ RSpec.describe Api::V1::IconsController do
     end
 
     it "should not allow deleting a URL in use" do
-      handle_s3_bucket
       icon = create(:uploaded_icon)
       api_login_as(icon.user)
       expect(S3_BUCKET).not_to receive(:delete_objects)
@@ -42,7 +36,6 @@ RSpec.describe Api::V1::IconsController do
     end
 
     it "should delete the URL" do
-      handle_s3_bucket
       user = create(:user)
       icon = build(:uploaded_icon, user: user)
       api_login_as(user)

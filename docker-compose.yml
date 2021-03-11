@@ -5,12 +5,17 @@ x-env: &env
   GLOWFIC_DATABASE_HOST: postgres
   GLOWFIC_DATABASE_USER: postgres
   GLOWFIC_DATABASE_PASS: postgres
+  AWS_ACCESS_KEY_ID: minioadmin
+  AWS_SECRET_ACCESS_KEY: minioadmin
+  S3_BUCKET_NAME: glowfic-dev
+  MINIO_ENDPOINT: http://minio:9000/
 x-svc: &svc
   build: .
   image: glowfic
   links:
     - redis
     - postgres
+    - minio
   volumes:
     - .:/code
     - bundler-volume:/usr/local/bundle
@@ -20,7 +25,7 @@ services:
   web:
     <<: *svc
     ports:
-      - "3000:3000"
+      - 3000:3000
     command: bin/rails s
     environment:
       <<: *env
@@ -48,8 +53,19 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+  minio:
+    image: minio/minio
+    command: server /data
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+    ports:
+      - 9000:9000
+    volumes:
+      - minio-data:/data
 
 volumes:
   bundler-volume:
   postgres-data:
   webdrivers:
+  minio-data:

@@ -5,12 +5,15 @@ rvm:
 env:
   global:
     - CC_TEST_REPORTER_ID=1e0c6dba9930e839038860b6d73301226c821937f57ed35d06fc0e4b7bddf5f6
+    - MINIO_ENDPOINT=http://localhost:9000/
 services:
   - redis-server
   - postgresql
 cache: bundler
 before_install:
   - psql -c 'create database glowfic_test;' -U postgres
+  - curl -O https://dl.min.io/server/minio/release/linux-amd64/minio && chmod +x ./minio
+  - MINIO_ACCESS_KEY=minioadmin MINIO_SECRET_KEY=minioadmin ./minio server data 2>&1 > minio.log &
   - gem install bundler -v 1.17.3
   - echo "Using bundler:" $(bundle --version)
 before_script:

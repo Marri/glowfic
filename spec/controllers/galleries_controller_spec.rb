@@ -1,5 +1,3 @@
-require "support/s3_bucket_helper"
-
 RSpec.describe GalleriesController do
   describe "GET index" do
     context "without a user_id" do
@@ -567,7 +565,7 @@ RSpec.describe GalleriesController do
       expect(flash[:error]).to eq("That is not your gallery.")
     end
 
-    it "correctly stubs S3 bucket for devs without local buckets" do
+    it "correctly stubs S3 bucket for devs without storage service" do
       stub_const("S3_BUCKET", nil)
       login
       get :add, params: { id: 0 }
@@ -577,7 +575,6 @@ RSpec.describe GalleriesController do
     end
 
     it "supports galleryless" do
-      handle_s3_bucket
       login
       get :add, params: { id: 0 }
       expect(response).to render_template('add')
@@ -586,7 +583,6 @@ RSpec.describe GalleriesController do
     end
 
     it "supports normal gallery" do
-      handle_s3_bucket
       gallery = create(:gallery)
       login_as(gallery.user)
       get :add, params: { id: gallery.id }
