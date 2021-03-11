@@ -216,8 +216,8 @@ class Post < ApplicationRecord
   def total_word_count
     return word_count unless replies.exists?
     contents = replies.pluck(:content)
-    contents[0] = contents[0].split.size
-    word_count + contents.inject{|r, e| r + e.split.size}.to_i
+    full_sanitizer = Rails::Html::FullSanitizer.new
+    word_count + contents.inject(0){|r, e| r + full_sanitizer.sanitize(e).split.size}.to_i
   end
 
   def word_count_for(user)
@@ -226,8 +226,8 @@ class Post < ApplicationRecord
     return sum unless replies.where(user_id: user.id).exists?
 
     contents = replies.where(user_id: user.id).pluck(:content)
-    contents[0] = contents[0].split.size
-    sum + contents.inject{|r, e| r + e.split.size}.to_i
+    full_sanitizer = Rails::Html::FullSanitizer.new
+    sum + contents.inject(0){|r, e| r + full_sanitizer.sanitize(e).split.size}.to_i
   end
 
   # only returns for authors who have written in the post (it's zero for authors who have not joined)

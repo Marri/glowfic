@@ -459,6 +459,13 @@ RSpec.describe Post do
       expect(post.total_word_count).to eq(5)
     end
 
+    it "should not reflect HTML tags in the word count" do
+      post = create(:post, content: '<strong> one</strong> two three four five')
+      create(:reply, post: post, content: '<strong> six </strong>')
+      expect(post.word_count).to eq(5)
+      expect(post.total_word_count).to eq(6)
+    end
+
     it "orders users correctly" do
       post = create(:post, content: 'one')
       two = create(:reply, post: post, content: 'two two')

@@ -30,7 +30,8 @@ module Writable
 
     def word_count
       return 0 if content.nil?
-      content.split.size
+      full_sanitizer = Rails::Html::FullSanitizer.new
+      full_sanitizer.sanitize(content).split.size
     end
 
     def url
