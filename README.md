@@ -104,11 +104,11 @@ If it has changed, you can rebuild the glowfic image with:
 
 Now, update the gems used for the project:
 
-*   `docker-bin/bundler`
+*   `bin-docker/bundler`
 
 And finally, run any database migrations that might have been added in the meantime:
 
-*   `docker-bin/rake db:migrate`
+*   `bin-docker/rake db:migrate`
 
 You should now be able to execute the server, as before but now with the latest updates.
 

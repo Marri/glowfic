@@ -6,7 +6,7 @@ RSpec.describe Api::V1::IconsController do
       handle_s3_bucket
       expect(S3_BUCKET).not_to receive(:delete_objects)
       post :s3_delete
-      expect(response).to have_http_status(401)
+      expect(response).to have_http_status(:unauthorized)
       expect(response.json['errors'][0]['message']).to eq("You must be logged in to view that page.")
     end
 
@@ -15,7 +15,7 @@ RSpec.describe Api::V1::IconsController do
       expect(S3_BUCKET).not_to receive(:delete_objects)
       api_login
       post :s3_delete
-      expect(response).to have_http_status(422)
+      expect(response).to have_http_status(:unprocessable_entity)
       expect(response.json['errors'][0]['message']).to eq("Missing parameter s3_key")
     end
 
@@ -27,7 +27,7 @@ RSpec.describe Api::V1::IconsController do
       expect(S3_BUCKET).not_to receive(:delete_objects)
       post :s3_delete, params: { s3_key: "users/#{user.id}1/icons/hash_name.png" }
 
-      expect(response).to have_http_status(403)
+      expect(response).to have_http_status(:forbidden)
       expect(response.json['errors'][0]['message']).to eq("That is not your icon.")
     end
 
@@ -37,7 +37,7 @@ RSpec.describe Api::V1::IconsController do
       api_login_as(icon.user)
       expect(S3_BUCKET).not_to receive(:delete_objects)
       post :s3_delete, params: { s3_key: icon.s3_key }
-      expect(response).to have_http_status(422)
+      expect(response).to have_http_status(:unprocessable_entity)
       expect(response.json['errors'][0]['message']).to eq("Only unused icons can be deleted.")
     end
 
@@ -49,7 +49,7 @@ RSpec.describe Api::V1::IconsController do
       delete_key = {delete: {objects: [{key: icon.s3_key}], quiet: true}}
       expect(S3_BUCKET).to receive(:delete_objects).with(delete_key)
       post :s3_delete, params: { s3_key: icon.s3_key }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json).to eq({})
     end
   end

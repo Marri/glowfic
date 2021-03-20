@@ -78,7 +78,7 @@ class Character < ApplicationRecord
     galleries.each_with_index do |other, index|
       next if other.section_order == index
       other.section_order = index
-      other.save
+      other.save!
     end
   end
 
@@ -111,7 +111,7 @@ class Character < ApplicationRecord
           group_gallery_ids.delete(gallery_id)
         else
           # destroy joins that are not in the new set of IDs
-          char_gal.destroy
+          char_gal.destroy!
         end
       end
       new_ids.each do |gallery_id|
@@ -121,7 +121,7 @@ class Character < ApplicationRecord
       # leftover galleries from gallery groups will be added by that model
       self.characters_galleries = new_chargals
       if persisted?
-        self.update(characters_galleries: new_chargals)
+        self.update!(characters_galleries: new_chargals)
       else
         self.assign_attributes(characters_galleries: new_chargals)
       end
@@ -139,7 +139,7 @@ class Character < ApplicationRecord
     @group = CharacterGroup.new(user: user, name: group_name)
     return if @group.valid?
     @group.errors.messages.each do |k, v|
-      v.each { |val| errors.add('group '+k.to_s, val) }
+      v.each { |val| errors.add("group #{k}", val) }
     end
   end
 

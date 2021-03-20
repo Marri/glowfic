@@ -6,7 +6,7 @@ RSpec.describe Api::V1::UsersController do
       create(:user, username: 'aab') # enduser
       create(:user, username: 'aaa') # notuser
       User.all.each do |user|
-        create(:user, username: user.username.upcase + 'c')
+        create(:user, username: "#{user.username.upcase}c")
       end
     end
 
@@ -14,20 +14,20 @@ RSpec.describe Api::V1::UsersController do
       create_search_users
       api_login
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].count).to eq(9)
     end
 
     it "works logged out", show_in_doc: true do
       create_search_users
       get :index, params: { q: 'b' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].count).to eq(2)
     end
 
     it "raises error on invalid page", show_in_doc: true do
       get :index, params: { page: 'b' }
-      expect(response).to have_http_status(422)
+      expect(response).to have_http_status(:unprocessable_entity)
     end
 
     it "supports exact match", show_in_doc: true do
@@ -84,7 +84,7 @@ RSpec.describe Api::V1::UsersController do
   describe 'GET posts' do
     it 'requires a valid user', show_in_doc: true do
       get :posts, params: { id: 0 }
-      expect(response).to have_http_status(404)
+      expect(response).to have_http_status(:not_found)
       expect(response.json['errors'].size).to eq(1)
       expect(response.json['errors'][0]['message']).to eq("User could not be found.")
     end
@@ -94,7 +94,7 @@ RSpec.describe Api::V1::UsersController do
       public_post = create(:post, privacy: :public, user: user)
       create(:post, privacy: :private, user: user)
       get :posts, params: { id: user.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].size).to eq(1)
       expect(response.json['results'][0]['id']).to eq(public_post.id)
     end
@@ -105,7 +105,7 @@ RSpec.describe Api::V1::UsersController do
       user_post = create(:post, user: user, board: board, section: create(:board_section, board: board))
       create(:post, user: create(:user))
       get :posts, params: { id: user.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].size).to eq(1)
       expect(response.json['results'][0]['id']).to eq(user_post.id)
       expect(response.json['results'][0]['board']['id']).to eq(user_post.board_id)

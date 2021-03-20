@@ -58,12 +58,12 @@ class Reply < ApplicationRecord
     return if (saved_changes.keys - Post::NON_TAGGED_ATTRS - ['updated_at']).empty?
     post.tagged_at = updated_at
     post.status = :active if post.on_hiatus?
-    post.save
+    post.save!
   end
 
   def update_active_char
     return if is_import
-    user.update(:active_character => character)
+    user.update!(:active_character => character)
   end
 
   def destroy_subsequent_replies
@@ -77,7 +77,7 @@ class Reply < ApplicationRecord
     post.last_reply = previous_reply
     post.last_user = (previous_reply || post).user
     post.tagged_at = (previous_reply || post).last_updated
-    post.save
+    post.save!
   end
 
   def destroy_draft
@@ -136,9 +136,9 @@ class Reply < ApplicationRecord
     # joined the wrong post outright and should be removed
     post_author = post.author_for(user)
     if post.authors_locked?
-      post_author.update(joined: false)
+      post_author.update!(joined: false)
     else
-      post_author.destroy
+      post_author.destroy!
     end
   end
 

@@ -15,7 +15,7 @@ RSpec.describe MessagesController do
         deleted = create(:message, recipient: user)
         deleted.sender.archive
         get :index
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:view)).to eq('inbox')
         expect(assigns(:page_title)).to eq('Inbox')
         expect(assigns(:messages)).to match_array(messages)
@@ -28,7 +28,7 @@ RSpec.describe MessagesController do
         deleted = create(:message, sender: user)
         deleted.recipient.archive
         get :index, params: { view: 'outbox' }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:view)).to eq('outbox')
         expect(assigns(:page_title)).to eq('Outbox')
         expect(assigns(:messages)).to match_array(messages)
@@ -39,7 +39,7 @@ RSpec.describe MessagesController do
         login_as(user)
         message = create(:message, sender_id: 0, recipient: user)
         get :index, params: { view: 'inbox' }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:messages)).to match_array([message])
       end
     end
@@ -149,13 +149,13 @@ RSpec.describe MessagesController do
       it "sets succeeds with previous messages" do
         user = create(:user)
         messages = Array.new(7) { create(:message, sender: user) }
-        recents = messages[-5..-1].map(&:recipient)
+        recents = messages[-5..].map(&:recipient)
         recents_data = recents.reverse.map{|x| [x.username, x.id] }
         users_data = messages.map(&:recipient).map{|x| [x.username, x.id]}
         users_data.sort_by! {|x| x[0]}
         login_as(user)
         get :new
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:select_items)).to eq({'Recently messaged': recents_data, 'Other users': users_data})
       end
     end
@@ -204,7 +204,7 @@ RSpec.describe MessagesController do
       other_user = create(:user)
       login_as(previous.recipient)
       post :create, params: {
-        message: {subject: 'Re: ' + previous.subject, message: 'response', recipient_id: other_user.id},
+        message: {subject: "Re: #{previous.subject}", message: 'response', recipient_id: other_user.id},
         parent_id: previous.id
       }
       expect(assigns(:message).recipient_id).to eq(previous.sender_id)
@@ -234,7 +234,7 @@ RSpec.describe MessagesController do
       login_as(previous.recipient)
       expect(Message.count).to eq(1)
       post :create, params: {
-        message: {subject: 'Re: ' + previous.subject, message: 'response'},
+        message: {subject: "Re: #{previous.subject}", message: 'response'},
         parent_id: previous.id
       }
       expect(Message.count).to eq(2)
@@ -244,7 +244,7 @@ RSpec.describe MessagesController do
       expect(message.sender_id).to eq(previous.recipient_id)
       expect(message.recipient_id).to eq(previous.sender_id)
       expect(message.message).to eq('response')
-      expect(message.subject).to eq('Re: ' + previous.subject)
+      expect(message.subject).to eq("Re: #{previous.subject}")
       expect(message.parent).to eq(previous)
     end
 
@@ -253,7 +253,7 @@ RSpec.describe MessagesController do
       login_as(previous.sender)
       expect(Message.count).to eq(1)
       post :create, params: {
-        message: {subject: 'Re: ' + previous.subject, message: 'response'},
+        message: {subject: "Re: #{previous.subject}", message: 'response'},
         parent_id: previous.id
       }
       expect(Message.count).to eq(2)
@@ -351,7 +351,7 @@ RSpec.describe MessagesController do
         message = create(:message)
         login_as(message.sender)
         get :show, params: { id: message.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:messages)).to eq([message])
         expect(message.reload.unread?).to eq(true)
       end
@@ -360,7 +360,7 @@ RSpec.describe MessagesController do
         message = create(:message)
         login_as(message.recipient)
         get :show, params: { id: message.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:messages)).to eq([message])
         expect(message.reload.unread?).not_to eq(true)
       end
@@ -371,7 +371,7 @@ RSpec.describe MessagesController do
         subsequent = create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: false)
         login_as(message.recipient)
         get :show, params: { id: subsequent.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(message.reload.unread?).not_to eq(true)
       end
     end
@@ -389,7 +389,7 @@ RSpec.describe MessagesController do
       subsequent = create(:message, sender: message.recipient, recipient: message.sender, parent: message, thread_id: message.id, unread: false)
       login_as(message.recipient)
       get :show, params: { id: subsequent.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(message.reload.unread?).not_to eq(true)
       expect(sender.reload.unread?).to eq(true)
     end

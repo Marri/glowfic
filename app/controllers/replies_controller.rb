@@ -52,9 +52,9 @@ class RepliesController < WritableController
 
     append_rank = params[:subj_content].present? ? ', rank DESC' : ''
     if params[:sort] == 'created_new'
-      @search_results = @search_results.except(:order).order('replies.created_at DESC' + append_rank)
+      @search_results = @search_results.except(:order).order("replies.created_at DESC#{append_rank}")
     elsif params[:sort] == 'created_old'
-      @search_results = @search_results.except(:order).order('replies.created_at ASC' + append_rank)
+      @search_results = @search_results.except(:order).order("replies.created_at ASC#{append_rank}")
     elsif params[:subj_content].blank?
       @search_results = @search_results.order('replies.created_at DESC')
     end

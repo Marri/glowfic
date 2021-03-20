@@ -14,7 +14,7 @@ class Api::V1::TagsController < Api::ApiController
   error 422, "Invalid parameters provided"
   def index
     type = find_type
-    queryset = type.where("name LIKE ?", params[:q].to_s + '%').ordered_by_name
+    queryset = type.where("name LIKE ?", "#{params[:q]}%").ordered_by_name
 
     # gallery groups only searches groups the specified user has used
     if (user_id = params[:user_id]) && type == GalleryGroup

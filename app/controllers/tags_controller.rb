@@ -12,7 +12,7 @@ class TagsController < ApplicationController
     @post_counts = @post_counts.group('post_tags.tag_id').count
     @view = params[:view]
     @page_title = @view.present? ? @view.titlecase.pluralize : 'Tags'
-    @tag_options = (Tag::TYPES - ['GalleryGroup']).sort.reverse.map{|t| [t.titlecase, t]}.to_h
+    @tag_options = (Tag::TYPES - ['GalleryGroup']).sort.reverse.index_by(&:titlecase)
     use_javascript('tags/index')
   rescue InvalidTagType => e
     flash[:error] = e.api_error

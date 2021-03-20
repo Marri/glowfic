@@ -81,7 +81,7 @@ RSpec.describe GalleriesController do
       icon = create(:icon)
       login_as(icon.user)
       post :create, params: { gallery: {icon_ids: [icon.id]} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq('New Gallery')
       expect(flash[:error][:message]).to eq('Your gallery could not be saved because of the following problems:')
       expect(flash[:error][:array]).to eq(["Name can't be blank"])
@@ -112,8 +112,8 @@ RSpec.describe GalleriesController do
         '_atag',
         create(:gallery_group).id,
         '',
-        '_' + existing_name.name,
-        '_' + existing_case.name.upcase
+        "_#{existing_name.name}",
+        "_#{existing_case.name.upcase}"
       ]
       login
       expect {
@@ -385,7 +385,7 @@ RSpec.describe GalleriesController do
       user = create(:user)
       gallery = create(:gallery, user: user)
       icon = create(:icon, user: user)
-      newkey = icon.keyword + 'new'
+      newkey = "#{icon.keyword}new"
       gallery.icons << icon
       login_as(user)
 
@@ -462,8 +462,8 @@ RSpec.describe GalleriesController do
         '_atag',
         create(:gallery_group).id,
         '',
-        '_' + existing_name.name,
-        '_' + existing_case.name.upcase
+        "_#{existing_name.name}",
+        "_#{existing_case.name.upcase}"
       ]
       expect {
         post :update, params: { id: gallery.id, gallery: {gallery_group_ids: tags} }

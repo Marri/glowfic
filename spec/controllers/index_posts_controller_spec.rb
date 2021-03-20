@@ -28,7 +28,7 @@ RSpec.describe IndexPostsController do
       index = create(:index)
       login_as(index.user)
       get :new, params: { index_id: index.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -55,7 +55,7 @@ RSpec.describe IndexPostsController do
       section = create(:index_section)
       login_as(index.user)
       post :create, params: { index_post: {index_id: index.id, index_section_id: section.id } }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:new)
       expect(flash[:error][:message]).to eq("Post could not be added to index.")
     end
@@ -98,7 +98,7 @@ RSpec.describe IndexPostsController do
       index.posts << create(:post, user: index.user)
       login_as(index.user)
       get :edit, params: { id: index.index_posts.first.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Edit Post in Index")
     end
   end
@@ -131,7 +131,7 @@ RSpec.describe IndexPostsController do
       index.posts << create(:post, user: index.user)
       login_as(index.user)
       patch :update, params: { id: index.index_posts.first.id, index_post: {post_id: nil} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Edit Post in Index")
       expect(flash[:error][:message]).to eq("Index could not be saved")
     end

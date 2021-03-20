@@ -9,7 +9,7 @@ RSpec.describe SessionsController do
     it "works when logged in" do
       login
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(controller.gon.logged_in).to eq(true)
     end
 
@@ -79,7 +79,7 @@ RSpec.describe SessionsController do
     it "requires a valid password" do
       password = 'password'
       user = create(:user, password: password)
-      post :create, params: { username: user.username, password: password + "-not" }
+      post :create, params: { username: user.username, password: "#{password}-not" }
       expect(flash[:error]).to eq("You have entered an incorrect password.")
       expect(controller.send(:logged_in?)).not_to eq(true)
     end

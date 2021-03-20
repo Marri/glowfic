@@ -10,6 +10,6 @@ end
 
 def stub_fixture(url, filename)
   url = url.gsub(/\#cmt\d+$/, '')
-  file = Rails.root.join('spec', 'support', 'fixtures', filename + '.html')
+  file = Rails.root.join('spec', 'support', 'fixtures', "#{filename}.html")
   stub_request(:get, url).to_return(status: 200, body: File.new(file))
 end

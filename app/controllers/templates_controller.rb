@@ -42,7 +42,7 @@ class TemplatesController < ApplicationController
   end
 
   def edit
-    @page_title = 'Edit Template: ' + @template.name
+    @page_title = "Edit Template: #{@template.name}"
   end
 
   def update
@@ -54,7 +54,7 @@ class TemplatesController < ApplicationController
         array: @template.errors.full_messages
       }
       editor_setup
-      @page_title = 'Edit Template: ' + @template.name_was
+      @page_title = "Edit Template: #{@template.name_was}"
       render :edit
     else
       flash[:success] = "Template saved successfully."

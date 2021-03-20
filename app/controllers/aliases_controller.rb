@@ -5,7 +5,7 @@ class AliasesController < ApplicationController
   before_action :find_model, only: :destroy
 
   def new
-    @page_title = "New Alias: " + @character.name
+    @page_title = "New Alias: #{@character.name}"
     @alias = CharacterAlias.new(character: @character)
   end
 
@@ -20,7 +20,7 @@ class AliasesController < ApplicationController
         message: "Alias could not be created.",
         array: @alias.errors.full_messages
       }
-      @page_title = "New Alias: " + @character.name
+      @page_title = "New Alias: #{@character.name}"
       render :new
     else
       flash[:success] = "Alias created."

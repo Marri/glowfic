@@ -70,7 +70,7 @@ RSpec.feature "Listing characters", type: :feature do
     def check_headers(group_data, has_groups)
       if has_groups
         text = if group_data[:group]
-          'Group: ' + group_data[:group].name
+          "Group: #{group_data[:group].name}"
         else
           'Ungrouped Characters'
         end
@@ -79,7 +79,7 @@ RSpec.feature "Listing characters", type: :feature do
 
       group_data[:templates].each do |data|
         text = if data[:template]
-          'Template: ' + data[:template].name
+          "Template: #{data[:template].name}"
         else
           'No Template'
         end

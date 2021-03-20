@@ -115,7 +115,7 @@ class UsersController < ApplicationController
   def search
     @page_title = 'Search Users'
     return unless params[:commit].present?
-    username = '%' + params[:username].to_s + '%'
+    username = "%#{params[:username]}%"
     @search_results = User.active.where("username LIKE ?", username).ordered.paginate(page: page)
   end
 
@@ -159,7 +159,7 @@ class UsersController < ApplicationController
     boards = Board.where(id: board_ids).ordered.pluck(:name)
     board_count = boards.length
     if board_count > 0
-      desc = "Continuity".pluralize(board_count) + ": " + generate_short(boards * ', ')
+      desc = "#{'Continuity'.pluralize(board_count)}: #{generate_short(boards * ', ')}"
     else
       desc = "No continuities."
     end

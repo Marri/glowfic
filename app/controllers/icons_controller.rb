@@ -35,7 +35,7 @@ class IconsController < UploadingController
 
     icons.each do |icon|
       next unless icon.user_id == current_user.id
-      icon.destroy
+      icon.destroy!
     end
     flash[:success] = "Icons deleted."
     icon_redirect(gallery) and return
@@ -43,24 +43,25 @@ class IconsController < UploadingController
 
   def show
     @page_title = @icon.keyword
-    if params[:view] == 'posts'
-      post_ids = Reply.where(icon_id: @icon.id).select(:post_id).distinct.pluck(:post_id)
-      posts = Post.where(icon_id: @icon.id).or(Post.where(id: post_ids))
-      @posts = posts_from_relation(posts.ordered)
-    elsif params[:view] == 'galleries'
-      use_javascript('galleries/expander_old')
-    else
-      posts_using = Post.where(icon_id: @icon.id).visible_to(current_user)
-      replies_using = Reply.where(icon_id: @icon.id).visible_to(current_user)
-      @times_used = (posts_using.count + replies_using.count)
-      @posts_used = (posts_using.pluck(:id) + replies_using.select(:post_id).distinct.pluck(:post_id)).uniq.count
+    case params[:view]
+      when 'posts'
+        post_ids = Reply.where(icon_id: @icon.id).select(:post_id).distinct.pluck(:post_id)
+        posts = Post.where(icon_id: @icon.id).or(Post.where(id: post_ids))
+        @posts = posts_from_relation(posts.ordered)
+      when 'galleries'
+        use_javascript('galleries/expander_old')
+      else
+        posts_using = Post.where(icon_id: @icon.id).visible_to(current_user)
+        replies_using = Reply.where(icon_id: @icon.id).visible_to(current_user)
+        @times_used = (posts_using.count + replies_using.count)
+        @posts_used = (posts_using.pluck(:id) + replies_using.select(:post_id).distinct.pluck(:post_id)).uniq.count
     end
     @galleries = @icon.galleries.ordered_by_name
     @meta_og = og_data
   end
 
   def edit
-    @page_title = 'Edit Icon: ' + @icon.keyword
+    @page_title = "Edit Icon: #{@icon.keyword}"
     use_javascript('galleries/update_existing')
     use_javascript('galleries/uploader')
   end
@@ -73,7 +74,7 @@ class IconsController < UploadingController
         message: "Your icon could not be saved due to the following problems:",
         array: @icon.errors.full_messages
       }
-      @page_title = 'Edit icon: ' + @icon.keyword_was
+      @page_title = "Edit icon: #{@icon.keyword_was}"
       use_javascript('galleries/update_existing')
       use_javascript('galleries/uploader')
       set_s3_url
@@ -85,7 +86,7 @@ class IconsController < UploadingController
   end
 
   def replace
-    @page_title = "Replace Icon: " + @icon.keyword
+    @page_title = "Replace Icon: #{@icon.keyword}"
     all_icons = if @icon.has_gallery?
       @icon.galleries.map(&:icons).flatten.uniq.compact - [@icon]
     else
@@ -183,7 +184,7 @@ class IconsController < UploadingController
   def og_data
     galleries = @galleries.map(&:name)
     if galleries.present?
-      desc = "Gallery".pluralize(galleries.count) + ": " + galleries.join(', ')
+      desc = "#{'Gallery'.pluralize(galleries.count)}: #{galleries.join(', ')}"
     else
       desc = "Galleryless"
     end

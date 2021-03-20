@@ -59,7 +59,7 @@ class Block < ApplicationRecord
   def mark_messages_read
     Message.where(unread: true, sender_id: blocked_user_id, recipient_id: blocking_user_id).find_each do |message|
       message.unread = false
-      message.save
+      message.save!
     end
   end
 

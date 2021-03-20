@@ -2,7 +2,7 @@ RSpec.describe Api::V1::IndexSectionsController do
   describe "POST reorder" do
     it "requires login", :show_in_doc do
       post :reorder
-      expect(response).to have_http_status(401)
+      expect(response).to have_http_status(:unauthorized)
       expect(response.json['errors'][0]['message']).to eq("You must be logged in to view that page.")
     end
 
@@ -17,7 +17,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       api_login
       post :reorder, params: { ordered_section_ids: section_ids }
-      expect(response).to have_http_status(403)
+      expect(response).to have_http_status(:forbidden)
       expect(index_section1.reload.section_order).to eq(0)
       expect(index_section2.reload.section_order).to eq(1)
     end
@@ -37,7 +37,7 @@ RSpec.describe Api::V1::IndexSectionsController do
       section_ids = [index_section3.id, index_section2.id, index_section1.id]
       api_login_as(user)
       post :reorder, params: { ordered_section_ids: section_ids }
-      expect(response).to have_http_status(422)
+      expect(response).to have_http_status(:unprocessable_entity)
       expect(response.json['errors'][0]['message']).to eq('Sections must be from one index')
       expect(index_section1.reload.section_order).to eq(0)
       expect(index_section2.reload.section_order).to eq(0)
@@ -54,7 +54,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       api_login_as(index.user)
       post :reorder, params: { ordered_section_ids: section_ids }
-      expect(response).to have_http_status(404)
+      expect(response).to have_http_status(:not_found)
       expect(response.json['errors'][0]['message']).to eq('Some sections could not be found: -1')
       expect(index_section1.reload.section_order).to eq(0)
       expect(index_section2.reload.section_order).to eq(1)
@@ -79,7 +79,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       api_login_as(index.user)
       post :reorder, params: { ordered_section_ids: section_ids }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json).to eq({'section_ids' => section_ids})
       expect(index_section1.reload.section_order).to eq(1)
       expect(index_section2.reload.section_order).to eq(3)
@@ -107,7 +107,7 @@ RSpec.describe Api::V1::IndexSectionsController do
 
       api_login_as(index.user)
       post :reorder, params: { ordered_section_ids: section_ids }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json).to eq({'section_ids' => [index_section3.id, index_section1.id, index_section2.id, index_section4.id]})
       expect(index_section1.reload.section_order).to eq(1)
       expect(index_section2.reload.section_order).to eq(2)

@@ -16,7 +16,7 @@ module ApplicationHelper
     klass = ICON
     klass += ' pointer' if args.delete(:pointer)
     if (supplied_class = args.delete(:class))
-      klass += ' ' + supplied_class
+      klass += " #{supplied_class}"
     end
 
     image_tag url, {alt: keyword, title: keyword, class: klass}.merge(**args)
@@ -28,12 +28,12 @@ module ApplicationHelper
 
   def loading_tag(**args)
     klass = 'vmid loading-icon'
-    klass += ' ' + args[:class] if args[:class]
+    klass += " #{args[:class]}" if args[:class]
     image_tag 'icons/loading.gif', title: 'Loading...', class: klass, alt: '...', id: args[:id]
   end
 
   def quick_switch_tag(image_url, short_text, hover_name, char_id)
-    return content_tag :div, short_text, class: CHAR_ICON_FAKE, title: hover_name, data: { character_id: char_id } if image_url.nil?
+    return tag.div(short_text, class: CHAR_ICON_FAKE, title: hover_name, data: { character_id: char_id }) if image_url.nil?
     image_tag image_url, class: CHAR_ICON, alt: hover_name, title: hover_name, data: { character_id: char_id }
   end
 
@@ -59,12 +59,12 @@ module ApplicationHelper
   def fun_name(user)
     return '(deleted user)'.html_safe if user.deleted?
     return user.username unless user.moiety
-    content_tag :span, user.username, style: 'font-weight: bold; color: #' + user.moiety
+    tag.span(user.username, style: "font-weight: bold; color: ##{user.moiety}")
   end
 
   def color_block(user)
     return unless user.moiety
-    content_tag :span, '█', style: 'cursor: default; color: #' + user.moiety, title: user.moiety_name
+    tag.span('█', style: "cursor: default; color: ##{user.moiety}", title: user.moiety_name)
   end
 
   def unread_img
@@ -82,7 +82,7 @@ module ApplicationHelper
   end
 
   def path_for(obj, path)
-    send (path + '_path') % obj.class.to_s.downcase, obj
+    send format("#{path}_path", obj.class.to_s.downcase), obj
   end
 
   def per_page_options(default=nil)
@@ -126,7 +126,7 @@ module ApplicationHelper
       "%d-%m-%Y %l:%M %p", "%d-%m-%Y %H:%M", "%d-%m-%Y %l:%M:%S %p", "%d-%m-%Y %H:%M:%S",
       "%Y-%m-%d %l:%M %p", "%Y-%m-%d %H:%M", "%Y-%m-%d %l:%M:%S %p", "%Y-%m-%d %H:%M:%S"
     ]
-    time_displays = Hash[time_display_list.map { |v| [time_thing.strftime(v), v] }]
+    time_displays = time_display_list.index_by { |v| time_thing.strftime(v) }
     options_for_select(time_displays, default)
   end
 

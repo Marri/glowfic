@@ -70,7 +70,7 @@ RSpec.feature "Viewing a character", :type => :feature do
     char = create_basic_character(user)
 
     expect_basic_character_page(char) do |view|
-      expect(page).to have_selector('.breadcrumbs', text: 'Test char » ' + view)
+      expect(page).to have_selector('.breadcrumbs', text: "Test char » #{view}")
       within('.breadcrumbs') do
         expect(page).to have_link('Example user', href: user_path(user))
         expect(page).to have_link("Example user's Characters", href: user_characters_path(user))
@@ -90,7 +90,7 @@ RSpec.feature "Viewing a character", :type => :feature do
     login
 
     expect_basic_character_page(char) do |view|
-      expect(page).to have_selector('.breadcrumbs', text: 'Test char » ' + view)
+      expect(page).to have_selector('.breadcrumbs', text: "Test char » #{view}")
       within('.breadcrumbs') do
         expect(page).to have_link('Example user', href: user_path(user))
         expect(page).to have_link("Example user's Characters", href: user_characters_path(user))
@@ -110,7 +110,7 @@ RSpec.feature "Viewing a character", :type => :feature do
     login(create(:mod_user, password: 'known'), 'known')
 
     expect_basic_character_page(char) do |view|
-      expect(page).to have_selector('.breadcrumbs', text: 'Test char » ' + view)
+      expect(page).to have_selector('.breadcrumbs', text: "Test char » #{view}")
       within('.breadcrumbs') do
         expect(page).to have_link('Example user', href: user_path(user))
         expect(page).to have_link("Example user's Characters", href: user_characters_path(user))
@@ -130,7 +130,7 @@ RSpec.feature "Viewing a character", :type => :feature do
     login(user, 'known')
 
     expect_basic_character_page(char) do |view|
-      expect(page).to have_selector('.breadcrumbs', text: 'Test char » ' + view)
+      expect(page).to have_selector('.breadcrumbs', text: "Test char » #{view}")
       within('.breadcrumbs') do
         expect(page).to have_no_link(href: user_path(user))
         expect(page).to have_link("Characters", href: user_characters_path(user))

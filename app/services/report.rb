@@ -16,7 +16,7 @@ class Report < Object
 
     return true if at_time <= view.read_at.to_date
     view.read_at = at_time
-    view.save
+    view.save!
   end
 
   def self.last_read(user)

@@ -13,7 +13,7 @@ class Api::V1::UsersController < Api::ApiController
     queryset = if params[:match] == 'exact'
       User.where(username: params[:q])
     else
-      User.where("username LIKE ?", params[:q].to_s + '%').ordered
+      User.where("username LIKE ?", "#{params[:q]}%").ordered
     end
     if params[:hide_unblockable].present? && params[:hide_unblockable] == 'true' && logged_in?
       blocked_users = Block.where(blocking_user_id: current_user.id).pluck(:blocked_user_id)

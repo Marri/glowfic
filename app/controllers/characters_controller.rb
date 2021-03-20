@@ -26,7 +26,7 @@ class CharactersController < ApplicationController
     @page_title = if @user.id == current_user.try(:id)
       "Your Characters"
     else
-      @user.username + "'s Characters"
+      "#{@user.username}'s Characters"
     end
   end
 
@@ -67,7 +67,7 @@ class CharactersController < ApplicationController
   end
 
   def edit
-    @page_title = 'Edit Character: ' + @character.name
+    @page_title = "Edit Character: #{@character.name}"
   end
 
   def update
@@ -87,7 +87,7 @@ class CharactersController < ApplicationController
         @character.save!
       end
     rescue ActiveRecord::RecordInvalid
-      @page_title = "Edit Character: " + @character.name
+      @page_title = "Edit Character: #{@character.name}"
       flash.now[:error] = {
         message: "Your character could not be saved.",
         array: @character.errors.full_messages
@@ -167,17 +167,18 @@ class CharactersController < ApplicationController
     end
     @pbs.uniq!
 
-    if params[:sort] == "name"
-      @pbs.sort_by! {|x| [x[:item_name].downcase, x[:pb].downcase, x[:username].downcase]}
-    elsif params[:sort] == "writer"
-      @pbs.sort_by! {|x| [x[:username].downcase, x[:pb].downcase, x[:item_name].downcase]}
-    else
-      @pbs.sort_by! {|x| [x[:pb].downcase, x[:username].downcase, x[:item_name].downcase]}
+    case params[:sort]
+      when "name"
+        @pbs.sort_by! {|x| [x[:item_name].downcase, x[:pb].downcase, x[:username].downcase]}
+      when "writer"
+        @pbs.sort_by! {|x| [x[:username].downcase, x[:pb].downcase, x[:item_name].downcase]}
+      else
+        @pbs.sort_by! {|x| [x[:pb].downcase, x[:username].downcase, x[:item_name].downcase]}
     end
   end
 
   def replace
-    @page_title = 'Replace Character: ' + @character.name
+    @page_title = "Replace Character: #{@character.name}"
     if @character.template
       @alts = @character.template.characters
     else
@@ -198,9 +199,9 @@ class CharactersController < ApplicationController
 
     @alt_dropdown = @alts.map do |alt|
       name = alt.name
-      name += ' | ' + alt.screenname if alt.screenname
-      name += ' | ' + alt.nickname if alt.nickname
-      name += ' | ' + alt.settings.pluck(:name).join(' & ') if alt.settings.present?
+      name += " | #{alt.screenname}" if alt.screenname
+      name += " | #{alt.nickname}" if alt.nickname
+      name += " | #{alt.settings.pluck(:name).join(' & ')}" if alt.settings.present?
       [name, alt.id]
     end
     @alt = @alts.first
@@ -246,7 +247,7 @@ class CharactersController < ApplicationController
 
     if params[:post_ids].present?
       wheres[:post_id] = params[:post_ids]
-      success_msg = " in the specified " + 'post'.pluralize(params[:post_ids].size)
+      success_msg = " in the specified #{'post'.pluralize(params[:post_ids].size)}"
     end
 
     wheres[:character_alias_id] = orig_alias.try(:id) if @character.aliases.exists? && params[:orig_alias] != 'all'
@@ -300,7 +301,7 @@ class CharactersController < ApplicationController
       where_calc << "screenname LIKE ?" if params[:search_screenname].present?
       where_calc << "nickname LIKE ?" if params[:search_nickname].present?
 
-      @search_results = @search_results.where(where_calc.join(' OR '), *(['%' + params[:name].to_s + '%'] * where_calc.length))
+      @search_results = @search_results.where(where_calc.join(' OR '), *(["%#{params[:name]}%"] * where_calc.length))
     end
 
     @search_results = @search_results.ordered.paginate(page: page)
@@ -367,9 +368,9 @@ class CharactersController < ApplicationController
 
     linked = []
     nicknames = ([@character.nickname] + @character.aliases.pluck(:name)).uniq.compact
-    linked << "Nickname".pluralize(nicknames.count) + ": " + nicknames.join(', ') if nicknames.present?
+    linked << "#{'Nickname'.pluralize(nicknames.count)}: #{nicknames.join(', ')}" if nicknames.present?
     settings = @character.settings.pluck(:name)
-    linked << "Setting".pluralize(settings.count) + ": " + settings.join(', ') if settings.present?
+    linked << "#{'Setting'.pluralize(settings.count)}: #{settings.join(', ')}" if settings.present?
     desc = [linked.join('. ')].reject(&:blank?)
     desc << generate_short(@character.description) if @character.description.present?
     reply_posts = Reply.where(character_id: @character.id).select(:post_id).distinct.pluck(:post_id)
@@ -401,7 +402,7 @@ class CharactersController < ApplicationController
       :audit_comment,
       :retired,
       :cluster,
-      ungrouped_gallery_ids: [],
+      {ungrouped_gallery_ids: []},
     ]
     if @character.user == current_user
       permitted.last[:template_attributes] = [:name, :id]

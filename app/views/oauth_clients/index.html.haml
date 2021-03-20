@@ -1,0 +1,39 @@
+%h1 OAuth Client Applications
+- unless @tokens.empty?
+
+  %p
+    The following tokens have been issued to applications in your name
+
+  %table
+    %tr
+      %th Application
+      %th Issued
+      %th &nbsp;
+    - @tokens.each do |token|
+      %tr
+        %td= link_to token.client_application.name, token.client_application.url
+        %td= token.authorized_at
+        %td
+          = form_with :url => url_for(:controller => 'oauth', :action => 'revoke'), local: true do |form|
+            = form.hidden_field 'client_application[name]', :value => "#{token.client_application.name}"
+            = form.hidden_field 'token', :value => token.token
+            = form.submit "Revoke!"
+
+%h3 Application Developers
+
+- if @client_applications.empty?
+  %p
+    Do you have an application you would like to register for use with us using the <a href="http://oauth.net">OAuth</a> standard?
+    You must register your web application before it can make OAuth requests to this service
+- else
+  %p
+    You have the following client applications registered:
+
+  - @client_applications.each do |client|
+    %div
+      = link_to client.name, :action => :show, :id => client.id
+      = link_to 'Edit', edit_oauth_client_path(client)
+      = link_to 'Delete', oauth_client_path(client), :confirm => "Are you sure?", :method => :delete
+%br
+%h3
+  = link_to "Register your application", :action => :new

@@ -153,13 +153,14 @@ class ApplicationController < ActionController::Base
   end
 
   attr_reader :unread_ids, :opened_ids, :unread_counts
+
   # unread_ids and unread_counts do not necessarily include fully unread posts
   helper_method :unread_ids, :opened_ids, :unread_counts
 
   def generate_short(msg)
     short_msg = Glowfic::Sanitizers.full(msg) # strip all tags, replacing appropriately with spaces
     return short_msg if short_msg.length <= 75
-    short_msg[0...73] + '…' # make the absolute max length 75 characters
+    "#{short_msg[0...73]}…" # make the absolute max length 75 characters
   end
   helper_method :generate_short
 

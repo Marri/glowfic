@@ -9,7 +9,7 @@ class Api::V1::BoardsController < Api::ApiController
   param :page, :number, required: false, desc: 'Page in results (25 per page)'
   error 422, "Invalid parameters provided"
   def index
-    queryset = Board.where("name LIKE ?", params[:q].to_s + '%').ordered
+    queryset = Board.where("name LIKE ?", "#{params[:q]}%").ordered
     boards = paginate queryset, per_page: 25
     render json: {results: boards}
   end

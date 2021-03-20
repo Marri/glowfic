@@ -38,7 +38,7 @@ FILES = {
 def dump(model)
   puts "Dumping #{model.name.titleize.pluralize(model.count)}..."
   exclude = EXCLUDED_SCHEMA[model.name.to_sym].join(',')
-  file = Rails.root.join('db', 'seeds', model.name.demodulize.underscore + '.rb')
+  file = Rails.root.join('db', 'seeds', "#{model.name.demodulize.underscore}.rb")
   `rake db:seed:dump MODEL=#{model.name} EXCLUDE=#{exclude} FILE=#{file}`
   file
 end
@@ -99,7 +99,7 @@ MODELS.each do |model|
 end
 
 FILES.each do |key, value|
-  file = Rails.root.join('db', 'seeds', key.to_s.downcase + '.out')
+  file = Rails.root.join('db', 'seeds', "#{key.to_s.downcase}.out")
   value.each do |part|
     if part.is_a?(String)
       File.open(file, 'a') do |f|
@@ -107,11 +107,11 @@ FILES.each do |key, value|
         f.puts part
       end
     else
-      part_file = Rails.root.join('db', 'seeds', part.name.demodulize.underscore + '.rb')
+      part_file = Rails.root.join('db', 'seeds', "#{part.name.demodulize.underscore}.rb")
       next unless part_file.exist?
       `cat #{part_file} >> #{file}`
       `rm #{part_file}`
     end
   end
-  `mv #{file} #{Rails.root.join('db', 'seeds', key.to_s.downcase + '.rb')}`
+  `mv #{file} #{Rails.root.join('db', 'seeds', "#{key.to_s.downcase}.rb")}`
 end

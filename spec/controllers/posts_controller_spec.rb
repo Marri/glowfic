@@ -163,7 +163,7 @@ RSpec.describe PostsController do
     context "no search" do
       it "works logged out" do
         get :search
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:page_title)).to eq('Search Posts')
         expect(assigns(:search_results)).to be_nil
       end
@@ -171,7 +171,7 @@ RSpec.describe PostsController do
       it "works logged in" do
         login
         get :search
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:page_title)).to eq('Search Posts')
         expect(assigns(:search_results)).to be_nil
       end
@@ -316,7 +316,7 @@ RSpec.describe PostsController do
 
       get :new
 
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:post)).to be_new_record
       expect(assigns(:post).character).to eq(char1)
 
@@ -345,7 +345,7 @@ RSpec.describe PostsController do
       it "works for importer" do
         login_as(create(:importing_user))
         get :new, params: { view: :import }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
       end
     end
 
@@ -449,9 +449,9 @@ RSpec.describe PostsController do
             character_id: char1.id,
             icon_id: icon.id,
             character_alias_id: calias.id,
-            setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-            content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-            label_ids: [label1.id, '_'+label2.name, '_other'],
+            setting_ids: [setting1.id, "_#{setting2.name}", '_other'],
+            content_warning_ids: [warning1.id, "_#{warning2.name}", '_other'],
+            label_ids: [label1.id, "_#{label2.name}", '_other'],
             unjoined_author_ids: [user.id, coauthor.id]
           }
         }
@@ -527,14 +527,14 @@ RSpec.describe PostsController do
         }.not_to change { [Post::Author.count, PostViewer.count, BoardAuthor.count] }
 
         expect(flash[:error]).to be_nil
-        expect(assigns(:page_title)).to eq('Previewing: ' + assigns(:post).subject.to_s)
+        expect(assigns(:page_title)).to eq("Previewing: #{assigns(:post).subject}")
       end
     end
 
     it "creates new labels" do
       existing_name = create(:label)
       existing_case = create(:label)
-      tags = ['_atag', '_atag', create(:label).id, '', '_' + existing_name.name, '_' + existing_case.name.upcase]
+      tags = ['_atag', '_atag', create(:label).id, '', "_#{existing_name.name}", "_#{existing_case.name.upcase}"]
       login
       expect {
         post :create, params: { post: {subject: 'a', board_id: create(:board).id, label_ids: tags} }
@@ -551,8 +551,8 @@ RSpec.describe PostsController do
         '_atag',
         create(:setting).id,
         '',
-        '_' + existing_name.name,
-        '_' + existing_case.name.upcase
+        "_#{existing_name.name}",
+        "_#{existing_case.name.upcase}"
       ]
       login
       expect {
@@ -570,8 +570,8 @@ RSpec.describe PostsController do
         '_atag',
         create(:content_warning).id,
         '',
-        '_' + existing_name.name,
-        '_' + existing_case.name.upcase
+        "_#{existing_name.name}",
+        "_#{existing_case.name.upcase}"
       ]
       login
       expect {
@@ -749,9 +749,9 @@ RSpec.describe PostsController do
         post: {
           subject: 'asubjct',
           content: 'acontnt',
-          setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-          content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-          label_ids: [label1.id, '_'+label2.name, '_other'],
+          setting_ids: [setting1.id, "_#{setting2.name}", '_other'],
+          content_warning_ids: [warning1.id, "_#{warning2.name}", '_other'],
+          label_ids: [label1.id, "_#{label2.name}", '_other'],
           character_id: char1.id,
           unjoined_author_ids: [user.id, coauthor.id]
         }
@@ -825,9 +825,9 @@ RSpec.describe PostsController do
             character_alias_id: calias.id,
             privacy: :access_list,
             viewer_ids: [viewer.id],
-            setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-            content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-            label_ids: [label1.id, '_'+label2.name, '_other'],
+            setting_ids: [setting1.id, "_#{setting2.name}", '_other'],
+            content_warning_ids: [warning1.id, "_#{warning2.name}", '_other'],
+            label_ids: [label1.id, "_#{label2.name}", '_other'],
             unjoined_author_ids: [coauthor.id]
           }
         }
@@ -953,7 +953,7 @@ RSpec.describe PostsController do
     it "does not require login" do
       post = create(:post)
       get :show, params: { id: post.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:javascripts)).to include('posts/show')
     end
 
@@ -980,7 +980,7 @@ RSpec.describe PostsController do
       post = create(:post)
       login
       get :show, params: { id: post.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:javascripts)).to include('posts/show')
     end
 
@@ -1028,7 +1028,7 @@ RSpec.describe PostsController do
       get :show, params: { id: post.id, page: 'invalid' }
       expect(flash[:error]).to eq('Page not recognized, defaulting to page 1.')
       expect(assigns(:page)).to eq(1)
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:show)
     end
 
@@ -1037,7 +1037,7 @@ RSpec.describe PostsController do
       get :show, params: { id: post.id, page: 'unread' }
       expect(flash[:error]).to eq("You must be logged in to view unread posts.")
       expect(assigns(:page)).to eq(1)
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:show)
     end
 
@@ -1053,7 +1053,7 @@ RSpec.describe PostsController do
       create_list(:reply, 5, post: post)
       get :show, params: { id: post.id, per_page: 1, page: 'last' }
       expect(assigns(:page)).to eq(5)
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:show)
     end
 
@@ -1061,7 +1061,7 @@ RSpec.describe PostsController do
       post = create(:post)
       get :show, params: { id: post.id, page: 'last' }
       expect(assigns(:page)).to eq(1)
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:show)
     end
 
@@ -1078,7 +1078,7 @@ RSpec.describe PostsController do
         replies[1].touch # rubocop:disable Rails/SkipsModelValidations
         replies[3].update!(character: create(:character, user: post.user))
         replies[2].update!(content: 'new content')
-        1.upto(5) { |i| replies[4].update!(content: 'message' + i.to_s) }
+        1.upto(5) { |i| replies[4].update!(content: "message#{i}") }
       end
       Audited.audit_class.as_user(create(:mod_user)) do
         replies[5].update!(content: 'new content')
@@ -1243,7 +1243,7 @@ RSpec.describe PostsController do
         post = create(:post)
         login_as(post.user)
         get :show, params: { id: post.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
       end
 
       it "sets reply variable using build_new_reply_for" do
@@ -1260,7 +1260,7 @@ RSpec.describe PostsController do
         expect(controller).to receive(:setup_layout_gon).and_call_original
 
         get :show, params: { id: post.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:reply)).not_to be_nil
         expect(assigns(:javascripts)).to include('posts/show', 'posts/editor')
       end
@@ -1273,7 +1273,7 @@ RSpec.describe PostsController do
         login_as(user)
         expect(post).to be_taggable_by(user)
         get :show, params: { id: post.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
       end
 
       it "sets reply variable using build_new_reply_for" do
@@ -1289,7 +1289,7 @@ RSpec.describe PostsController do
         expect(post).to receive(:build_new_reply_for).with(user, {}).and_call_original
 
         get :show, params: { id: post.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:reply)).not_to be_nil
       end
     end
@@ -1308,7 +1308,7 @@ RSpec.describe PostsController do
         expect(post).not_to receive(:build_new_reply_for)
 
         get :show, params: { id: post.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:reply)).to be_nil
       end
     end
@@ -1386,7 +1386,7 @@ RSpec.describe PostsController do
       reply = create(:reply, post: post)
       reply.destroy!
       get :delete_history, params: { id: post.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:audit).auditable_id).to eq(reply.id)
     end
 
@@ -1976,9 +1976,9 @@ RSpec.describe PostsController do
             character_id: char1.id,
             icon_id: icon.id,
             character_alias_id: calias.id,
-            setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-            content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-            label_ids: [label1.id, '_'+label2.name, '_other'],
+            setting_ids: [setting1.id, "_#{setting2.name}", '_other'],
+            content_warning_ids: [warning1.id, "_#{warning2.name}", '_other'],
+            label_ids: [label1.id, "_#{label2.name}", '_other'],
             unjoined_author_ids: [coauthor.id],
             viewer_ids: [viewer.id]
           }
@@ -2073,7 +2073,7 @@ RSpec.describe PostsController do
         }.not_to change { [Post::Author.count, PostViewer.count, BoardAuthor.count] }
 
         expect(flash[:error]).to be_nil
-        expect(assigns(:page_title)).to eq('Previewing: ' + assigns(:post).subject.to_s)
+        expect(assigns(:page_title)).to eq("Previewing: #{assigns(:post).subject}")
       end
 
       skip "TODO"
@@ -2393,8 +2393,8 @@ RSpec.describe PostsController do
         post = create(:post, user: user, unjoined_authors: [removed_author])
         create(:reply, user: joined_author, post: post)
 
-        newcontent = post.content + 'new'
-        newsubj = post.subject + 'new'
+        newcontent = "#{post.content}new"
+        newsubj = "#{post.subject}new"
         login_as(user)
         board = create(:board)
         section = create(:board_section, board: board)
@@ -3014,7 +3014,7 @@ RSpec.describe PostsController do
     it "succeeds" do
       login
       get :unread
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:started)).not_to eq(true)
       expect(assigns(:page_title)).to eq('Unread Threads')
       expect(assigns(:posts)).to be_empty
@@ -3057,7 +3057,7 @@ RSpec.describe PostsController do
 
       login_as(user)
       get :unread
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:started)).not_to eq(true)
       expect(assigns(:page_title)).to eq('Unread Threads')
       expect(assigns(:posts)).to match_array([unread_post, opened_post1, opened_post2])
@@ -3124,7 +3124,7 @@ RSpec.describe PostsController do
         expect(user.unread_opened).not_to eq(true)
         login_as(user)
         get :unread, params: { started: 'true' }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:started)).to eq(true)
         expect(assigns(:page_title)).to eq('Opened Threads')
       end
@@ -3167,7 +3167,7 @@ RSpec.describe PostsController do
 
         login_as(user)
         get :unread
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:started)).to eq(true)
         expect(assigns(:page_title)).to eq('Opened Threads')
         expect(assigns(:posts)).to match_array([opened_post1, opened_post2])

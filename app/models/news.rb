@@ -24,7 +24,7 @@ class News < ApplicationRecord
     end
 
     return true if view.news_id > self.id
-    view.update(news: self)
+    view.update!(news: self)
   end
 
   def self.num_unread_for(user)

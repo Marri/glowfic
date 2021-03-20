@@ -2,13 +2,13 @@ RSpec.describe IndexesController do
   describe "GET index" do
     it "works logged out" do
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "works logged in" do
       login
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Indexes")
     end
   end
@@ -23,7 +23,7 @@ RSpec.describe IndexesController do
     it "works logged in" do
       login
       get :new
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("New Index")
     end
   end
@@ -38,7 +38,7 @@ RSpec.describe IndexesController do
     it "requires valid index" do
       login
       post :create, params: { index: {} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:new)
       expect(flash[:error][:message]).to eq("Index could not be created.")
     end
@@ -70,7 +70,7 @@ RSpec.describe IndexesController do
     it "works logged out" do
       index = create(:index)
       get :show, params: { id: index.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq(index.name)
     end
 
@@ -78,7 +78,7 @@ RSpec.describe IndexesController do
       index = create(:index, privacy: :private)
       login_as(index.user)
       get :show, params: { id: index.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "orders sectionless posts correctly" do
@@ -120,7 +120,7 @@ RSpec.describe IndexesController do
       index = create(:index)
       login_as(index.user)
       get :edit, params: { id: index.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Edit Index: #{index.name}")
     end
   end
@@ -151,7 +151,7 @@ RSpec.describe IndexesController do
       index = create(:index)
       login_as(index.user)
       put :update, params: { id: index.id, index: {name: ''} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:edit)
       expect(flash[:error][:message]).to eq("Index could not be saved because of the following problems:")
     end
@@ -159,7 +159,7 @@ RSpec.describe IndexesController do
     it "succeeds" do
       index = create(:index)
       login_as(index.user)
-      name = 'ValidSection' + index.name
+      name = "ValidSection#{index.name}"
       put :update, params: { id: index.id, index: {name: name} }
       expect(response).to redirect_to(index_url(index))
       expect(flash[:success]).to eq("Index saved!")

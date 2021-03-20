@@ -45,7 +45,7 @@ RSpec.feature "Viewing posts", :type => :feature do
 
     scenario "when user has content warnings turned off" do
       user = login
-      user.update(hide_warnings: true)
+      user.update!(hide_warnings: true)
       visit post_path(post)
       expect(page).not_to have_selector('.error')
     end

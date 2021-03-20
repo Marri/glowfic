@@ -55,7 +55,7 @@ RSpec.describe BoardSectionsController do
       board = create(:board)
       login_as(board.creator)
       post :create, params: { board_section: {board_id: board.id} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:new)
       expect(flash[:error][:message]).to eq("Section could not be created.")
     end
@@ -64,7 +64,7 @@ RSpec.describe BoardSectionsController do
       board = create(:board)
       login_as(board.creator)
       post :create, params: { board_section: {name: 'fake'} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:new)
       expect(flash[:error][:message]).to eq("Section could not be created.")
     end
@@ -93,7 +93,7 @@ RSpec.describe BoardSectionsController do
       create(:post)
       create(:post, board: section.board)
       get :show, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq(section.name)
       expect(assigns(:posts)).to match_array(posts)
     end
@@ -105,7 +105,7 @@ RSpec.describe BoardSectionsController do
       create(:post)
       create(:post, board: section.board)
       get :show, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq(section.name)
       expect(assigns(:posts)).to match_array(posts)
     end
@@ -124,7 +124,7 @@ RSpec.describe BoardSectionsController do
       post4.update!(section_order: 4)
       post5.update!(section_order: 5)
       get :show, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq(section.name)
       expect(assigns(:posts)).to eq([post1, post2, post3, post4, post5])
     end
@@ -170,7 +170,7 @@ RSpec.describe BoardSectionsController do
       section = create(:board_section)
       login_as(section.board.creator)
       get :edit, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Edit #{section.name}")
       expect(assigns(:board_section)).to eq(section)
     end
@@ -198,7 +198,7 @@ RSpec.describe BoardSectionsController do
       board_section = create(:board_section)
       login_as(board_section.board.creator)
       put :update, params: { id: board_section.id, board_section: {name: ''} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:edit)
       expect(flash[:error][:message]).to eq("Section could not be updated.")
     end

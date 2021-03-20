@@ -25,13 +25,13 @@ module Owable
     def opt_out_of_owed(user)
       return unless (author = author_for(user))
       author.destroy and return true unless author.joined?
-      author.update(can_owe: false)
+      author.update!(can_owe: false)
     end
 
     def opt_in_to_owed(user)
       return unless (author = author_for(user))
       return if author.can_owe?
-      author.update(can_owe: true)
+      author.update!(can_owe: true)
     end
 
     def author_for(user)
@@ -42,9 +42,9 @@ module Owable
 
     def add_creator_to_authors
       if author_ids.include?(user_id)
-        author_for(user).update(joined: true, joined_at: created_at, private_note: private_note)
+        author_for(user).update!(joined: true, joined_at: created_at, private_note: private_note)
       else
-        post_authors.create(user: user, joined: true, joined_at: created_at, private_note: private_note)
+        post_authors.create!(user: user, joined: true, joined_at: created_at, private_note: private_note)
       end
     end
 

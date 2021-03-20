@@ -1,6 +1,7 @@
 require 'resque/server'
 
 Rails.application.routes.draw do
+  resources :oauth_clients
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   apipie
 
@@ -108,6 +109,16 @@ Rails.application.routes.draw do
   # Blocks
   resources :blocks, except: [:show]
 
+  # OAuth2
+  namespace :oauth do
+    get :test_request
+    post :revoke
+    post :token
+    get :access_token
+    post :authorize
+    get :authorize
+    match '',               :to => 'oauth#index',         :via => :get, :as => :oauth
+  end
   # API
   namespace :api do
     namespace :v1 do

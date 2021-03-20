@@ -17,7 +17,7 @@ RSpec.describe Api::ApiController do
       it "displays an error if an invalid token is provided" do
         request.headers.merge({'Authorization': "Bearer definitely-invalid"})
         get :show, params: {id: 1}
-        expect(response).to have_http_status(422)
+        expect(response).to have_http_status(:unprocessable_entity)
         expect(response.json['errors'][0]['message']).to eq("Authorization token is not valid.")
       end
 
@@ -26,7 +26,7 @@ RSpec.describe Api::ApiController do
         Timecop.freeze(cur_time) { api_login }
         Timecop.freeze(cur_time + Authentication::EXPIRY + 3.days) do
           get :show, params: {id: 1}
-          expect(response).to have_http_status(401)
+          expect(response).to have_http_status(:unauthorized)
           expect(response.json['errors'][0]['message']).to eq("Authorization token has expired.")
         end
       end
@@ -34,7 +34,7 @@ RSpec.describe Api::ApiController do
       it "works when valid token is provided" do
         api_login
         get :show, params: {id: 1}
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(response.json['results'].size).to eq(3)
       end
     end
@@ -43,7 +43,7 @@ RSpec.describe Api::ApiController do
       it "displays an error if an invalid token is provided" do
         request.headers.merge({'Authorization': "Bearer definitely-invalid"})
         get :index
-        expect(response).to have_http_status(422)
+        expect(response).to have_http_status(:unprocessable_entity)
         expect(response.json['errors'][0]['message']).to eq("Authorization token is not valid.")
       end
 
@@ -52,21 +52,21 @@ RSpec.describe Api::ApiController do
         Timecop.freeze(cur_time) { api_login }
         Timecop.freeze(cur_time + Authentication::EXPIRY + 3.days) do
           get :index
-          expect(response).to have_http_status(401)
+          expect(response).to have_http_status(:unauthorized)
           expect(response.json['errors'][0]['message']).to eq("Authorization token has expired.")
         end
       end
 
       it "displays some data when logged out" do
         get :index
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(response.json['results'].size).to eq(1)
       end
 
       it "displays all data when logged in" do
         api_login
         get :index
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(response.json['results'].size).to eq(2)
       end
     end

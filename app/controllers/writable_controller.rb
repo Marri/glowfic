@@ -53,7 +53,7 @@ class WritableController < ApplicationController
         @unread = @post.first_unread_for(current_user) if logged_in?
         if @unread.nil?
           self.page = cur_page = @post.replies.paginate(per_page: per, page: 1).total_pages
-        elsif @unread.class == Post
+        elsif @unread.instance_of?(Post)
           self.page = cur_page = 1
         else
           self.page = cur_page = @unread.post_page(per)
@@ -146,14 +146,14 @@ class WritableController < ApplicationController
   def setup_layout_gon
     return unless logged_in?
     gon.base_url = ENV['DOMAIN_NAME'] ? "https://#{ENV['DOMAIN_NAME']}/" : '/'
-    gon.editor_class = 'layout_' + current_user.layout if current_user.layout
+    gon.editor_class = "layout_#{current_user.layout}" if current_user.layout
     gon.tinymce_css_path = helpers.stylesheet_path('tinymce')
     gon.no_icon_path = view_context.image_path('icons/no-icon.png')
   end
 
-  def og_data_for_post(post, page: 1, total_pages:, per_page: 25)
+  def og_data_for_post(post, total_pages:, page: 1, per_page: 25)
     post_location = post.board.name
-    post_location += ' » ' + post.section.name if post.section.present?
+    post_location += " » #{post.section.name}" if post.section.present?
 
     post_description = generate_short(post.description)
     post_description += ' ('
@@ -164,7 +164,7 @@ class WritableController < ApplicationController
     post_description.strip!
 
     @meta_og = {
-      title: post.subject + ' · ' + post_location,
+      title: "#{post.subject} · #{post_location}",
       description: post_description,
     }
   end

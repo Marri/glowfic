@@ -6,7 +6,7 @@ RSpec.describe Api::V1::BoardsController do
       create(:board, name: 'aab') # enduser
       create(:board, name: 'aaa') # notuser
       Board.all.each do |board|
-        create(:board, name: board.name.upcase + 'c')
+        create(:board, name: "#{board.name.upcase}c")
       end
     end
 
@@ -14,27 +14,27 @@ RSpec.describe Api::V1::BoardsController do
       create_search_boards
       api_login
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].count).to eq(8)
     end
 
     it "works logged out", show_in_doc: true do
       create_search_boards
       get :index, params: { q: 'b' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].count).to eq(2)
     end
 
     it "raises error on invalid page", show_in_doc: true do
       get :index, params: { page: 'b' }
-      expect(response).to have_http_status(422)
+      expect(response).to have_http_status(:unprocessable_entity)
     end
   end
 
   describe "GET show" do
     it "requires valid board", :show_in_doc do
       get :show, params: { id: 0 }
-      expect(response).to have_http_status(404)
+      expect(response).to have_http_status(:not_found)
       expect(response.json['errors'].size).to eq(1)
       expect(response.json['errors'][0]['message']).to eq("Continuity could not be found.")
     end
@@ -44,7 +44,7 @@ RSpec.describe Api::V1::BoardsController do
       section1 = create(:board_section, board: board)
       section2 = create(:board_section, board: board)
       get :show, params: { id: board.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['id']).to eq(board.id)
       expect(response.json['board_sections'].size).to eq(2)
       expect(response.json['board_sections'][0]['id']).to eq(section1.id)
@@ -57,7 +57,7 @@ RSpec.describe Api::V1::BoardsController do
       section1 = create(:board_section, board: board)
       section2 = create(:board_section, board: board)
       get :show, params: { id: board.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['id']).to eq(board.id)
       expect(response.json['board_sections'].size).to eq(2)
       expect(response.json['board_sections'][0]['id']).to eq(section1.id)
@@ -73,7 +73,7 @@ RSpec.describe Api::V1::BoardsController do
       section2.section_order = 0
       section2.save!
       get :show, params: { id: board.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['id']).to eq(board.id)
       expect(response.json['board_sections'].size).to eq(2)
       expect(response.json['board_sections'][0]['id']).to eq(section2.id)
@@ -86,7 +86,7 @@ RSpec.describe Api::V1::BoardsController do
   describe 'GET posts' do
     it 'requires a valid board', show_in_doc: true do
       get :posts, params: { id: 0 }
-      expect(response).to have_http_status(404)
+      expect(response).to have_http_status(:not_found)
       expect(response.json['errors'].size).to eq(1)
       expect(response.json['errors'][0]['message']).to eq("Continuity could not be found.")
     end
@@ -95,7 +95,7 @@ RSpec.describe Api::V1::BoardsController do
       public_post = create(:post, privacy: :public)
       create(:post, privacy: :private, board: public_post.board)
       get :posts, params: { id: public_post.board_id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].size).to eq(1)
       expect(response.json['results'][0]['id']).to eq(public_post.id)
     end
@@ -107,7 +107,7 @@ RSpec.describe Api::V1::BoardsController do
       end
       create(:post, board: create(:board))
       get :posts, params: { id: board.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response.json['results'].size).to eq(1)
       expect(response.json['results'][0]['id']).to eq(user_post.id)
       expect(response.json['results'][0]['board']['id']).to eq(user_post.board_id)

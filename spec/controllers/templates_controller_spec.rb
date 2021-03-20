@@ -9,7 +9,7 @@ RSpec.describe TemplatesController do
     it "works" do
       login
       get :new
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("New Template")
       expect(assigns(:template)).to be_a_new_record
     end
@@ -63,12 +63,12 @@ RSpec.describe TemplatesController do
     it "works logged in" do
       login
       get :show, params: { id: create(:template).id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "works logged out" do
       get :show, params: { id: create(:template).id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "sets correct variables" do
@@ -128,7 +128,7 @@ RSpec.describe TemplatesController do
       template = create(:template)
       login_as(template.user)
       get :edit, params: { id: template.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Edit Template: #{template.name}")
       expect(assigns(:template)).to eq(template)
     end
@@ -169,7 +169,7 @@ RSpec.describe TemplatesController do
     it "works" do
       template = create(:template)
       char = create(:character, user: template.user)
-      new_name = template.name + 'new'
+      new_name = "#{template.name}new"
       login_as(template.user)
 
       put :update, params: {

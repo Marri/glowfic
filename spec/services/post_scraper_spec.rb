@@ -139,7 +139,7 @@ RSpec.describe PostScraper do
     board = create(:board, creator: user)
 
     scraper = PostScraper.new(url, board.id, nil, nil, false, true)
-    allow(STDIN).to receive(:gets).and_return(user.username)
+    allow($stdin).to receive(:gets).and_return(user.username)
     expect(scraper.send(:logger)).to receive(:info).with("Importing thread 'linear b'")
     expect(scraper).to receive(:print).with("User ID or username for wild_pegasus_appeared? ")
 

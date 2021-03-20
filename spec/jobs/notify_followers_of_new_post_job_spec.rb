@@ -151,7 +151,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
       }.to change { Message.count }.by(1)
 
-      author.update!(username: author.username + 'new')
+      author.update!(username: "#{author.username}new")
       reply = create(:reply, post: post, user: replier)
       expect {
         NotifyFollowersOfNewPostJob.perform_now(post.id, reply.user_id)
@@ -170,7 +170,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
       }.to change { Message.count }.by(1)
 
-      post.update!(subject: post.subject + 'new')
+      post.update!(subject: "#{post.subject}new")
       reply = create(:reply, post: post, user: replier)
       expect {
         NotifyFollowersOfNewPostJob.perform_now(post.id, reply.user_id)

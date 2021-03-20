@@ -43,14 +43,14 @@ class Api::V1::IndexPostsController < Api::ApiController
       posts = posts.sort_by {|post| post_ids.index(post.id) }
       posts.each_with_index do |post, i|
         next if post.section_order == i
-        post.update(section_order: i)
+        post.update!(section_order: i)
       end
 
       other_posts = IndexPost.where(index_id: index.id, index_section_id: section_id).where.not(id: post_ids).ordered_in_section
       other_posts.each_with_index do |post, i|
         pos = i + posts_count
         next if post.section_order == pos
-        post.update(section_order: pos)
+        post.update!(section_order: pos)
       end
     end
 

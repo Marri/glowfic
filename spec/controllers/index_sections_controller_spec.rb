@@ -28,7 +28,7 @@ RSpec.describe IndexSectionsController do
       index = create(:index)
       login_as(index.user)
       get :new, params: { index_id: index.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -54,7 +54,7 @@ RSpec.describe IndexSectionsController do
       index = create(:index)
       login_as(index.user)
       post :create, params: { index_section: {index_id: index.id} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:new)
       expect(flash[:error][:message]).to eq("Index section could not be created.")
     end
@@ -80,7 +80,7 @@ RSpec.describe IndexSectionsController do
     it "does not require login" do
       section = create(:index_section)
       get :show, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq(section.name)
     end
 
@@ -88,7 +88,7 @@ RSpec.describe IndexSectionsController do
       login
       section = create(:index_section)
       get :show, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq(section.name)
     end
   end
@@ -119,7 +119,7 @@ RSpec.describe IndexSectionsController do
       section = create(:index_section)
       login_as(section.index.user)
       get :edit, params: { id: section.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq("Edit Index Section: #{section.name}")
     end
   end
@@ -146,7 +146,7 @@ RSpec.describe IndexSectionsController do
       index_section = create(:index_section)
       login_as(index_section.index.user)
       put :update, params: { id: index_section.id, index_section: {name: ''} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(response).to render_template(:edit)
       expect(flash[:error][:message]).to eq("Index section could not be saved because of the following problems:")
     end

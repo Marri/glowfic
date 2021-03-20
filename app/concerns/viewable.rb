@@ -12,7 +12,7 @@ module Viewable
 
       return view.update(read_at: Time.now.in_time_zone) unless at_time.present?
       return true if view.read_at && at_time <= view.read_at && !force
-      view.update(read_at: at_time)
+      view.update!(read_at: at_time)
     end
 
     def ignore(user)

@@ -17,7 +17,7 @@ RSpec.describe WritableController do
           user = create(:user, layout: theme)
           login_as(user)
           controller.send(:setup_layout_gon)
-          expect(controller.gon.editor_class).to eq('layout_' + theme)
+          expect(controller.gon.editor_class).to eq("layout_#{theme}")
           expect(controller.gon.base_url).not_to be_nil
           expect(controller.gon.tinymce_css_path).not_to be_nil
         end

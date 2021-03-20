@@ -6,6 +6,7 @@ RSpec.describe Presentable do
       4
     end
   end
+
   class ExampleWith
     include Presentable
   end
@@ -40,6 +41,7 @@ RSpec.describe Presentable do
       1
     end
   end
+
   class ExampleWithSuper
     include Presentable
     def as_json(_options={})

@@ -280,10 +280,10 @@ RSpec.describe Character do
     it "is only created on mod update" do
       character = create(:character)
       Audited.audit_class.as_user(character.user) do
-        character.update(name: character.name + 'notmod')
+        character.update(name: "#{character.name}notmod")
       end
       Audited.audit_class.as_user(create(:user)) do
-        character.update(name: character.name + 'mod', audit_comment: 'mod')
+        character.update(name: "#{character.name}mod", audit_comment: 'mod')
       end
       expect(Audited::Audit.count).to eq(1)
     end

@@ -26,7 +26,7 @@ class PostScraper < Object
     @board_id = board_id || Board::ID_SANDBOX
     @section_id = section_id
     @status = status || :complete
-    url += (url.include?('?') ? '&' : '?') + 'style=site' unless url.include?('style=site')
+    url += "#{url.include?('?') ? '&' : '?'}style=site" unless url.include?('style=site')
     url += '&view=flat' unless url.include?('view=flat') || threaded_import
     @url = url
     @console_import = console_import
@@ -127,7 +127,7 @@ class PostScraper < Object
       url = first_reply_in_batch.at_css('.comment-title').at_css('a').attribute('href').value
       unless url[/(\?|&)style=site/]
         url_obj = URI.parse(url)
-        url_obj.query += ('&' if url_obj.query.present?) + 'style=site'
+        url_obj.query += "#{'&' if url_obj.query.present?}style=site"
         url = url_obj.to_s
       end
       links << url
@@ -239,8 +239,8 @@ class PostScraper < Object
 
   def prompt_for_user(username)
     raise UnrecognizedUsernameError.new("Unrecognized username: #{username}") unless @console_import
-    print('User ID or username for ' + username + '? ')
-    input = STDIN.gets.chomp
+    print("User ID or username for #{username}? ")
+    input = $stdin.gets.chomp
     return User.find_by_id(input) if input.to_s == input.to_i.to_s
     User.where('lower(username) = ?', input.downcase).first
   end
@@ -248,9 +248,9 @@ class PostScraper < Object
   def set_from_icon(tag, url, keyword)
     return unless url
 
-    url = 'https://v.dreamwidth.org' + url if url[0] == '/'
+    url = "https://v.dreamwidth.org#{url}" if url[0] == '/'
     host_url = url.gsub(/https?:\/\//, "")
-    https_url = 'https://' + host_url
+    https_url = "https://#{host_url}"
     icon = Icon.find_by(url: https_url)
     tag.icon = icon and return if icon
 
@@ -318,6 +318,7 @@ end
 
 class AlreadyImportedError < RuntimeError
   attr_reader :post_id
+
   def initialize(msg, post_id)
     @post_id = post_id
     super(msg)

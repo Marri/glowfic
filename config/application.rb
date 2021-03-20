@@ -1,4 +1,5 @@
 require_relative 'boot'
+require 'oauth/rack/oauth_filter'
 
 require 'rails/all'
 
@@ -64,6 +65,7 @@ module Glowfic
       ActionView::Base.sanitized_allowed_attributes += ['style', 'target']
     end
     config.middleware.use Rack::Pratchett
+    config.middleware.use OAuth::Rack::OAuthFilter
 
     # The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.
     # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]

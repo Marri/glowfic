@@ -2,13 +2,13 @@ RSpec.describe ReportsController do
   describe "GET index" do
     it "succeeds when logged out" do
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "succeeds when logged in" do
       login
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -21,7 +21,7 @@ RSpec.describe ReportsController do
 
     it "succeeds with daily" do
       get :show, params: { id: 'daily' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "sets variables with logged in daily" do
@@ -31,7 +31,7 @@ RSpec.describe ReportsController do
       time = post.last_read(user)
       login_as(user)
       get :show, params: { id: 'daily' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:board_views)).to be_empty
       expect(assigns(:opened_ids)).to match_array([post.id])
       expect(assigns(:opened_posts).length).to eq(1)
@@ -40,12 +40,12 @@ RSpec.describe ReportsController do
 
     it "handles invalid day argument" do
       get :show, params: { id: 'daily', day: 'asdf' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "handles out of range argument" do
       get :show, params: { id: 'daily', day: '2018-28-10' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "sorts by timestamp" do
@@ -86,7 +86,7 @@ RSpec.describe ReportsController do
 
     it "succeeds with monthly" do
       get :show, params: { id: 'monthly' }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "succeeds with deleted user" do

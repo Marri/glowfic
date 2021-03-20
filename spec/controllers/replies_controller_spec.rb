@@ -183,11 +183,11 @@ RSpec.describe RepliesController do
       reply_post.mark_read(reply_post.user, at_time: dupe_reply.created_at + 1.second, force: true)
 
       post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id, content: dupe_reply.content} }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(flash[:error]).to eq("This looks like a duplicate. Did you attempt to post this twice? Please resubmit if this was intentional.")
 
       post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id, content: dupe_reply.content}, allow_dupe: true }
-      expect(response).to have_http_status(302)
+      expect(response).to have_http_status(:found)
       expect(flash[:success]).to eq("Posted!")
     end
 
@@ -445,7 +445,7 @@ RSpec.describe RepliesController do
     it "succeeds when logged out" do
       reply = create(:reply)
       get :show, params: { id: reply.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:javascripts)).to include('posts/show')
     end
 
@@ -458,7 +458,7 @@ RSpec.describe RepliesController do
       create_list(:reply, 25, post: post, user: user)
       reply = create(:reply, post: post, user: user2)
       get :show, params: { id: reply.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:javascripts)).to include('posts/show')
 
       meta_og = assigns(:meta_og)
@@ -471,7 +471,7 @@ RSpec.describe RepliesController do
       reply = create(:reply)
       login
       get :show, params: { id: reply.id }
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:javascripts)).to include('posts/show')
     end
 
@@ -660,7 +660,7 @@ RSpec.describe RepliesController do
     it "succeeds" do
       user = create(:user)
       reply = create(:reply, user: user)
-      newcontent = reply.content + 'new'
+      newcontent = "#{reply.content}new"
       login_as(user)
       char = create(:character, user: user)
       icon = create(:icon, user: user)
@@ -705,7 +705,7 @@ RSpec.describe RepliesController do
         icon = create(:icon, user: user)
         calias = create(:alias, character: char)
         char2 = create(:template_character, user: user)
-        newcontent = reply.content + 'new'
+        newcontent = "#{reply.content}new"
         expect(controller).to receive(:build_template_groups).and_call_original
         expect(controller).to receive(:setup_layout_gon).and_call_original
 
@@ -762,7 +762,7 @@ RSpec.describe RepliesController do
         char = create(:template_character, user: user)
         login_as(create(:mod_user))
 
-        newcontent = reply.content + 'new'
+        newcontent = "#{reply.content}new"
 
         post :update, params: {
           id: reply.id,
@@ -1094,7 +1094,7 @@ RSpec.describe RepliesController do
 
       it "works logged out" do
         get :search
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:page_title)).to eq('Search Replies')
         expect(assigns(:post)).to be_nil
         expect(assigns(:search_results)).to be_nil
@@ -1107,7 +1107,7 @@ RSpec.describe RepliesController do
       it "works logged in" do
         login
         get :search
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:page_title)).to eq('Search Replies')
         expect(assigns(:post)).to be_nil
         expect(assigns(:search_results)).to be_nil
@@ -1123,7 +1123,7 @@ RSpec.describe RepliesController do
 
       it "handles invalid post" do
         get :search, params: { post_id: -1 }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:page_title)).to eq('Search Replies')
         expect(assigns(:post)).to be_nil
         expect(assigns(:search_results)).to be_nil
@@ -1138,7 +1138,7 @@ RSpec.describe RepliesController do
         post.opt_out_of_owed(user_ignoring_tags)
 
         get :search, params: { post_id: post.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:page_title)).to eq('Search Replies')
         expect(assigns(:post)).to eq(post)
         expect(assigns(:search_results)).to be_nil
@@ -1297,7 +1297,7 @@ RSpec.describe RepliesController do
           replies[1].touch # rubocop:disable Rails/SkipsModelValidations
           replies[3].update!(character: create(:character, user: user))
           replies[2].update!(content: 'new content')
-          1.upto(5) { |i| replies[4].update!(content: 'message' + i.to_s) }
+          1.upto(5) { |i| replies[4].update!(content: "message#{i}") }
         end
         Audited.audit_class.as_user(create(:mod_user)) do
           replies[5].update!(content: 'new content')

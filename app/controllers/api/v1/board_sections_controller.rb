@@ -35,14 +35,14 @@ class Api::V1::BoardSectionsController < Api::ApiController
       sections = sections.sort_by {|section| section_ids.index(section.id) }
       sections.each_with_index do |section, index|
         next if section.section_order == index
-        section.update(section_order: index)
+        section.update!(section_order: index)
       end
 
       other_sections = BoardSection.where(board_id: board.id).where.not(id: section_ids).ordered
       other_sections.each_with_index do |section, i|
         index = i + sections_count
         next if section.section_order == index
-        section.update(section_order: index)
+        section.update!(section_order: index)
       end
     end
 

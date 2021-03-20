@@ -2,13 +2,13 @@ RSpec.describe NewsController do
   describe "GET index" do
     it "works logged out" do
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "works logged in" do
       login
       get :index
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
     end
 
     it "only shows one news post" do
@@ -48,7 +48,7 @@ RSpec.describe NewsController do
     it "works for staff" do
       login_as(create(:mod_user))
       get :new
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq('Create News Post')
     end
   end
@@ -158,7 +158,7 @@ RSpec.describe NewsController do
       news = create(:news)
       login_as(create(:admin_user))
       get :edit, params: {id: news.id}
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq('Edit News Post')
     end
 
@@ -166,7 +166,7 @@ RSpec.describe NewsController do
       news = create(:news)
       login_as(news.user)
       get :edit, params: {id: news.id}
-      expect(response).to have_http_status(200)
+      expect(response).to have_http_status(:ok)
       expect(assigns(:page_title)).to eq('Edit News Post')
     end
   end

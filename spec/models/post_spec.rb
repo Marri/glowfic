@@ -741,7 +741,7 @@ RSpec.describe Post do
         create(:reply, user: user, post: post, character: char)
       end
 
-      expect(post.recent_characters_for(user, 9)).to eq(characters[-9..-1].reverse)
+      expect(post.recent_characters_for(user, 9)).to eq(characters[-9..].reverse)
       expect(post.recent_characters_for(user, 10)).to eq(characters.reverse)
     end
   end

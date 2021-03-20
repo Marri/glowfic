@@ -27,7 +27,7 @@ RSpec.feature "Searching posts", :type => :feature do
     end
 
     # check the post is still hidden when there are two pages of results
-    2.upto(26) { |i| create(:post, subject: 'post ' + i.to_s, privacy: :private) }
+    2.upto(26) { |i| create(:post, subject: "post #{i}", privacy: :private) }
     perform_search
     within('#search_results') do
       expect(page).to have_no_selector('.post-subject')

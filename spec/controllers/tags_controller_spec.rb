@@ -27,15 +27,15 @@ RSpec.describe TagsController do
       it "succeeds with type filter" do
         tags = create_tags
         get :index, params: { view: 'Setting' }
-        expect(response).to have_http_status(200)
-        expect(assigns(:tags)).to match_array(tags[-2..-1])
+        expect(response).to have_http_status(:ok)
+        expect(assigns(:tags)).to match_array(tags[-2..])
         expect(assigns(:page_title)).to eq('Settings')
       end
 
       it "succeeds with name filter" do
         tags = create_tags
         get :index, params: {name: 'Empty'}
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
         expect(assigns(:tags)).to match_array([tags[0], tags[4]])
         expect(assigns(:page_title)).to eq('Tags')
       end
@@ -168,7 +168,7 @@ RSpec.describe TagsController do
         tag = create(:setting)
         tag.child_settings << create(:setting)
         get :show, params: { id: tag.id, view: 'settings' }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
       end
 
       it "succeeds with valid gallery tag" do
@@ -321,7 +321,7 @@ RSpec.describe TagsController do
 
     it "allows admin to update the tag" do
       tag = create(:label)
-      name = tag.name + 'Edited'
+      name = "#{tag.name}Edited"
       login_as(create(:admin_user))
       put :update, params: { id: tag.id, tag: {name: name} }
       expect(response).to redirect_to(tag_url(tag))

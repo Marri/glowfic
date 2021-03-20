@@ -19,7 +19,7 @@ RSpec.feature "Message threads", :type => :feature do
       click_link first.unempty_subject
     end
     expect(page).to have_selector('.message-collapse', count: 4)
-    short = ("abcde" * 15)[0...73] + "…"
+    short = "#{('abcde' * 15)[0...73]}…"
     expect(page).to have_selector('.message-collapse', text: short)
     expect(page).to have_no_selector('.message-collapse', text: "abcde" * 20)
   end
