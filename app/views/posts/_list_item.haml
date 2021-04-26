@@ -10,7 +10,7 @@
       = image_tag "icons/book_grey.png", class: 'vmid', title: "Thread Abandoned", alt: 'Abandoned'
     - if post.privacy_access_list? || post.privacy_private?
       = privacy_icon(post.privacy.to_sym)
-    - if !current_user.try(:hide_warnings) && post.has_content_warnings?
+    - if !current_user.try(:hide_warnings) && (current_user.nil? || post.show_warnings_for?(current_user)) && post.has_content_warnings?
       = image_tag "icons/exclamation.png", class: 'vmid', title: "Content Warning: " + post.content_warnings.pluck(:name).join(', '), alt: 'Has Warnings'
   %td.post-subject.vtop{class: klass}
     - if logged_in?
