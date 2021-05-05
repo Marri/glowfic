@@ -80,6 +80,9 @@
         %td{class: cycle('even', 'odd')}
           = f.check_box :hide_hiatused_tags_owed, class: 'width-15 vmid'
           = f.label :hide_hiatused_tags_owed, "Hide hiatused threads"
+          %br
+          = f.check_box :replies_owed_indicator, class: 'width-15 vmid'
+          = f.label :replies_owed_indicator, "Show replies owed count in navigation bar"
       %tr
         %th.sub Character Quick Switcher
         %td{class: cycle('even', 'odd')}

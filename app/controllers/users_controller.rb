@@ -202,6 +202,7 @@ class UsersController < ApplicationController
       :visible_unread,
       :favorite_notifications,
       :show_user_in_switcher,
+      :replies_owed_indicator,
     )
   end
 
