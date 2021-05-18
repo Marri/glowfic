@@ -4,5 +4,5 @@ class Setting::Post < ApplicationRecord
   belongs_to :post, class_name: '::Post', inverse_of: :setting_posts, optional: false
   belongs_to :setting, class_name: '::Setting', inverse_of: :setting_characters, optional: false
 
-  validates :post, uniqueness: { scope: :tag }
+  validates :post, uniqueness: { scope: :setting }
 end
