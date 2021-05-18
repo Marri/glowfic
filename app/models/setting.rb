@@ -32,7 +32,7 @@ class Setting < ApplicationRecord
         (
           SELECT COUNT(DISTINCT setting_characters.character_id)
           FROM setting_characters
-          WHERE setting_characters.tag_id = settings.id
+          WHERE setting_characters.setting_id = settings.id
         )
         AS character_count
       SQL
