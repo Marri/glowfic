@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 class SettingsController < ApplicationController
-  include Settinggable
+  include Taggable
 
   before_action :login_required, except: [:index, :show]
   before_action :find_model, except: :index
-  before_action :require_permission, except: [:index, :show, :destroy]
+  before_action :require_edit_permission, only: [:edit, :update]
+  before_action :require_delete_permission, only: [:destroy]
 
   def index
     @settings = SettingSearcher.new.search(tag_name: params[:name], tag_type: params[:view], page: page)
@@ -38,7 +39,7 @@ class SettingsController < ApplicationController
 
     begin
       Setting.transaction do
-        @setting.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids) if @setting.is_a?(Setting)
+        @setting.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids)
         @setting.save!
       end
     rescue ActiveRecord::RecordInvalid
@@ -56,26 +57,19 @@ class SettingsController < ApplicationController
   end
 
   def destroy
-    unless @setting.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this tag."
-      redirect_to tag_path(@setting) and return
-    end
-
-    begin
-      @setting.destroy!
-    rescue ActiveRecord::RecordNotDestroyed
-      flash[:error] = {
-        message: "Setting could not be deleted.",
-        array: @setting.errors.full_messages
-      }
-      redirect_to tag_path(@setting)
-    else
+    if @setting.destroy
       flash[:success] = "Setting deleted."
 
       url_params = {}
       url_params[:page] = page if params[:page].present?
       url_params[:view] = params[:view] if params[:view].present?
       redirect_to tags_path(url_params)
+    else
+      flash[:error] = {
+        message: "Setting could not be deleted.",
+        array: @setting.errors.full_messages
+      }
+      redirect_to tag_path(@setting)
     end
   end
 
@@ -88,10 +82,17 @@ class SettingsController < ApplicationController
     end
   end
 
-  def require_permission
+  def require_edit_permission
     unless @setting.editable_by?(current_user)
       flash[:error] = "You do not have permission to edit this tag."
       redirect_to tag_path(@setting)
+    end
+  end
+
+  def require_delete_permission
+    unless @setting.deletable_by?(current_user)
+      flash[:error] = "You do not have permission to edit this tag."
+      redirect_to tag_path(@setting) and return
     end
   end
 
