@@ -1,9 +1,9 @@
 class Setting < ApplicationRecord
   belongs_to :user, optional: false
-  has_many :setting_posts, class_name: 'Setting::Post', dependent: :destroy, inverse_of: :tag
+  has_many :setting_posts, class_name: 'Setting::Post', dependent: :destroy, inverse_of: :setting
   has_many :posts, through: :setting_posts, dependent: :destroy
 
-  has_many :setting_characters, class_name: 'Setting::Character', dependent: :destroy, inverse_of: :tag
+  has_many :setting_characters, class_name: 'Setting::Character', dependent: :destroy, inverse_of: :setting
   has_many :characters, through: :setting_characters, dependent: :destroy
 
   has_many :parent_setting_tags, class_name: 'Setting::SettingTag', foreign_key: :tag_id, inverse_of: :parent_setting, dependent: :destroy
