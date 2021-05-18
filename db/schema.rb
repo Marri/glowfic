@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_04_16_173619) do
+ActiveRecord::Schema.define(version: 2021_05_18_202832) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
@@ -392,6 +392,34 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["user_id"], name: "index_report_views_on_user_id"
+  end
+
+  create_table "setting_characters", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.integer "setting_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_setting_characters_on_character_id"
+    t.index ["setting_id"], name: "index_setting_characters_on_setting_id"
+  end
+
+  create_table "setting_posts", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.integer "setting_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_setting_posts_on_character_id"
+    t.index ["setting_id"], name: "index_setting_posts_on_setting_id"
+  end
+
+  create_table "settings", force: :cascade do |t|
+    t.citext "name", null: false
+    t.integer "user_id", null: false
+    t.boolean "owned", default: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_settings_on_name"
   end
 
   create_table "tag_tags", id: :serial, force: :cascade do |t|
