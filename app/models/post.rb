@@ -26,7 +26,7 @@ class Post < ApplicationRecord
   has_many :content_warnings, -> { ordered_by_post_tag }, through: :post_tags, source: :content_warning,
     after_add: :reset_warnings, dependent: :destroy
 
-  has_many :setting_posts, inverse_of: :post, dependent: :destroy
+  has_many :setting_posts, class_name: 'Setting::Post', inverse_of: :post, dependent: :destroy
   has_many :settings, -> { ordered_by_post_tag }, through: :setting_posts, source: :setting, dependent: :destroy
 
   has_many :index_posts, inverse_of: :post, dependent: :destroy
