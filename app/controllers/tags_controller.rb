@@ -31,7 +31,7 @@ class TagsController < ApplicationController
     elsif @view == 'galleries'
       @galleries = @tag.galleries.with_icon_count.ordered_by_name
       use_javascript('galleries/expander')
-    elsif @view != 'settings'
+    else
       @view = 'info'
     end
   end
@@ -42,14 +42,10 @@ class TagsController < ApplicationController
   end
 
   def update
-    @tag.assign_attributes(permitted_params)
-
-    begin
-      Tag.transaction do
-        @tag.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids) if @tag.is_a?(Setting)
-        @tag.save!
-      end
-    rescue ActiveRecord::RecordInvalid
+    if @tag.update(permitted_params)
+      flash[:success] = "Tag saved!"
+      redirect_to tag_path(@tag)
+    else
       flash.now[:error] = {
         message: "Tag could not be saved because of the following problems:",
         array: @tag.errors.full_messages
@@ -57,9 +53,6 @@ class TagsController < ApplicationController
       @page_title = "Edit Tag: #{@tag.name}"
       build_editor
       render :edit
-    else
-      flash[:success] = "Tag saved!"
-      redirect_to tag_path(@tag)
     end
   end
 
