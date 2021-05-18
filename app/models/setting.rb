@@ -1,11 +1,9 @@
 class Setting < ApplicationRecord
   belongs_to :user, optional: false
-  has_many :post_tags, dependent: :destroy, inverse_of: :tag
-  has_many :posts, through: :post_tags, dependent: :destroy
-  has_many :character_tags, dependent: :destroy, inverse_of: :tag
-  has_many :characters, through: :character_tags, dependent: :destroy
-  has_many :gallery_tags, dependent: :destroy, inverse_of: :tag
-  has_many :galleries, through: :gallery_tags, dependent: :destroy
+  has_many :setting_posts, dependent: :destroy, inverse_of: :tag
+  has_many :posts, through: :setting_posts, dependent: :destroy
+  has_many :setting_characters, dependent: :destroy, inverse_of: :tag
+  has_many :characters, through: :setting_characters, dependent: :destroy
 
   has_many :parent_setting_tags, class_name: 'Setting::SettingTag', foreign_key: :tag_id, inverse_of: :parent_setting, dependent: :destroy
   has_many :child_setting_tags, class_name: 'Setting::SettingTag', foreign_key: :tagged_id, inverse_of: :child_setting, dependent: :destroy
@@ -27,7 +25,7 @@ class Setting < ApplicationRecord
   scope :ordered_by_tag_tag, -> { order('tag_tags.id ASC') }
 
   scope :with_character_counts, -> {
-    select("(SELECT COUNT(DISTINCT character_tags.character_id) FROM character_tags WHERE character_tags.tag_id = tags.id) AS character_count")
+    select("(SELECT COUNT(DISTINCT setting_characters.character_id) FROM setting_characters WHERE setting_characters.tag_id = settings.id) AS character_count")
   }
 
   def editable_by?(user)
