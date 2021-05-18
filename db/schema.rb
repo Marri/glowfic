@@ -404,12 +404,21 @@ ActiveRecord::Schema.define(version: 2021_05_18_202832) do
   end
 
   create_table "setting_posts", force: :cascade do |t|
-    t.integer "character_id", null: false
+    t.integer "post_id", null: false
     t.integer "setting_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["character_id"], name: "index_setting_posts_on_character_id"
+    t.index ["post_id"], name: "index_setting_posts_on_post_id"
     t.index ["setting_id"], name: "index_setting_posts_on_setting_id"
+  end
+
+  create_table "setting_tags", force: :cascade do |t|
+    t.integer "tagged_id", null: false
+    t.integer "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tag_id"], name: "index_setting_tags_on_tag_id"
+    t.index ["tagged_id"], name: "index_setting_tags_on_tagged_id"
   end
 
   create_table "settings", force: :cascade do |t|

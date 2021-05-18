@@ -15,8 +15,14 @@ class CreateSettings < ActiveRecord::Migration[5.2]
     end
 
     create_table :setting_posts do |t|
-      t.integer :character_id, null: false, index: true
+      t.integer :post_id, null: false, index: true
       t.integer :setting_id, null: false, index: true
+      t.timestamps
+    end
+
+    create_table :setting_tags do |t|
+      t.integer :tagged_id, null: false, index: true
+      t.integer :tag_id, null: false, index: true
       t.timestamps
     end
   end
