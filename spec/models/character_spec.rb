@@ -291,7 +291,7 @@ RSpec.describe Character do
     it "is not created on destroy" do
       character = create(:character)
       Audited.audit_class.as_user(create(:user)) do
-        character.destroy
+        character.destroy!
       end
       expect(Audited::Audit.count).to eq(0)
     end
