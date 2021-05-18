@@ -7,13 +7,11 @@ RSpec.describe TagsController do
         empty_tag = create(:label, name: 'Empty')
         tag = create(:label)
         create(:post, labels: [tag])
-        setting = create(:setting, name: 'Empty')
-        owned_setting = create(:setting, owned: true)
 
         empty_group = create(:gallery_group)
         group1 = create(:gallery_group)
         create(:gallery, gallery_groups: [group1])
-        [empty_tag, tag, empty_group, group1, setting, owned_setting]
+        [empty_tag, tag, empty_group, group1]
       end
 
       it "succeeds when logged out" do
@@ -26,17 +24,17 @@ RSpec.describe TagsController do
 
       it "succeeds with type filter" do
         tags = create_tags
-        get :index, params: { view: 'Setting' }
+        get :index, params: { view: 'Label' }
         expect(response).to have_http_status(200)
-        expect(assigns(:tags)).to match_array(tags[-2..-1])
-        expect(assigns(:page_title)).to eq('Settings')
+        expect(assigns(:tags)).to match_array(tags[0..1])
+        expect(assigns(:page_title)).to eq('Labels')
       end
 
       it "succeeds with name filter" do
         tags = create_tags
         get :index, params: {name: 'Empty'}
         expect(response).to have_http_status(200)
-        expect(assigns(:tags)).to match_array([tags[0], tags[4]])
+        expect(assigns(:tags)).to match_array([tags[0]])
         expect(assigns(:page_title)).to eq('Tags')
       end
 
@@ -53,12 +51,10 @@ RSpec.describe TagsController do
     it "orders tags by type and then name" do
       tag2 = create(:label, name: "b")
       tag1 = create(:label, name: "a")
-      setting1 = create(:setting, name: "a")
-      setting2 = create(:setting, owned: true, name: "b")
       warning2 = create(:content_warning, name: "b")
       warning1 = create(:content_warning, name: "a")
       get :index
-      expect(assigns(:tags)).to eq([setting1, setting2, tag1, tag2, warning1, warning2])
+      expect(assigns(:tags)).to eq([tag1, tag2, warning1, warning2])
     end
 
     it "performs a full-text match on tag names" do
