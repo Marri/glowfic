@@ -54,15 +54,8 @@ class Setting < ApplicationRecord
     user.id == user_id
   end
 
-  def as_json(options={})
-    tag_json = {id: self.id, text: self.name}
-    return tag_json unless options[:include].present?
-    if options[:include].include?(:gallery_ids)
-      g_tags = gallery_tags.joins(:gallery)
-      g_tags = g_tags.where(galleries: {user_id: options[:user_id]}) if options[:user_id].present?
-      tag_json[:gallery_ids] = g_tags.pluck(:gallery_id)
-    end
-    tag_json
+  def as_json
+    {id: self.id, text: self.name}
   end
 
   def id_for_select
