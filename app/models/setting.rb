@@ -19,11 +19,11 @@ class Setting < ApplicationRecord
 
   scope :ordered_by_id, -> { order(id: :asc) }
 
-  scope :ordered_by_char_tag, -> { order('character_setting.id ASC') }
+  scope :ordered_by_char_tag, -> { order('setting_characters.id ASC') }
 
-  scope :ordered_by_post_tag, -> { order('post_setting.id ASC') }
+  scope :ordered_by_post_tag, -> { order('setting_posts.id ASC') }
 
-  scope :ordered_by_tag_tag, -> { order('tag_tags.id ASC') }
+  scope :ordered_by_tag_tag, -> { order('setting_tags.id ASC') }
 
   scope :with_character_counts, -> {
     # rubocop:disable Style/TrailingCommaInArguments
