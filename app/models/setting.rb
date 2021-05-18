@@ -54,7 +54,7 @@ class Setting < ApplicationRecord
     user.id == user_id
   end
 
-  def as_json
+  def as_json(_options={})
     {id: self.id, text: self.name}
   end
 
