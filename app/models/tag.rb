@@ -79,10 +79,6 @@ class Tag < ApplicationRecord
       CharacterTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
       GalleryTag.where(tag_id: other_tag.id).where(gallery_id: gallery_tags.select(:gallery_id).distinct.pluck(:gallery_id)).delete_all
       GalleryTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
-      Tag::SettingTag.where(tag_id: other_tag.id, tagged_id: self.id).delete_all
-      Tag::SettingTag.where(tag_id: self.id, tagged_id: other_tag.id).delete_all
-      Tag::SettingTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
-      Tag::SettingTag.where(tagged_id: other_tag.id).update_all(tagged_id: self.id)
       other_tag.destroy
       # rubocop:enable Rails/SkipsModelValidations
     end
