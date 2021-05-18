@@ -55,10 +55,10 @@ GalleryTag.create!([
 ])
 
 puts "Attaching settings to each other..."
-Tag::SettingTag.create!([
-  { tagged_id: 6, setting_id: 8 },
-  { tagged_id: 12, setting_id: 1 },
-  { tagged_id: 8, setting_id: 1 },
+Setting::SettingTag.create!([
+  { tagged_id: 6, tag_id: 8 },
+  { tagged_id: 12, tag_id: 1 },
+  { tagged_id: 8, tag_id: 1 },
 ])
 
 puts "Attaching tags to posts..."
@@ -109,8 +109,5 @@ Setting::Post.create!([
   { post_id: 5, setting_id: 9 },
   { post_id: 6, setting_id: 9 },
   { post_id: 7, setting_id: 9 },
-  { post_id: 1, tag_id: 1 },
-  { post_id: 1, tag_id: 2 },
-  { post_id: 1, tag_id: 3 },
   { post_id: 32, setting_id: 3 },
 ])
