@@ -17,8 +17,10 @@ class Character < ApplicationRecord
   has_many :icons, -> { group('icons.id').ordered }, through: :galleries
 
   has_many :character_tags, inverse_of: :character, dependent: :destroy
-  has_many :settings, -> { ordered_by_char_tag }, through: :character_tags, source: :setting, dependent: :destroy
   has_many :gallery_groups, -> { ordered_by_char_tag }, through: :character_tags, source: :gallery_group, dependent: :destroy
+
+  has_many :setting_characters, inverse_of: :character, dependent: :destroy
+  has_many :settings, -> { ordered_by_char_tag }, through: :setting_characters, source: :setting, dependent: :destroy
 
   validates :name,
     presence: true,
