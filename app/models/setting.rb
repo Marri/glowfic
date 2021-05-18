@@ -25,7 +25,18 @@ class Setting < ApplicationRecord
   scope :ordered_by_tag_tag, -> { order('tag_tags.id ASC') }
 
   scope :with_character_counts, -> {
-    select("(SELECT COUNT(DISTINCT setting_characters.character_id) FROM setting_characters WHERE setting_characters.tag_id = settings.id) AS character_count")
+    # rubocop:disable Style/TrailingCommaInArguments
+    select(
+      <<~SQL
+        (
+          SELECT COUNT(DISTINCT setting_characters.character_id)
+          FROM setting_characters
+          WHERE setting_characters.tag_id = settings.id
+        )
+        AS character_count
+      SQL
+    )
+    # rubocop:enable Style/TrailingCommaInArguments
   }
 
   def editable_by?(user)
