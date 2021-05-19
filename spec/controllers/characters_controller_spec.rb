@@ -1327,7 +1327,8 @@ RSpec.describe CharactersController do
         post :duplicate, params: { id: character.id }
       end.to not_change {
         [Template.count, Gallery.count, Icon.count, Reply.count, Post.count, Tag.count]
-      }.and change { Character.count }.by(1).and change { CharactersGallery.count }.by(3).and change { CharacterTag.count }.by(2)
+      }.and change { Character.count }.by(1).and change { CharactersGallery.count }.by(3).and change { CharacterTag.count }.by(1)
+        .and change {Setting::Character.count}.by(1)
 
       dupe = Character.last
       character.reload

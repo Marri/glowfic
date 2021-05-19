@@ -867,7 +867,8 @@ RSpec.describe PostsController do
       expect(Setting.count).to eq(3)
       expect(ContentWarning.count).to eq(3)
       expect(Label.count).to eq(3)
-      expect(PostTag.count).to eq(9)
+      expect(PostTag.count).to eq(6)
+      expect(Setting::Post.count).to eq(3)
     end
 
     it "generates a flat post" do
@@ -1915,7 +1916,8 @@ RSpec.describe PostsController do
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
-        expect(PostTag.count).to eq(6)
+        expect(PostTag.count).to eq(4)
+        expect(Setting::Post.count).to eq(2)
 
         # for each type: keep one, remove one, create one, existing one
         setting_ids = [setting.id, '_setting', '_dupesetting']
@@ -1942,10 +1944,13 @@ RSpec.describe PostsController do
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
-        expect(PostTag.count).to eq(6)
-        expect(PostTag.where(post: post, tag: [setting, warning, label]).count).to eq(3)
-        expect(PostTag.where(post: post, tag: [dupes, dupew, dupel]).count).to eq(0)
-        expect(PostTag.where(post: post, tag: [reml, remw, rems]).count).to eq(3)
+        expect(PostTag.count).to eq(4)
+        expect(PostTag.where(post: post, tag: [warning, label]).count).to eq(2)
+        expect(PostTag.where(post: post, tag: [dupew, dupel]).count).to eq(0)
+        expect(PostTag.where(post: post, tag: [reml, remw]).count).to eq(2)
+        expect(Setting::Post.count).to eq(2)
+        expect(Setting::Post.where(post: post, setting: rems).exists?).to eq(true)
+        expect(Setting::Post.where(post: post, setting: dupes).exists?).to eq(false)
       end
 
       it "sets expected variables" do
@@ -2098,7 +2103,8 @@ RSpec.describe PostsController do
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
-        expect(PostTag.count).to eq(6)
+        expect(PostTag.count).to eq(4)
+        expect(Setting::Post.count).to eq(2)
 
         # for each type: keep one, remove one, create one, existing one
         setting_ids = [setting.id, '_setting', '_dupesetting']
@@ -2124,10 +2130,13 @@ RSpec.describe PostsController do
         expect(Setting.count).to eq(4)
         expect(ContentWarning.count).to eq(4)
         expect(Label.count).to eq(4)
-        expect(PostTag.count).to eq(9)
-        expect(PostTag.where(post: post, tag: [setting, warning, label]).count).to eq(3)
-        expect(PostTag.where(post: post, tag: [dupes, dupew, dupel]).count).to eq(3)
-        expect(PostTag.where(post: post, tag: [reml, remw, rems]).count).to eq(0)
+        expect(PostTag.count).to eq(6)
+        expect(PostTag.where(post: post, tag: [warning, label]).count).to eq(2)
+        expect(PostTag.where(post: post, tag: [dupew, dupel]).count).to eq(2)
+        expect(PostTag.where(post: post, tag: [reml, remw]).count).to eq(0)
+        expect(Setting::Post.count).to eq(3)
+        expect(Setting::Post.where(post: post, setting: rems).exists?).to eq(false)
+        expect(Setting::Post.where(post: post, setting: dupes).exists?).to eq(true)
       end
 
       it "uses extant tags if available" do
@@ -2325,7 +2334,8 @@ RSpec.describe PostsController do
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
-        expect(PostTag.count).to eq(6)
+        expect(PostTag.count).to eq(4)
+        expect(Setting::Post.count).to eq(2)
 
         char1 = create(:character, user: user)
         char2 = create(:template_character, user: user)
@@ -2379,10 +2389,13 @@ RSpec.describe PostsController do
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
-        expect(PostTag.count).to eq(6)
-        expect(PostTag.where(post: post, tag: [setting, warning, label]).count).to eq(3)
-        expect(PostTag.where(post: post, tag: [dupes, dupew, dupel]).count).to eq(0)
-        expect(PostTag.where(post: post, tag: [reml, remw, rems]).count).to eq(3)
+        expect(PostTag.count).to eq(4)
+        expect(PostTag.where(post: post, tag: [warning, label]).count).to eq(2)
+        expect(PostTag.where(post: post, tag: [dupew, dupel]).count).to eq(0)
+        expect(PostTag.where(post: post, tag: [reml, remw]).count).to eq(2)
+        expect(Setting::Post.count).to eq(2)
+        expect(Setting::Post.where(post: post, setting: rems).exists?).to eq(true)
+        expect(Setting::Post.where(post: post, setting: dupes).exists?).to eq(false)
       end
 
       it "works" do
