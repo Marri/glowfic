@@ -75,10 +75,12 @@ class Setting < ApplicationRecord
   def merge_with(other_setting)
     transaction do
       # rubocop:disable Rails/SkipsModelValidations
-      Setting::Post.where(setting_id: other_setting.id).where(post_id: post_tags.select(:post_id).distinct.pluck(:post_id)).delete_all
-      Setting::Post.where(setting_id: other_setting.id).update_all(setting_id: self.id)
-      Setting::Character.where(setting_id: other_setting.id).where(character_id: character_tags.select(:character_id).distinct.pluck(:character_id)).delete_all
-      Setting::Character.where(setting_id: other_setting.id).update_all(setting_id: self.id)
+      other_posts = Setting::Post.where(setting_id: other_setting.id)
+      other_posts.where(post_id: setting_posts.select(:post_id).distinct.pluck(:post_id)).delete_all
+      other_posts.update_all(setting_id: self.id)
+      other_characters = Setting::Character.where(setting_id: other_setting.id)
+      other_characters.where(character_id: setting_characters.select(:character_id).distinct.pluck(:character_id)).delete_all
+      other_characters.update_all(setting_id: self.id)
       Setting::SettingTag.where(tag_id: other_setting.id, tagged_id: self.id).delete_all
       Setting::SettingTag.where(tag_id: self.id, tagged_id: other_setting.id).delete_all
       Setting::SettingTag.where(tag_id: other_setting.id).update_all(tag_id: self.id)
