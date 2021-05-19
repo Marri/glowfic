@@ -10,7 +10,7 @@ RSpec.describe Api::V1::SettingsController do
       end
 
       it "should handle invalid input", show_in_doc: in_doc do
-        get :index
+        get :index, params: { t: 'b' }
         expect(response).to have_http_status(422)
         expect(response.json).to have_key('errors')
         expect(response.json['errors'].first['message']).to include("Invalid parameter 't'")
