@@ -8,7 +8,7 @@ class SettingsController < ApplicationController
   before_action :require_delete_permission, only: [:destroy]
 
   def index
-    @settings = SettingSearcher.new.search(tag_name: params[:name], tag_type: params[:view], page: page)
+    @settings = Setting::Searcher.new.search(name: params[:name], page: page)
     @post_counts = Post.visible_to(current_user).joins(setting_posts: :setting).where(setting_posts: {setting_id: @settings.map(&:id)})
     @post_counts = @post_counts.group('setting_posts.setting_id').count
     @page_title = 'Settings'
@@ -19,6 +19,7 @@ class SettingsController < ApplicationController
     @page_title = @setting.name.to_s
     @view = params[:view]
     @meta_og = og_data
+    @tag = @setting
 
     if @view == 'posts'
       @posts = posts_from_relation(@setting.posts.ordered)
@@ -52,7 +53,7 @@ class SettingsController < ApplicationController
       render :edit
     else
       flash[:success] = "Setting saved!"
-      redirect_to tag_path(@setting)
+      redirect_to setting_path(@setting)
     end
   end
 
@@ -63,13 +64,13 @@ class SettingsController < ApplicationController
       url_params = {}
       url_params[:page] = page if params[:page].present?
       url_params[:view] = params[:view] if params[:view].present?
-      redirect_to tags_path(url_params)
+      redirect_to settings_path(url_params)
     else
       flash[:error] = {
         message: "Setting could not be deleted.",
         array: @setting.errors.full_messages
       }
-      redirect_to tag_path(@setting)
+      redirect_to setting_path(@setting)
     end
   end
 
@@ -78,21 +79,21 @@ class SettingsController < ApplicationController
   def find_model
     unless (@setting = Setting.find_by_id(params[:id]))
       flash[:error] = "Setting could not be found."
-      redirect_to tags_path
+      redirect_to settings_path
     end
   end
 
   def require_edit_permission
     unless @setting.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this tag."
-      redirect_to tag_path(@setting)
+      flash[:error] = "You do not have permission to edit this setting."
+      redirect_to setting_path(@setting)
     end
   end
 
   def require_delete_permission
     unless @setting.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this tag."
-      redirect_to tag_path(@setting) and return
+      flash[:error] = "You do not have permission to edit this setting."
+      redirect_to setting_path(@setting)
     end
   end
 
@@ -112,9 +113,9 @@ class SettingsController < ApplicationController
     desc << stats.join(', ')
     title = [@setting.name]
     title << @setting.user.username if @setting.owned? && !@setting.user.deleted?
-    title << @setting.type.titleize
+    title << 'Setting'
     {
-      url: tag_url(@setting),
+      url: setting_url(@setting),
       title: title.join(' · '),
       description: desc.join("\n"),
     }
@@ -123,6 +124,6 @@ class SettingsController < ApplicationController
   def permitted_params
     permitted = [:type, :description, :owned]
     permitted.insert(0, :name, :user_id) if current_user.admin? || @setting.user == current_user
-    params.fetch(:tag, {}).permit(permitted)
+    params.fetch(:setting, {}).permit(permitted)
   end
 end
