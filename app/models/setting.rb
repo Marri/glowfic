@@ -44,7 +44,6 @@ class Setting < ApplicationRecord
     return false unless user
     return true if deletable_by?(user)
     return true if user.has_permission?(:edit_tags)
-    return false unless is_a?(Setting)
     !owned?
   end
 
