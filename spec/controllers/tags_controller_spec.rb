@@ -91,42 +91,6 @@ RSpec.describe TagsController do
       expect(meta_og[:description]).to eq('2 posts')
     end
 
-    it "calculates OpenGraph meta for unowned settings" do
-      setting = create(:setting,
-        name: 'setting',
-        description: 'this is an example setting',
-      )
-      create_list(:post, 2, settings: [setting])
-      create_list(:character, 3, settings: [setting])
-
-      get :show, params: { id: setting.id }
-
-      meta_og = assigns(:meta_og)
-      expect(meta_og.keys).to match_array([:url, :title, :description])
-      expect(meta_og[:url]).to eq(tag_url(setting))
-      expect(meta_og[:title]).to eq('setting · Setting')
-      expect(meta_og[:description]).to eq("this is an example setting\n2 posts, 3 characters")
-    end
-
-    it "calculates OpenGraph meta for owned settings" do
-      setting = create(:setting,
-        name: 'setting',
-        user: create(:user, username: "User"),
-        description: 'this is an example setting',
-        owned: true,
-      )
-      create_list(:post, 2, settings: [setting])
-      create_list(:character, 3, settings: [setting])
-
-      get :show, params: { id: setting.id }
-
-      meta_og = assigns(:meta_og)
-      expect(meta_og.keys).to match_array([:url, :title, :description])
-      expect(meta_og[:url]).to eq(tag_url(setting))
-      expect(meta_og[:title]).to eq('setting · User · Setting')
-      expect(meta_og[:description]).to eq("this is an example setting\n2 posts, 3 characters")
-    end
-
     it "calculates OpenGraph meta for gallery groups" do
       group = create(:gallery_group, name: 'group')
       create_list(:gallery, 2, gallery_groups: [group])
@@ -152,19 +116,12 @@ RSpec.describe TagsController do
       end
 
       it "succeeds for logged in users with valid post tag" do
-        tag = create(:setting)
-        post = create(:post, settings: [tag])
+        tag = create(:label)
+        post = create(:post, labels: [tag])
         login
         get :show, params: { id: tag.id, view: 'posts' }
         expect(response.status).to eq(200)
         expect(assigns(:posts)).to match_array([post])
-      end
-
-      it 'succeeds for canons with settings' do
-        tag = create(:setting)
-        tag.child_settings << create(:setting)
-        get :show, params: { id: tag.id, view: 'settings' }
-        expect(response).to have_http_status(200)
       end
 
       it "succeeds with valid gallery tag" do
@@ -210,38 +167,6 @@ RSpec.describe TagsController do
           get :show, params: { id: group.id, view: 'galleries' }
           expect(response.status).to eq(200)
           expect(assigns(:galleries)).to match_array([gallery1, gallery2, gallery3])
-        end
-      end
-
-      context "setting" do
-        it "succeeds with valid character tag" do
-          setting = create(:setting)
-          character = create(:character, settings: [setting])
-          get :show, params: { id: setting.id, view: 'characters' }
-          expect(response.status).to eq(200)
-          expect(assigns(:characters)).to match_array([character])
-        end
-
-        it "succeeds for logged in users with valid character tag" do
-          setting = create(:setting)
-          character = create(:character, settings: [setting])
-          login
-          get :show, params: { id: setting.id, view: 'characters' }
-          expect(response.status).to eq(200)
-          expect(assigns(:characters)).to match_array([character])
-        end
-
-        it "succeeds for owned settings" do
-          setting = create(:setting, owned: true)
-          get :show, params: { id: setting.id }
-          expect(response.status).to eq(200)
-        end
-
-        it "succeeds for settings without characters" do
-          setting = create(:setting)
-          get :show, params: { id: setting.id, view: 'characters' }
-          expect(response.status).to eq(200)
-          expect(assigns(:characters)).to be_empty
         end
       end
     end
@@ -308,7 +233,7 @@ RSpec.describe TagsController do
     end
 
     it "requires valid params" do
-      tag = create(:setting)
+      tag = create(:label)
       login_as(create(:admin_user))
       put :update, params: { id: tag.id, tag: {name: nil} }
       expect(response.status).to eq(200)
@@ -323,16 +248,6 @@ RSpec.describe TagsController do
       expect(response).to redirect_to(tag_url(tag))
       expect(flash[:success]).to eq("Tag saved!")
       expect(tag.reload.name).to eq(name)
-    end
-
-    it "allows update of setting tags" do
-      tag = create(:setting)
-      parent_tag = create(:setting)
-      login_as(tag.user)
-      expect(tag.parent_settings).to be_empty
-      put :update, params: { id: tag.id, tag: {name: 'newname', parent_setting_ids: ["", parent_tag.id.to_s]} }
-      expect(tag.reload.name).to eq('newname')
-      expect(Setting.find(tag.id).parent_settings).to eq([parent_tag])
     end
   end
 
