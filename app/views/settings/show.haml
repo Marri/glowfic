@@ -11,35 +11,35 @@
   %tbody
     %tr
       %td.centered{class: cycle('even', 'odd')}
-        = link_to tag_path(@setting) do
+        = link_to setting_path(@setting) do
           = image_tag "icons/chart_bar.png", class: 'vmid', alt: ''
           Info
       %tr
         %td.centered{class: cycle('even', 'odd')}
-          = link_to tag_path(@setting, view: 'posts') do
+          = link_to setting_path(@setting, view: 'posts') do
             = image_tag "icons/book_open.png", class: 'vmid', alt: ''
             Posts
       %tr
         %td.centered{class: cycle('even', 'odd')}
-          = link_to tag_path(@setting, view: 'characters') do
+          = link_to setting_path(@setting, view: 'characters') do
             = image_tag "icons/group.png", class: 'vmid', alt: ''
             Characters
     - if @setting.child_settings.present?
       %tr
         %td.centered{class: cycle('even', 'odd')}
-          = link_to tag_path(@setting, view: 'settings') do
+          = link_to setting_path(@setting, view: 'settings') do
             = image_tag "icons/world.png", class: 'vmid', alt: ''
             Settings
     - if @setting.editable_by?(current_user)
       %tr
         %td.centered{class: cycle('even', 'odd')}
-          = link_to edit_tag_path(@setting) do
+          = link_to edit_setting_path(@setting) do
             = image_tag "icons/pencil.png", class: 'vmid', alt: ''
             Edit Setting
     - if @setting.deletable_by?(current_user)
       %tr
         %td.centered{class: cycle('even', 'odd')}
-          = link_to tag_path(@setting), method: :delete, data: { confirm: 'Are you sure you want to delete this tag?' } do
+          = link_to setting_path(@setting), method: :delete, data: { confirm: 'Are you sure you want to delete this tag?' } do
             = image_tag "icons/cross.png", class: 'vmid', alt: ''
             Delete Setting
 
