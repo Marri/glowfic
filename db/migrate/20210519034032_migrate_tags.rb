@@ -34,11 +34,14 @@ class MigrateTags < ActiveRecord::Migration[5.2]
       Setting::Post.create!(setting: setting, post_id: post_id)
     end
 
-    tag_tags = TagTag.joins('INNER JOIN tags t1 ON t1.id = tag_tags.tag_id').joins('INNER JOIN tags t2 ON t2.id = tag_tags.tagged_id')
-    TagTag.order(id: :asc).each do |join|
-      tag = Setting.find_by(name: join.tag.name)
-      tagged = Setting.find_by(name: join.tagged.name)
-      Setting::Setting_Tag.create!(tag: tag, tagged: tagged)
+    tag_tags = Tag::SettingTag
+      .joins('INNER JOIN tags t1 ON t1.id = tag_tags.tag_id')
+      .joins('INNER JOIN tags t2 ON t2.id = tag_tags.tagged_id')
+      .pluck('t1.name', 't2.name')
+    tag_tags.each do |tag_name, tagged_name|
+      tag = Setting.find_by(name: tag_name)
+      tagged = Setting.find_by(name: tagged_name)
+      Setting::SettingTag.create!(tag_id: tag.id, tagged_id: tagged.id)
     end
   end
 
