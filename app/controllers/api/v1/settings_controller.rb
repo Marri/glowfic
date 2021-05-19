@@ -11,8 +11,7 @@ class Api::V1::SettingsController < Api::ApiController
   param :setting_id, :number, required: false, desc: 'Used so we don\'t show the current setting as a possible parent setting of itself'
   error 422, "Invalid parameters provided"
   def index
-    type = find_type
-    queryset = type.where("name LIKE ?", params[:q].to_s + '%').ordered_by_name
+    queryset = Setting.where("name LIKE ?", params[:q].to_s + '%').ordered_by_name
 
     queryset = queryset.where.not(id: params[:setting_id]) if params[:setting_id].present?
 

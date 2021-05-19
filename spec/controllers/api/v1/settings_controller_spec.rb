@@ -6,7 +6,7 @@ RSpec.describe Api::V1::SettingsController do
         get :index, params: { q: setting.name }
         expect(response).to have_http_status(200)
         expect(response.json).to have_key('results')
-        expect(response.json['results']).to contain_exactly(tag.as_json.stringify_keys)
+        expect(response.json['results']).to contain_exactly(setting.as_json.stringify_keys)
       end
 
       it "should handle invalid input", show_in_doc: in_doc do
