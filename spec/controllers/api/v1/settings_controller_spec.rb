@@ -33,14 +33,14 @@ RSpec.describe Api::V1::SettingsController do
       setting = create(:setting)
       get :show, params: { id: setting.id }
       expect(response).to have_http_status(200)
-      expect(response.json['id']).to eq(tag.id)
+      expect(response.json['id']).to eq(setting.id)
     end
 
     it "should handle invalid tag", show_in_doc: true do
       get :show, params: { id: 99 }
       expect(response).to have_http_status(404)
       expect(response.json).to have_key('errors')
-      expect(response.json['errors'][0]['message']).to eq("Tag could not be found")
+      expect(response.json['errors'][0]['message']).to eq("Setting could not be found")
     end
   end
 end
