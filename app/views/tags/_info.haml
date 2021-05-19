@@ -6,7 +6,7 @@
     - if @tag.is_a?(Setting) && @tag.parent_settings.present?
       %tr
         %th.sub.centered.width-150= 'Parent Setting'.pluralize(@tag.parent_settings.count)
-        - setting_links = @tag.parent_settings.map { |c| link_to(c.name, tag_path(c))}
+        - setting_links = @tag.parent_settings.map { |c| link_to(c.name, setting_path(c))}
         %td{class: cycle('even', 'odd')}= safe_join(setting_links, ', ')
     - if @tag.is_a?(Setting)
       %tr
