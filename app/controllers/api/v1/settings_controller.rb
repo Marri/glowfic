@@ -1,4 +1,4 @@
-class Api::V1::TagsController < Api::ApiController
+class Api::V1::SettingsController < Api::ApiController
   before_action :find_tag, except: :index
 
   resource_description do
