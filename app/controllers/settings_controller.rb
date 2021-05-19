@@ -12,7 +12,6 @@ class SettingsController < ApplicationController
     @post_counts = Post.visible_to(current_user).joins(setting_posts: :setting).where(setting_posts: {setting_id: @settings.map(&:id)})
     @post_counts = @post_counts.group('setting_posts.setting_id').count
     @page_title = 'Settings'
-    use_javascript('tags/index')
   end
 
   def show
