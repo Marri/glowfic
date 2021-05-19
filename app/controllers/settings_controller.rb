@@ -40,7 +40,7 @@ class SettingsController < ApplicationController
 
     begin
       Setting.transaction do
-        @setting.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids)
+        @setting.parent_settings = process_tags(Setting, obj_param: :setting, id_param: :parent_setting_ids)
         @setting.save!
       end
     rescue ActiveRecord::RecordInvalid

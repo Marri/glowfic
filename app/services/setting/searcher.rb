@@ -1,6 +1,6 @@
 class Setting::Searcher < Object
   def initialize
-    @qs = Setting.select('settings.*')
+    @qs = Setting.ordered_by_name.select('settings.*')
   end
 
   def search(name: nil, page: 1)

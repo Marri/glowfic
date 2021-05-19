@@ -41,9 +41,9 @@ RSpec.describe SettingsController do
     end
 
     it "performs a full-text match on setting names" do
-      setting1 = create(:content_warning, name: 'test')
-      setting2 = create(:content_warning, name: 'entest')
-      get :index, params: { name: 'est' }
+      setting1 = create(:setting, name: 'test')
+      setting2 = create(:setting, name: 'ztest')
+      get :index, params: { name: 'test' }
       expect(assigns(:settings)).to eq([setting1, setting2])
     end
   end
@@ -236,7 +236,7 @@ RSpec.describe SettingsController do
       expect(setting.parent_settings).to be_empty
       put :update, params: { id: setting.id, setting: {name: 'newname', parent_setting_ids: ["", parent_setting.id.to_s]} }
       expect(setting.reload.name).to eq('newname')
-      expect(Setting.find(setting.id).parent_settings).to eq([parent_setting])
+      expect(setting.reload.parent_settings).to eq([parent_setting])
     end
   end
 
@@ -273,7 +273,7 @@ RSpec.describe SettingsController do
     it "handles destroy failure" do
       setting = create(:setting)
       login_as(setting.user)
-      expect_any_instance_of(Setting).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
+      expect_any_instance_of(Setting).to receive(:destroy).and_return(false)
       delete :destroy, params: { id: setting.id }
       expect(response).to redirect_to(setting_url(setting))
       expect(flash[:error]).to eq({message: "Setting could not be deleted.", array: []})
