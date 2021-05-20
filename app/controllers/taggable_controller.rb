@@ -68,15 +68,9 @@ class TaggableController < ApplicationController
     desc << stats.join(', ')
     title = [@tag.name]
     title << @tag.user.username if @tag.owned? && !@tag.user.deleted?
-    if @tag.is_a?(Setting)
-      title << 'Setting'
-      url = setting_url(@tag)
-    else
-      title << @tag.type.titleize
-      url = tag_url(@tag)
-    end
+    title << @tag.is_a?(Setting) ? 'Setting' : @tag.type.titleize
     {
-      url: url,
+      url: @tag.is_a?(Setting) ? setting_url(@tag) : tag_url(@tag),
       title: title.join(' · '),
       description: desc.join("\n"),
     }
