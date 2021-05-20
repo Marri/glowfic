@@ -1,13 +1,9 @@
 RSpec.describe Api::V1::TemplatesController do
   describe "GET index" do
     def create_search_templates
-      create(:template, name: 'baa') # firsttemplate
-      create(:template, name: 'aba') # midtemplate
-      create(:template, name: 'aab') # endtemplate
-      create(:template, name: 'aaa') # nottemplate
-      Template.all.each do |template|
-        create(:template, name: template.name.upcase + 'c')
-      end
+      names = ['baa', 'aba', 'aab', 'aaa']
+      names.each {|name| create(:template, name: name) }
+      names.each {|name| create(:template, name: name.upcase + 'c') }
     end
 
     it "works logged in" do
@@ -41,10 +37,8 @@ RSpec.describe Api::V1::TemplatesController do
     end
 
     it "finds only user's templates", show_in_doc: true do
-      user = create(:user)
-      notuser = create(:user)
-      template = create(:template, user: user)
-      create(:template, user: notuser) # nottemplate
+      template = create(:template)
+      create(:template)
 
       get :index, params: { user_id: template.user_id }
       expect(response.json['results'].count).to eq(1)

@@ -1,5 +1,9 @@
 RSpec.describe Api::V1::IndexSectionsController do
   describe "POST reorder" do
+    let(:user) { create(:user) }
+    let(:index) { create(:index, user: user) }
+    let(:index2) { create(:index, user: user) }
+
     it "requires login", :show_in_doc do
       post :reorder
       expect(response).to have_http_status(401)
@@ -7,113 +11,64 @@ RSpec.describe Api::V1::IndexSectionsController do
     end
 
     it "requires a index you have access to" do
-      index = create(:index)
-      index_section1 = create(:index_section, index_id: index.id)
-      index_section2 = create(:index_section, index_id: index.id)
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(1)
-
-      section_ids = [index_section2.id, index_section1.id]
-
+      sections = create_list(:index_section, 2, index: index)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 1])
+      section_ids = sections.map(&:id).reverse
       api_login
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(403)
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(1)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 1])
     end
 
     it "requires a single index" do
-      user = create(:user)
-      index1 = create(:index, user: user)
-      index2 = create(:index, user: user)
-      index_section1 = create(:index_section, index_id: index1.id)
-      index_section2 = create(:index_section, index_id: index2.id)
-      index_section3 = create(:index_section, index_id: index2.id)
+      sections = [create(:index_section, index: index)]
+      sections += create_list(:index_section, 2, index: index2)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
 
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(0)
-      expect(index_section3.reload.section_order).to eq(1)
-
-      section_ids = [index_section3.id, index_section2.id, index_section1.id]
+      section_ids = sections.map(&:id).reverse
       api_login_as(user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(422)
       expect(response.json['errors'][0]['message']).to eq('Sections must be from one index')
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(0)
-      expect(index_section3.reload.section_order).to eq(1)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
     end
 
     it "requires valid section ids" do
-      index = create(:index)
-      index_section1 = create(:index_section, index_id: index.id)
-      index_section2 = create(:index_section, index_id: index.id)
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(1)
-      section_ids = [-1]
-
-      api_login_as(index.user)
-      post :reorder, params: { ordered_section_ids: section_ids }
+      sections = create_list(:index_section, 2, index: index)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 1])
+      api_login_as(user)
+      post :reorder, params: { ordered_section_ids: [-1] }
       expect(response).to have_http_status(404)
       expect(response.json['errors'][0]['message']).to eq('Some sections could not be found: -1')
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(1)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 1])
     end
 
     it "works for valid changes", :show_in_doc do
-      index = create(:index)
-      index2 = create(:index, user: index.user)
-      index_section1 = create(:index_section, index_id: index.id)
-      index_section2 = create(:index_section, index_id: index.id)
-      index_section3 = create(:index_section, index_id: index.id)
-      index_section4 = create(:index_section, index_id: index.id)
-      index_section5 = create(:index_section, index_id: index2.id)
+      sections = create_list(:index_section, 4, index: index)
+      sections << create(:index_section, index: index2)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 1, 2, 3, 0])
 
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(1)
-      expect(index_section3.reload.section_order).to eq(2)
-      expect(index_section4.reload.section_order).to eq(3)
-      expect(index_section5.reload.section_order).to eq(0)
+      section_ids = [sections[2], sections[0], sections[3], sections[1]].map(&:id)
 
-      section_ids = [index_section3.id, index_section1.id, index_section4.id, index_section2.id]
-
-      api_login_as(index.user)
+      api_login_as(user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(200)
       expect(response.json).to eq({'section_ids' => section_ids})
-      expect(index_section1.reload.section_order).to eq(1)
-      expect(index_section2.reload.section_order).to eq(3)
-      expect(index_section3.reload.section_order).to eq(0)
-      expect(index_section4.reload.section_order).to eq(2)
-      expect(index_section5.reload.section_order).to eq(0)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([1, 3, 0, 2, 0])
     end
 
     it "works when specifying valid subset", :show_in_doc do
-      index = create(:index)
-      index2 = create(:index, user: index.user)
-      index_section1 = create(:index_section, index_id: index.id)
-      index_section2 = create(:index_section, index_id: index.id)
-      index_section3 = create(:index_section, index_id: index.id)
-      index_section4 = create(:index_section, index_id: index.id)
-      index_section5 = create(:index_section, index_id: index2.id)
+      sections = create_list(:index_section, 4, index: index)
+      sections << create(:index_section, index: index2)
+      expect(sections.map(&:reload).map(&:section_order)).to eq([0, 1, 2, 3, 0])
 
-      expect(index_section1.reload.section_order).to eq(0)
-      expect(index_section2.reload.section_order).to eq(1)
-      expect(index_section3.reload.section_order).to eq(2)
-      expect(index_section4.reload.section_order).to eq(3)
-      expect(index_section5.reload.section_order).to eq(0)
+      section_ids = [sections[2], sections[0]].map(&:id)
 
-      section_ids = [index_section3.id, index_section1.id]
-
-      api_login_as(index.user)
+      api_login_as(user)
       post :reorder, params: { ordered_section_ids: section_ids }
       expect(response).to have_http_status(200)
-      expect(response.json).to eq({'section_ids' => [index_section3.id, index_section1.id, index_section2.id, index_section4.id]})
-      expect(index_section1.reload.section_order).to eq(1)
-      expect(index_section2.reload.section_order).to eq(2)
-      expect(index_section3.reload.section_order).to eq(0)
-      expect(index_section4.reload.section_order).to eq(3)
-      expect(index_section5.reload.section_order).to eq(0)
+      expect(response.json).to eq({'section_ids' => [sections[2], sections[0], sections[1], sections[3]].map(&:id)})
+      expect(sections.map(&:reload).map(&:section_order)).to eq([1, 2, 0, 3, 0])
     end
   end
 end

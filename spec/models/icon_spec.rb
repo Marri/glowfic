@@ -66,11 +66,11 @@ RSpec.describe Icon do
     end
 
     it "updates avatar ids" do
-      icon = create(:icon)
-      icon.user.avatar = icon
-      icon.user.save!
+      user = create(:user)
+      icon = create(:icon, user: user)
+      user.update!(avatar: icon)
       Audited.audit_class.as_user(icon.user) { icon.destroy! }
-      expect(icon.user.reload.avatar_id).to be_nil
+      expect(user.reload.avatar_id).to be_nil
     end
   end
 

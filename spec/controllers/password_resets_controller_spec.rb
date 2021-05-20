@@ -15,8 +15,9 @@ RSpec.describe PasswordResetsController do
   end
 
   describe "POST create" do
+    let(:user) { create(:user) }
+
     it "requires logout" do
-      user = create(:user)
       login_as(user)
       post :create
       expect(response).to redirect_to(edit_user_url(user))
@@ -42,21 +43,18 @@ RSpec.describe PasswordResetsController do
     end
 
     it "handles email match but not username" do
-      user = create(:user)
       post :create, params: { username: 'fake_username', email: user.email }
       expect(response).to render_template('new')
       expect(flash[:error]).to eq("Account could not be found.")
     end
 
     it "handles username match but not email" do
-      user = create(:user)
       post :create, params: { username: user.username, email: 'fake_email' }
       expect(response).to render_template('new')
       expect(flash[:error]).to eq("Account could not be found.")
     end
 
     it "handles failed save" do
-      user = create(:user)
       expect_any_instance_of(PasswordReset).to receive(:generate_auth_token).and_return(nil)
       post :create, params: { username: user.username, email: user.email }
       expect(response).to render_template('new')
@@ -65,7 +63,6 @@ RSpec.describe PasswordResetsController do
 
     it "resends link if reset already present" do
       ActionMailer::Base.deliveries.clear
-      user = create(:user)
       reset = create(:password_reset, user: user)
       expect(PasswordReset.count).to eq(1)
       post :create, params: { username: user.username, email: user.email }
@@ -76,7 +73,6 @@ RSpec.describe PasswordResetsController do
 
     it "sends password reset" do
       ActionMailer::Base.deliveries.clear
-      user = create(:user)
       post :create, params: { username: user.username, email: user.email }
       expect(response).to redirect_to(new_password_reset_url)
       expect(flash[:success]).to eq("A password reset link has been emailed to you.")
@@ -123,6 +119,8 @@ RSpec.describe PasswordResetsController do
   end
 
   describe "PUT update" do
+    let(:token) { create(:password_reset) }
+
     it "requires logout" do
       user = create(:user)
       login_as(user)
@@ -152,35 +150,30 @@ RSpec.describe PasswordResetsController do
     end
 
     it "requires password" do
-      token = create(:password_reset)
       put :update, params: { id: token.auth_token, password_confirmation: 'newpass' }
       expect(flash[:error][:message]).to eq("Could not update password.")
       expect(response).to render_template('show')
     end
 
     it "requires long enough password" do
-      token = create(:password_reset)
       put :update, params: { id: token.auth_token, password: 'new', password_confirmation: 'new' }
       expect(flash[:error][:message]).to eq("Could not update password.")
       expect(response).to render_template('show')
     end
 
     it "requires password confirmation" do
-      token = create(:password_reset)
       put :update, params: { id: token.auth_token, password: 'newpass' }
       expect(flash[:error][:message]).to eq("Could not update password.")
       expect(response).to render_template('show')
     end
 
     it "requires password and confirmation to match" do
-      token = create(:password_reset)
       put :update, params: { id: token.auth_token, password: 'newpass', password_confirmation: 'notnewpass' }
       expect(flash[:error][:message]).to eq("Could not update password.")
       expect(response).to render_template('show')
     end
 
     it "succeeds" do
-      token = create(:password_reset)
       expect(token.user.authenticate('newpass')).to eq(false)
       put :update, params: { id: token.auth_token, password: 'newpass', password_confirmation: 'newpass' }
       expect(response).to redirect_to(root_url)

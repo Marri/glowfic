@@ -1,13 +1,9 @@
 RSpec.describe Api::V1::UsersController do
   describe "GET index" do
     def create_search_users
-      create(:user, username: 'baa', moiety: '123456', moiety_name: 'Test') # firstuser
-      create(:user, username: 'aba') # miduser
-      create(:user, username: 'aab') # enduser
-      create(:user, username: 'aaa') # notuser
-      User.all.each do |user|
-        create(:user, username: user.username.upcase + 'c')
-      end
+      names = ['baa', 'aba', 'aab', 'aaa']
+      names.each {|name| create(:user, username: name) }
+      names.each {|name| create(:user, username: name.upcase + 'c') }
     end
 
     it "works logged in" do
@@ -37,22 +33,23 @@ RSpec.describe Api::V1::UsersController do
       expect(response.json['results'].count).to eq(1)
     end
 
-    it "handles hiding unblockable users" do
-      user = create(:user)
-      api_login_as(user)
-      create_list(:block, 2, blocking_user: user)
-      create_list(:user, 3)
-      get :index, params: { hide_unblockable: true }
-      expect(response.json['results'].count).to eq(3)
-    end
+    context "with blocks" do
+      before(:each) do
+        user = create(:user)
+        api_login_as(user)
+        create_list(:block, 2, blocking_user: user)
+        create_list(:user, 3)
+      end
 
-    it "does not hide unblockable users unless that parameter is sent" do
-      user = create(:user)
-      api_login_as(user)
-      create_list(:block, 2, blocking_user: user)
-      create_list(:user, 3)
-      get :index
-      expect(response.json['results'].count).to eq(6)
+      it "handles hiding unblockable users" do
+        get :index, params: { hide_unblockable: true }
+        expect(response.json['results'].count).to eq(3)
+      end
+
+      it "does not hide unblockable users unless that parameter is sent" do
+        get :index
+        expect(response.json['results'].count).to eq(6)
+      end
     end
 
     it "does not return deleted users" do
@@ -82,6 +79,8 @@ RSpec.describe Api::V1::UsersController do
   end
 
   describe 'GET posts' do
+    let(:user) { create(:user) }
+
     it 'requires a valid user', show_in_doc: true do
       get :posts, params: { id: 0 }
       expect(response).to have_http_status(404)
@@ -90,7 +89,6 @@ RSpec.describe Api::V1::UsersController do
     end
 
     it 'filters non-public posts' do
-      user = create(:user)
       public_post = create(:post, privacy: :public, user: user)
       create(:post, privacy: :private, user: user)
       get :posts, params: { id: user.id }
@@ -100,7 +98,6 @@ RSpec.describe Api::V1::UsersController do
     end
 
     it 'returns only the correct posts', show_in_doc: true do
-      user = create(:user)
       board = create(:board)
       user_post = create(:post, user: user, board: board, section: create(:board_section, board: board))
       create(:post, user: create(:user))
@@ -113,14 +110,12 @@ RSpec.describe Api::V1::UsersController do
     end
 
     it 'paginates results' do
-      user = create(:user)
       create_list(:post, 26, user: user)
       get :posts, params: { id: user.id }
       expect(response.json['results'].size).to eq(25)
     end
 
     it 'paginates results on additional pages' do
-      user = create(:user)
       create_list(:post, 27, user: user)
       get :posts, params: { id: user.id, page: 2 }
       expect(response.json['results'].size).to eq(2)

@@ -1,8 +1,9 @@
 RSpec.describe Api::V1::PostsController do
   describe "GET index" do
     shared_examples_for "index.json" do |in_doc|
+      let!(:post) { create(:post, subject: 'search') }
+
       it "should support no search", show_in_doc: in_doc do
-        post = create(:post)
         get :index
         expect(response).to have_http_status(200)
         expect(response.json).to have_key('results')
@@ -10,8 +11,7 @@ RSpec.describe Api::V1::PostsController do
       end
 
       it "should support search", show_in_doc: in_doc do
-        post = create(:post, subject: 'search')
-        create(:post, subject: 'no') # post2
+        create(:post, subject: 'no')
         get :index, params: { q: 'se' }
         expect(response).to have_http_status(200)
         expect(response.json).to have_key('results')
@@ -20,7 +20,6 @@ RSpec.describe Api::V1::PostsController do
 
       it "hides private posts" do
         create(:post, privacy: :private)
-        post = create(:post)
         get :index
         expect(response).to have_http_status(200)
         expect(response.json).to have_key('results')
@@ -69,6 +68,9 @@ RSpec.describe Api::V1::PostsController do
   end
 
   describe "PATCH update" do
+    let(:user) { create(:user) }
+    let(:post) { create(:post, user: user) }
+
     it "requires login", :show_in_doc do
       patch :update, params: { id: 0 }
       expect(response).to have_http_status(401)
@@ -93,7 +95,6 @@ RSpec.describe Api::V1::PostsController do
 
     it "requires private_note param", :show_in_doc do
       api_login
-      post = create(:post)
       patch :update, params: { id: post.id }
       expect(response).to have_http_status(422)
       expect(response.json['errors'][0]['message']).to eq("Missing parameter private_note")
@@ -101,7 +102,6 @@ RSpec.describe Api::V1::PostsController do
 
     it "requires authorship of post" do
       api_login
-      post = create(:post)
       patch :update, params: { id: post.id, private_note: "Shiny new note" }
       expect(response).to have_http_status(403)
       expect(response.json['errors'][0]['message']).to eq("You do not have permission to perform this action.")
@@ -109,8 +109,7 @@ RSpec.describe Api::V1::PostsController do
 
     it "handles failed saves" do
       expect_any_instance_of(Post::Author).to receive(:update).and_return(false)
-      user = api_login
-      post = create(:post, user: user)
+      api_login_as(user)
 
       patch :update, params: { id: post.id, private_note: 'Shiny new note' }
 
@@ -119,19 +118,23 @@ RSpec.describe Api::V1::PostsController do
     end
 
     it "succeeds with valid post", :show_in_doc do
-      user = api_login
-      post = create(:post, user: user)
-      expect(post.author_for(user).private_note).to be_nil
+      api_login_as(user)
+      author = post.author_for(user)
+      expect(author.private_note).to be_nil
 
       patch :update, params: { id: post.id, private_note: 'Shiny new note' }
 
       expect(response).to have_http_status(200)
       expect(response.json['private_note']).to eq("<p>Shiny new note</p>")
-      expect(post.author_for(user).private_note).to eq('Shiny new note')
+      expect(author.reload.private_note).to eq('Shiny new note')
     end
   end
 
   describe "POST reorder" do
+    let(:user) { create(:user) }
+    let(:board) { create(:board, creator: user) }
+    let(:section) { create(:board_section, board: board) }
+
     it "requires login", :show_in_doc do
       post :reorder
       expect(response).to have_http_status(401)
@@ -139,309 +142,175 @@ RSpec.describe Api::V1::PostsController do
     end
 
     context "without section_id" do
+      let(:board2) { create(:board, creator: user) }
+
       it "requires a board you have access to" do
-        board = create(:board)
-        board_post1 = create(:post, board_id: board.id)
-        board_post2 = create(:post, board_id: board.id)
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-
-        post_ids = [board_post2.id, board_post1.id]
-
+        posts = create_list(:post, 2, board: board)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login
         post :reorder, params: { ordered_post_ids: post_ids }
         expect(response).to have_http_status(403)
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
-      it "requires a single board without section_id" do
-        user = create(:user)
-        board1 = create(:board, creator: user)
-        board2 = create(:board, creator: user)
-        board_post1 = create(:post, board_id: board1.id)
-        board_post2 = create(:post, board_id: board2.id)
-        board_post3 = create(:post, board_id: board2.id)
-
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(0)
-        expect(board_post3.reload.section_order).to eq(1)
-
-        post_ids = [board_post3.id, board_post2.id, board_post1.id]
+      it "requires a single board" do
+        posts = create_list(:post, 1, board: board)
+        posts += create_list(:post, 2, board: board2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids }
         expect(response).to have_http_status(422)
         expect(response.json['errors'][0]['message']).to eq('Posts must be from one board')
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(0)
-        expect(board_post3.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
       end
 
       it "requires section_id if posts in section" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        section = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: section.id)
-        board_post2 = create(:post, board_id: board.id, section_id: section.id)
-
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-
-        post_ids = [board_post2.id, board_post1.id]
+        posts = create_list(:post, 2, board: board, section: section)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids }
         expect(response).to have_http_status(422)
         expect(response.json['errors'][0]['message']).to eq('Posts must be from one specified section in the board, or no section')
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
       it "requires valid post_ids" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        post1 = create(:post, board_id: board.id)
-        post2 = create(:post, board_id: board.id)
-        expect(post1.reload.section_order).to eq(0)
-        expect(post2.reload.section_order).to eq(1)
-
-        post_ids = [-1]
+        posts = create_list(:post, 2, board: board)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
         api_login_as(user)
-        post :reorder, params: { ordered_post_ids: post_ids }
+        post :reorder, params: { ordered_post_ids: [-1] }
         expect(response).to have_http_status(404)
         expect(response.json['errors'][0]['message']).to eq('Some posts could not be found: -1')
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
       it "works for valid changes", :show_in_doc do
-        board = create(:board)
-        board2 = create(:board, creator: board.creator)
-        board_post1 = create(:post, board_id: board.id)
-        board_post2 = create(:post, board_id: board.id)
-        board_post3 = create(:post, board_id: board.id)
-        board_post4 = create(:post, board_id: board.id)
-        board_post5 = create(:post, board_id: board2.id)
+        posts = create_list(:post, 4, board: board)
+        posts << create(:post, board: board2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1, 2, 3, 0])
 
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-        expect(board_post3.reload.section_order).to eq(2)
-        expect(board_post4.reload.section_order).to eq(3)
-        expect(board_post5.reload.section_order).to eq(0)
+        post_ids = [posts[2], posts[0], posts[3], posts[1]].map(&:id)
 
-        post_ids = [board_post3.id, board_post1.id, board_post4.id, board_post2.id]
-
-        api_login_as(board.creator)
+        api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids }
         expect(response).to have_http_status(200)
         expect(response.json).to eq({'post_ids' => post_ids})
-        expect(board_post1.reload.section_order).to eq(1)
-        expect(board_post2.reload.section_order).to eq(3)
-        expect(board_post3.reload.section_order).to eq(0)
-        expect(board_post4.reload.section_order).to eq(2)
-        expect(board_post5.reload.section_order).to eq(0)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([1, 3, 0, 2, 0])
       end
 
       it "works when specifying valid subset", :show_in_doc do
-        board = create(:board)
-        board2 = create(:board, creator: board.creator)
-        board_post1 = create(:post, board_id: board.id)
-        board_post2 = create(:post, board_id: board.id)
-        board_post3 = create(:post, board_id: board.id)
-        board_post4 = create(:post, board_id: board.id)
-        board_post5 = create(:post, board_id: board2.id)
+        posts = create_list(:post, 4, board: board)
+        posts << create(:post, board: board2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1, 2, 3, 0])
 
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-        expect(board_post3.reload.section_order).to eq(2)
-        expect(board_post4.reload.section_order).to eq(3)
-        expect(board_post5.reload.section_order).to eq(0)
+        post_ids = [posts[2], posts[0]].map(&:id)
 
-        post_ids = [board_post3.id, board_post1.id]
-
-        api_login_as(board.creator)
+        api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids }
         expect(response).to have_http_status(200)
-        expect(response.json).to eq({'post_ids' => [board_post3.id, board_post1.id, board_post2.id, board_post4.id]})
-        expect(board_post1.reload.section_order).to eq(1)
-        expect(board_post2.reload.section_order).to eq(2)
-        expect(board_post3.reload.section_order).to eq(0)
-        expect(board_post4.reload.section_order).to eq(3)
-        expect(board_post5.reload.section_order).to eq(0)
+        expect(response.json).to eq({'post_ids' => [posts[2], posts[0], posts[1], posts[3]].map(&:id)})
+        expect(posts.map(&:reload).map(&:section_order)).to eq([1, 2, 0, 3, 0])
       end
     end
 
     context "with section_id" do
+      let(:section2) { create(:board_section, board: board) }
+
       it "requires a board you have access to" do
-        board = create(:board)
-        section = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: section.id)
-        board_post2 = create(:post, board_id: board.id, section_id: section.id)
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-
-        post_ids = [board_post2.id, board_post1.id]
-
+        posts = create_list(:post, 2, board: board, section: section)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login
         post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
         expect(response).to have_http_status(403)
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
       it "requires a single section" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        board_section1 = create(:board_section, board_id: board.id)
-        board_section2 = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: board_section1.id)
-        board_post2 = create(:post, board_id: board.id, section_id: board_section2.id)
-        board_post3 = create(:post, board_id: board.id, section_id: board_section2.id)
-
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(0)
-        expect(board_post3.reload.section_order).to eq(1)
-
-        post_ids = [board_post3.id, board_post2.id, board_post1.id]
+        posts = create_list(:post, 1, board: board, section: section)
+        posts += create_list(:post, 2, board: board, section: section2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login_as(user)
-        post :reorder, params: { ordered_post_ids: post_ids, section_id: board_section1.id }
+        post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
         expect(response).to have_http_status(422)
         expect(response.json['errors'][0]['message']).to eq('Posts must be from one specified section in the board, or no section')
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(0)
-        expect(board_post3.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
       end
 
       it "requires valid section id" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        section = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: section.id)
-        board_post2 = create(:post, board_id: board.id, section_id: section.id)
-
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-
-        post_ids = [board_post2.id, board_post1.id]
+        posts = create_list(:post, 2, board: board, section: section)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids, section_id: 0 }
         expect(response).to have_http_status(422)
         expect(response.json['errors'][0]['message']).to eq('Posts must be from one specified section in the board, or no section')
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
       it "requires correct section id" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        board_section1 = create(:board_section, board_id: board.id)
-        board_section2 = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: board_section1.id)
-        board_post2 = create(:post, board_id: board.id, section_id: board_section2.id)
-        board_post3 = create(:post, board_id: board.id, section_id: board_section2.id)
-
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(0)
-        expect(board_post3.reload.section_order).to eq(1)
-
-        post_ids = [board_post3.id, board_post2.id]
+        posts = create_list(:post, 1, board: board, section: section)
+        posts += create_list(:post, 2, board: board, section: section2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
+        post_ids = posts[1..2].reverse.map(&:id)
         api_login_as(user)
-        post :reorder, params: { ordered_post_ids: post_ids, section_id: board_section1.id }
+        post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
         expect(response).to have_http_status(422)
         expect(response.json['errors'][0]['message']).to eq('Posts must be from one specified section in the board, or no section')
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(0)
-        expect(board_post3.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 0, 1])
       end
 
       it "requires no section_id if posts not in section" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        section = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id)
-        board_post2 = create(:post, board_id: board.id)
-
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-
-        post_ids = [board_post2.id, board_post1.id]
+        posts = create_list(:post, 2, board: board)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
+        post_ids = posts.map(&:id).reverse
         api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
         expect(response).to have_http_status(422)
         expect(response.json['errors'][0]['message']).to eq('Posts must be from one specified section in the board, or no section')
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
       it "requires valid post_ids" do
-        user = create(:user)
-        board = create(:board, creator: user)
-        section = create(:board_section, board_id: board.id)
-        post1 = create(:post, board_id: board.id, section_id: section.id)
-        post2 = create(:post, board_id: board.id, section_id: section.id)
-        expect(post1.reload.section_order).to eq(0)
-        expect(post2.reload.section_order).to eq(1)
-
-        post_ids = [-1]
+        posts = create_list(:post, 2, board: board, section: section)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
         api_login_as(user)
-        post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
+        post :reorder, params: { ordered_post_ids: [-1], section_id: section.id }
         expect(response).to have_http_status(404)
         expect(response.json['errors'][0]['message']).to eq('Some posts could not be found: -1')
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1])
       end
 
       it "works for valid changes", :show_in_doc do
-        board = create(:board)
-        section = create(:board_section, board_id: board.id)
-        section2 = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: section.id)
-        board_post2 = create(:post, board_id: board.id, section_id: section.id)
-        board_post3 = create(:post, board_id: board.id, section_id: section.id)
-        board_post4 = create(:post, board_id: board.id, section_id: section.id)
-        board_post5 = create(:post, board_id: board.id, section_id: section2.id)
+        posts = create_list(:post, 4, board: board, section: section)
+        posts << create(:post, board: board, section: section2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1, 2, 3, 0])
 
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-        expect(board_post3.reload.section_order).to eq(2)
-        expect(board_post4.reload.section_order).to eq(3)
-        expect(board_post5.reload.section_order).to eq(0)
+        post_ids = [posts[2], posts[0], posts[3], posts[1]].map(&:id)
 
-        post_ids = [board_post3.id, board_post1.id, board_post4.id, board_post2.id]
-
-        api_login_as(board.creator)
+        api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
         expect(response).to have_http_status(200)
         expect(response.json).to eq({'post_ids' => post_ids})
-        expect(board_post1.reload.section_order).to eq(1)
-        expect(board_post2.reload.section_order).to eq(3)
-        expect(board_post3.reload.section_order).to eq(0)
-        expect(board_post4.reload.section_order).to eq(2)
-        expect(board_post5.reload.section_order).to eq(0)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([1, 3, 0, 2, 0])
       end
 
       it "works when specifying valid subset", :show_in_doc do
-        board = create(:board)
-        section = create(:board_section, board_id: board.id)
-        section2 = create(:board_section, board_id: board.id)
-        board_post1 = create(:post, board_id: board.id, section_id: section.id)
-        board_post2 = create(:post, board_id: board.id, section_id: section.id)
-        board_post3 = create(:post, board_id: board.id, section_id: section.id)
-        board_post4 = create(:post, board_id: board.id, section_id: section.id)
-        board_post5 = create(:post, board_id: board.id, section_id: section2.id)
+        posts = create_list(:post, 4, board: board, section: section)
+        posts << create(:post, board: board, section: section2)
+        expect(posts.map(&:reload).map(&:section_order)).to eq([0, 1, 2, 3, 0])
 
-        expect(board_post1.reload.section_order).to eq(0)
-        expect(board_post2.reload.section_order).to eq(1)
-        expect(board_post3.reload.section_order).to eq(2)
-        expect(board_post4.reload.section_order).to eq(3)
-        expect(board_post5.reload.section_order).to eq(0)
+        post_ids = [posts[2], posts[0]].map(&:id)
 
-        post_ids = [board_post3.id, board_post1.id]
-
-        api_login_as(board.creator)
+        api_login_as(user)
         post :reorder, params: { ordered_post_ids: post_ids, section_id: section.id }
         expect(response).to have_http_status(200)
-        expect(response.json).to eq({'post_ids' => [board_post3.id, board_post1.id, board_post2.id, board_post4.id]})
-        expect(board_post1.reload.section_order).to eq(1)
-        expect(board_post2.reload.section_order).to eq(2)
-        expect(board_post3.reload.section_order).to eq(0)
-        expect(board_post4.reload.section_order).to eq(3)
-        expect(board_post5.reload.section_order).to eq(0)
+        expect(response.json).to eq({'post_ids' => [posts[2], posts[0], posts[1], posts[3]].map(&:id)})
+        expect(posts.map(&:reload).map(&:section_order)).to eq([1, 2, 0, 3, 0])
       end
     end
   end

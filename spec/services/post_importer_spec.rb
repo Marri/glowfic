@@ -40,6 +40,7 @@ RSpec.describe PostImporter do
 
     context "when validating duplicate imports" do
       let(:post) { create(:post, subject: 'linear b') }
+      let(:importer) { PostImporter.new(url) }
 
       before(:each) do
         stub_fixture(url, 'scrape_no_replies')
@@ -47,36 +48,33 @@ RSpec.describe PostImporter do
       end
 
       it "does not raise error on threaded imports" do
-        importer = PostImporter.new(url)
         expect { importer.import(post.board_id, nil, threaded: true) }.not_to raise_error
         expect(ScrapePostJob).to have_been_enqueued
       end
 
       it "does not raise error on different continuity imports" do
-        importer = PostImporter.new(url)
         expect { importer.import(post.board_id + 1, nil) }.not_to raise_error
         expect(ScrapePostJob).to have_been_enqueued
       end
 
       it "raises error on duplicate" do
-        importer = PostImporter.new(url)
         expect { importer.import(post.board_id, nil) }.to raise_error(AlreadyImported)
         expect(ScrapePostJob).not_to have_been_enqueued
       end
     end
 
     context "when validating duplicate usernames" do
+      let(:importer) { PostImporter.new(url) }
+
+      before(:each) { stub_fixture(url, 'scrape_no_replies') }
+
       it "requires usernames to exist" do
-        stub_fixture(url, 'scrape_no_replies')
-        importer = PostImporter.new(url)
         expect { importer.import(nil, nil) }.to raise_error(MissingUsernames)
         expect(ScrapePostJob).not_to have_been_enqueued
       end
 
       it "handles usernames with - instead of _" do
         create(:character, screenname: 'wild-pegasus-appeared')
-        stub_fixture(url, 'scrape_no_replies')
-        importer = PostImporter.new(url)
         expect { importer.import(nil, nil) }.not_to raise_error
         expect(ScrapePostJob).to have_been_enqueued
       end

@@ -1,8 +1,10 @@
 RSpec.describe Setting do
   context "tags" do
+    let(:harry_potter) { create(:setting, name: 'Harry Potter') }
+    let(:setting) { build(:setting, parent_settings: [harry_potter]) }
+
     it "creates only in-memory tags on invalid create" do
-      harry_potter = create(:setting, name: 'Harry Potter')
-      setting = build(:setting, name: '', parent_settings: [harry_potter])
+      setting.name = ''
       expect(setting.valid?).to eq(false)
       expect(setting.save).to eq(false)
       expect(setting.parent_settings.count).to eq(0)
@@ -11,8 +13,6 @@ RSpec.describe Setting do
     end
 
     it "creates tags on valid create" do
-      harry_potter = create(:setting, name: 'Harry Potter')
-      setting = build(:setting, parent_settings: [harry_potter])
       expect(setting.valid?).to eq(true)
       expect(setting.save).to eq(true)
       expect(setting.parent_settings.count).to eq(1)

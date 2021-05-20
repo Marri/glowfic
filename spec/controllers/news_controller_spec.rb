@@ -125,6 +125,8 @@ RSpec.describe NewsController do
   end
 
   describe "GET edit" do
+    let(:news) { create(:news) }
+
     it "errors if logged out" do
       get :edit, params: {id: -1}
       expect(response).to redirect_to(root_url)
@@ -146,16 +148,13 @@ RSpec.describe NewsController do
     end
 
     it "errors if wrong mod" do
-      news = create(:news)
-      other_mod = create(:mod_user)
-      login_as(other_mod)
+      login_as(create(:mod_user))
       get :edit, params: {id: news.id}
       expect(response).to redirect_to(news_index_url)
       expect(flash[:error]).to eq("You do not have permission to edit that news post.")
     end
 
     it "works for admins" do
-      news = create(:news)
       login_as(create(:admin_user))
       get :edit, params: {id: news.id}
       expect(response).to have_http_status(200)
@@ -163,7 +162,6 @@ RSpec.describe NewsController do
     end
 
     it "works for right mod" do
-      news = create(:news)
       login_as(news.user)
       get :edit, params: {id: news.id}
       expect(response).to have_http_status(200)
@@ -172,6 +170,8 @@ RSpec.describe NewsController do
   end
 
   describe "PATCH update" do
+    let(:news) { create(:news) }
+
     it "errors if logged out" do
       patch :update, params: {id: -1}
       expect(response).to redirect_to(root_url)
@@ -193,16 +193,13 @@ RSpec.describe NewsController do
     end
 
     it "errors if wrong mod" do
-      news = create(:news)
-      other_mod = create(:mod_user)
-      login_as(other_mod)
+      login_as(create(:mod_user))
       patch :update, params: {id: news.id}
       expect(response).to redirect_to(news_index_url)
       expect(flash[:error]).to eq("You do not have permission to edit that news post.")
     end
 
     it "errors without content" do
-      news = create(:news)
       login_as(news.user)
       patch :update, params: {id: news.id, news: {content: ''}}
       expect(response).to render_template(:edit)
@@ -211,7 +208,6 @@ RSpec.describe NewsController do
     end
 
     it "works for admins" do
-      news = create(:news)
       login_as(create(:admin_user))
       patch :update, params: {id: news.id, news: {content: 'admin content'}}
       expect(response).to redirect_to(news_index_url)
@@ -219,7 +215,6 @@ RSpec.describe NewsController do
     end
 
     it "works for right mod" do
-      news = create(:news)
       login_as(news.user)
       patch :update, params: {id: news.id, news: {content: 'right mod content'}}
       expect(response).to redirect_to(news_index_url)
@@ -228,6 +223,8 @@ RSpec.describe NewsController do
   end
 
   describe "DELETE destroy" do
+    let(:news) { create(:news) }
+
     it "errors if logged out" do
       delete :destroy, params: {id: -1}
       expect(response).to redirect_to(root_url)
@@ -249,16 +246,13 @@ RSpec.describe NewsController do
     end
 
     it "errors if wrong mod" do
-      news = create(:news)
-      other_mod = create(:mod_user)
-      login_as(other_mod)
+      login_as(create(:mod_user))
       delete :destroy, params: {id: news.id}
       expect(response).to redirect_to(news_index_url)
       expect(flash[:error]).to eq("You do not have permission to edit that news post.")
     end
 
     it "errors if something fails" do
-      news = create(:news)
       login_as(create(:admin_user))
       expect_any_instance_of(News).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: {id: news.id}
@@ -268,7 +262,6 @@ RSpec.describe NewsController do
     end
 
     it "works for admins" do
-      news = create(:news)
       login_as(create(:admin_user))
       expect {
         delete :destroy, params: {id: news.id}
@@ -279,7 +272,6 @@ RSpec.describe NewsController do
     end
 
     it "works for right mod" do
-      news = create(:news)
       login_as(news.user)
       expect {
         delete :destroy, params: {id: news.id}

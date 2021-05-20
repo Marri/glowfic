@@ -1,5 +1,7 @@
 RSpec.describe IndexSectionsController do
   describe "GET new" do
+    let(:index) { create(:index) }
+
     it "requires login" do
       get :new
       expect(response).to redirect_to(root_url)
@@ -7,11 +9,7 @@ RSpec.describe IndexSectionsController do
     end
 
     it "requires permission" do
-      user = create(:user)
-      index = create(:index)
-      expect(index.editable_by?(user)).to eq(false)
-      login_as(user)
-
+      login
       get :new, params: { index_id: index.id }
       expect(response).to redirect_to(index_url(index))
       expect(flash[:error]).to eq("You do not have permission to edit this index.")
@@ -25,7 +23,6 @@ RSpec.describe IndexSectionsController do
     end
 
     it "works with index_id" do
-      index = create(:index)
       login_as(index.user)
       get :new, params: { index_id: index.id }
       expect(response).to have_http_status(200)
@@ -33,6 +30,8 @@ RSpec.describe IndexSectionsController do
   end
 
   describe "POST create" do
+    let(:index) { create(:index) }
+
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -40,18 +39,13 @@ RSpec.describe IndexSectionsController do
     end
 
     it "requires permission" do
-      user = create(:user)
-      index = create(:index)
-      expect(index.editable_by?(user)).to eq(false)
-      login_as(user)
-
+      login
       post :create, params: { index_section: {index_id: index.id} }
       expect(response).to redirect_to(index_url(index))
       expect(flash[:error]).to eq("You do not have permission to edit this index.")
     end
 
     it "requires valid section" do
-      index = create(:index)
       login_as(index.user)
       post :create, params: { index_section: {index_id: index.id} }
       expect(response).to have_http_status(200)
@@ -60,7 +54,6 @@ RSpec.describe IndexSectionsController do
     end
 
     it "succeeds" do
-      index = create(:index)
       login_as(index.user)
       section_name = 'ValidSection'
       post :create, params: { index_section: {index_id: index.id, name: section_name} }
@@ -71,6 +64,8 @@ RSpec.describe IndexSectionsController do
   end
 
   describe "GET show" do
+    let(:section) { create(:index_section) }
+
     it "requires valid section" do
       get :show, params: { id: -1 }
       expect(response).to redirect_to(indexes_url)
@@ -78,7 +73,6 @@ RSpec.describe IndexSectionsController do
     end
 
     it "does not require login" do
-      section = create(:index_section)
       get :show, params: { id: section.id }
       expect(response).to have_http_status(200)
       expect(assigns(:page_title)).to eq(section.name)
@@ -86,7 +80,6 @@ RSpec.describe IndexSectionsController do
 
     it "works with login" do
       login
-      section = create(:index_section)
       get :show, params: { id: section.id }
       expect(response).to have_http_status(200)
       expect(assigns(:page_title)).to eq(section.name)
@@ -94,6 +87,10 @@ RSpec.describe IndexSectionsController do
   end
 
   describe "GET edit" do
+    let(:user) { create(:user) }
+    let(:index) { create(:index, user: user) }
+    let(:section) { create(:index_section, index: index) }
+
     it "requires login" do
       get :edit, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -108,7 +105,6 @@ RSpec.describe IndexSectionsController do
     end
 
     it "requires permission" do
-      section = create(:index_section)
       login
       get :edit, params: { id: section.id }
       expect(response).to redirect_to(index_url(section.index))
@@ -116,8 +112,7 @@ RSpec.describe IndexSectionsController do
     end
 
     it "works" do
-      section = create(:index_section)
-      login_as(section.index.user)
+      login_as(user)
       get :edit, params: { id: section.id }
       expect(response).to have_http_status(200)
       expect(assigns(:page_title)).to eq("Edit Index Section: #{section.name}")
@@ -125,6 +120,10 @@ RSpec.describe IndexSectionsController do
   end
 
   describe "PUT update" do
+    let(:user) { create(:user) }
+    let(:index) { create(:index, user: user) }
+    let(:index_section) { create(:index_section, index: index) }
+
     it "requires login" do
       put :update, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -132,19 +131,14 @@ RSpec.describe IndexSectionsController do
     end
 
     it "requires index permission" do
-      user = create(:user)
-      login_as(user)
-      index_section = create(:index_section)
-      expect(index_section.index).not_to be_editable_by(user)
-
+      login
       put :update, params: { id: index_section.id }
       expect(response).to redirect_to(index_url(index_section.index))
       expect(flash[:error]).to eq("You do not have permission to edit this index.")
     end
 
     it "requires valid params" do
-      index_section = create(:index_section)
-      login_as(index_section.index.user)
+      login_as(user)
       put :update, params: { id: index_section.id, index_section: {name: ''} }
       expect(response).to have_http_status(200)
       expect(response).to render_template(:edit)
@@ -163,6 +157,10 @@ RSpec.describe IndexSectionsController do
   end
 
   describe "DELETE destroy" do
+    let(:user) { create(:user) }
+    let(:index) { create(:index, user: user) }
+    let(:section) { create(:index_section, index: index) }
+
     it "requires login" do
       delete :destroy, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -177,7 +175,6 @@ RSpec.describe IndexSectionsController do
     end
 
     it "requires permission" do
-      section = create(:index_section)
       login
       delete :destroy, params: { id: section.id }
       expect(response).to redirect_to(index_url(section.index))
@@ -185,8 +182,7 @@ RSpec.describe IndexSectionsController do
     end
 
     it "works" do
-      section = create(:index_section)
-      login_as(section.index.user)
+      login_as(user)
       delete :destroy, params: { id: section.id }
       expect(response).to redirect_to(index_url(section.index))
       expect(flash[:success]).to eq("Index section deleted.")
@@ -194,9 +190,7 @@ RSpec.describe IndexSectionsController do
     end
 
     it "handles destroy failure" do
-      section = create(:index_section)
-      index = section.index
-      login_as(index.user)
+      login_as(user)
       expect_any_instance_of(IndexSection).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
       delete :destroy, params: { id: section.id }
       expect(response).to redirect_to(index_url(index))

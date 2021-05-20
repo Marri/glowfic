@@ -34,6 +34,10 @@ RSpec.describe BlocksController, type: :controller do
   end
 
   describe "POST create" do
+    let(:user) { create(:user) }
+    let(:blocked) { create(:user) }
+    let(:blocking) { create(:user) }
+
     it "requires login" do
       post :create
       expect(response).to redirect_to(root_url)
@@ -64,22 +68,19 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "does not let the user block themself" do
-      user = create(:user)
-      login_as(user)
-      post :create, params: { block: { blocked_user_id: user.id } }
+      user_id = login
+      post :create, params: { block: { blocked_user_id: user_id } }
       expect(response).to render_template('new')
       expect(flash[:error][:message]).to eq("User could not be blocked.")
       expect(flash[:error][:array]).to include("User cannot block themself")
     end
 
     it "succeeds" do
-      blocker = create(:user)
-      blockee = create(:user)
-      login_as(blocker)
+      login_as(blocking)
       expect {
         post :create, params: {
           block: {
-            blocked_user_id: blockee.id,
+            blocked_user_id: blocked.id,
             block_interactions: false,
             hide_them: :posts,
             hide_me: :all
@@ -90,17 +91,14 @@ RSpec.describe BlocksController, type: :controller do
       expect(flash[:success]).to eq("User blocked!")
       block = assigns(:block)
       expect(block).not_to be_nil
-      expect(block.blocking_user).to eq(blocker)
-      expect(block.blocked_user).to eq(blockee)
+      expect(block.blocking_user).to eq(blocking)
+      expect(block.blocked_user).to eq(blocked)
       expect(block.block_interactions).to eq(false)
       expect(block).to be_hide_them_posts
       expect(block).to be_hide_me_all
     end
 
     it "refreshes caches" do
-      user = create(:user)
-      blocked = create(:user)
-      blocking = create(:user)
       create(:block, blocking_user: blocking, blocked_user: user, hide_me: :posts)
       blocked_post = create(:post, user: blocking, authors_locked: true)
       hidden_post = create(:post, user: blocked, authors_locked: true)
@@ -135,8 +133,9 @@ RSpec.describe BlocksController, type: :controller do
   end
 
   describe "GET edit" do
+    let(:block) { create(:block) }
+
     it "requires permission" do
-      block = create(:block)
       login
       get :edit, params: { id: block.id }
       expect(response).to redirect_to(blocks_url)
@@ -151,7 +150,6 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "succeeds" do
-      block = create(:block)
       login_as(block.blocking_user)
       get :edit, params: { id: block.id }
       expect(response.status).to eq(200)
@@ -159,8 +157,10 @@ RSpec.describe BlocksController, type: :controller do
   end
 
   describe "PUT update" do
+    let(:user) { create(:user) }
+    let(:block) { create(:block, blocking_user: user) }
+
     it "requires permission" do
-      block = create(:block)
       login
       put :update, params: { id: block.id }
       expect(response).to redirect_to(blocks_url)
@@ -175,24 +175,21 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "requires valid variables" do
-      block = create(:block)
-      login_as(block.blocking_user)
+      login_as(user)
       expect {
         put :update, params: { id: block.id, block: { hide_them: -1 } }
       }.to raise_error(ArgumentError)
     end
 
     it "requires successful validation" do
-      block = create(:block)
-      login_as(block.blocking_user)
+      login_as(user)
       put :update, params: { id: block.id, block: { block_interactions: 0 } }
       expect(flash[:error][:message]).to eq("Block could not be saved.")
       expect(flash[:error][:array]).to eq(["Block must choose at least one action to prevent"])
     end
 
     it "suceeds" do
-      block = create(:block)
-      login_as(block.blocking_user)
+      login_as(user)
       put :update, params: {
         id: block.id,
         block: {
@@ -213,7 +210,6 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "does not update blocked_user" do
-      block = create(:block)
       blocked_user = block.blocked_user
       login_as(block.blocking_user)
       put :update, params: { id: block.id, block: { blocked_user: create(:user).id } }
@@ -223,8 +219,10 @@ RSpec.describe BlocksController, type: :controller do
   end
 
   describe "DELETE destroy" do
+    let(:user) { create(:user) }
+    let(:block) { create(:block, blocking_user: user) }
+
     it "requires permission" do
-      block = create(:block)
       login
       delete :destroy, params: { id: block.id }
       expect(response).to redirect_to(blocks_url)
@@ -239,8 +237,7 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "handles failure" do
-      block = create(:block)
-      login_as(block.blocking_user)
+      login_as(user)
       expect_any_instance_of(Block).to receive(:destroy).and_return(false)
       delete :destroy, params: {id: block.id}
       expect(response).to redirect_to(blocks_url)
@@ -249,8 +246,7 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "succeeds" do
-      block = create(:block)
-      login_as(block.blocking_user)
+      login_as(user)
       delete :destroy, params: { id: block.id }
       expect(response).to redirect_to(blocks_url)
       expect(flash[:success]).to eq("User unblocked.")
@@ -258,7 +254,6 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "refreshes caches" do
-      user = create(:user)
       blocked = create(:user)
       blocking = create(:user)
       block = create(:block, blocking_user: user, blocked_user: blocked, hide_me: :posts, hide_them: :posts)

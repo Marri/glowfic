@@ -1,8 +1,9 @@
 RSpec.describe Api::V1::SessionsController do
   describe "POST create" do
+    let(:password) { 'password' }
+    let(:user) { create(:user, password: password) }
+
     it "requires logout" do
-      password = 'password'
-      user = create(:user, password: password)
       api_login_as(user)
       post :create, params: { username: user.username, password: password }
       expect(response).to have_http_status(401)
@@ -32,7 +33,6 @@ RSpec.describe Api::V1::SessionsController do
     end
 
     it "disallows logins with old passwords when reset is pending" do
-      user = create(:user)
       create(:password_reset, user: user)
       expect(user.password_resets.active.unused).not_to be_empty
       post :create, params: { username: user.username }
@@ -41,17 +41,12 @@ RSpec.describe Api::V1::SessionsController do
     end
 
     it "requires a valid password" do
-      password = 'password'
-      user = create(:user, password: password)
       post :create, params: { username: user.username, password: password + "-not" }
       expect(response).to have_http_status(401)
       expect(response.json['errors'][0]['message']).to eq("You have entered an incorrect password.")
     end
 
     it "logs in successfully with salt_uuid" do
-      password = 'password'
-      user = create(:user, password: password)
-
       post :create, params: { username: user.username, password: password }
 
       expect(response).to have_http_status(200)
@@ -61,8 +56,6 @@ RSpec.describe Api::V1::SessionsController do
     end
 
     it "logs in successfully without salt_uuid and sets it" do
-      password = 'password'
-      user = create(:user)
       user.update_columns(salt_uuid: nil, crypted: user.send(:old_crypted_password, password)) # rubocop:disable Rails/SkipsModelValidations
       user.reload
       expect(user.salt_uuid).to be_nil

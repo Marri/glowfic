@@ -1,29 +1,28 @@
 RSpec.describe News do
+  let(:user) { create(:user) }
+  let!(:news) { create(:news, user: user) }
+
   describe "#mark_read" do
+    let(:new_news) { create(:news) }
+
     it "works for never reads" do
-      news = create(:news)
-      expect(NewsView.count).to eq(0)
-      news.mark_read(news.user)
-      expect(NewsView.count).to eq(1)
+      expect { news.mark_read(user) }.to change{NewsView.count}.from(0).to(1)
       expect(NewsView.last.news).to eq(news)
     end
 
     it "works for subsequent reads" do
-      news = create(:news)
-      news.mark_read(news.user)
+      news.mark_read(user)
       view = NewsView.last
       new_news = create(:news)
-      new_news.mark_read(news.user)
+      new_news.mark_read(user)
       expect(view.reload.news).to eq(new_news)
     end
 
     it "does nothing for historical reads" do
-      news = create(:news)
-      new_news = create(:news)
-      new_news.mark_read(news.user)
-      expect(NewsView.last.news).to eq(new_news)
-      news.mark_read(news.user)
-      expect(NewsView.last.news).to eq(new_news)
+      new_news.mark_read(user)
+      view = NewsView.last
+      expect(view.news).to eq(new_news)
+      expect { news.mark_read(user) }.to not_change{view.news_id}
     end
   end
 
@@ -33,16 +32,14 @@ RSpec.describe News do
     end
 
     it "returns correct number for partially read" do
-      news = create(:news)
-      news.mark_read(news.user)
+      news.mark_read(user)
       create_list(:news, 5)
-      expect(News.num_unread_for(news.user)).to eq(5)
+      expect(News.num_unread_for(user)).to eq(5)
     end
 
     it "returns correct number for unread" do
-      news = create(:news)
       create_list(:news, 5)
-      expect(News.num_unread_for(news.user)).to eq(6)
+      expect(News.num_unread_for(user)).to eq(6)
     end
   end
 end

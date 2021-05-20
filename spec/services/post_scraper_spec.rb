@@ -1,4 +1,6 @@
 RSpec.describe PostScraper do
+  let(:url) { 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat' }
+
   it "should add view to url" do
     scraper = PostScraper.new('http://wild-pegasus-appeared.dreamwidth.org/403.html')
     expect(scraper.url).to include('view=flat')
@@ -18,13 +20,11 @@ RSpec.describe PostScraper do
   end
 
   it "should not change url if site style is present" do
-    url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?view=flat&style=site'
     scraper = PostScraper.new(url)
     expect(scraper.url.length).to eq(url.length)
   end
 
   it "should scrape properly when nothing is created" do
-    url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat'
     stub_fixture(url, 'scrape_single_page')
     user = create(:user, username: "Marri")
     board = create(:board, creator: user)
@@ -46,7 +46,6 @@ RSpec.describe PostScraper do
   end
 
   it "should scrape multiple pages" do
-    url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat'
     url_page_2 = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat&page=2'
     stub_fixture(url, 'scrape_multi_page')
     stub_fixture(url_page_2, 'scrape_single_page')
@@ -69,35 +68,40 @@ RSpec.describe PostScraper do
     expect(Character.where(screenname: 'undercover_talent').first).not_to be_nil
   end
 
-  it "should detect all threaded pages" do
-    url = 'http://alicornutopia.dreamwidth.org/9596.html?thread=4077436&style=site#cmt4077436'
-    stub_fixture(url, 'scrape_threaded')
-    scraper = PostScraper.new(url, nil, nil, nil, true)
-    scraper.instance_variable_set('@html_doc', scraper.send(:doc_from_url, url))
-    expect(scraper.send(:page_links).size).to eq(2)
-  end
+  context "with threading" do
+    it "should detect all pages" do
+      url = 'http://alicornutopia.dreamwidth.org/9596.html?thread=4077436&style=site#cmt4077436'
+      stub_fixture(url, 'scrape_threaded')
+      scraper = setup_scraper(url)
+      expect(scraper.send(:page_links).size).to eq(2)
+    end
 
-  it "should detect all threaded pages even if there's a single broken-depth comment" do
-    url = 'https://alicornutopia.dreamwidth.org/22671.html?thread=14698127&style=site#cmt14698127'
-    stub_fixture(url, 'scrape_threaded_broken_depth')
-    scraper = PostScraper.new(url, nil, nil, nil, true)
-    scraper.instance_variable_set('@html_doc', scraper.send(:doc_from_url, url))
-    expect(scraper.send(:page_links)).to eq([
-      'https://alicornutopia.dreamwidth.org/22671.html?thread=14705039&style=site#cmt14705039',
-      'https://alicornutopia.dreamwidth.org/22671.html?thread=14711695&style=site#cmt14711695'
-    ])
-  end
+    it "should detect all pages even if there's a single broken-depth comment" do
+      url = 'https://alicornutopia.dreamwidth.org/22671.html?thread=14698127&style=site#cmt14698127'
+      stub_fixture(url, 'scrape_threaded_broken_depth')
+      scraper = setup_scraper(url)
+      expect(scraper.send(:page_links)).to eq([
+        'https://alicornutopia.dreamwidth.org/22671.html?thread=14705039&style=site#cmt14705039',
+        'https://alicornutopia.dreamwidth.org/22671.html?thread=14711695&style=site#cmt14711695'
+      ])
+    end
 
-  it "should detect all threaded pages even if there's a broken-depth comment at the 25-per-page boundary" do
-    url = 'https://alicornutopia.dreamwidth.org/22671.html?thread=14691983#cmt14691983'
-    stub_fixture(url, 'scrape_threaded_broken_boundary_depth')
-    scraper = PostScraper.new(url, nil, nil, nil, true)
-    scraper.instance_variable_set('@html_doc', scraper.send(:doc_from_url, url))
-    expect(scraper.send(:page_links)).to eq([
-      'https://alicornutopia.dreamwidth.org/22671.html?thread=14698383&style=site#cmt14698383',
-      'https://alicornutopia.dreamwidth.org/22671.html?thread=14698639&style=site#cmt14698639',
-      'https://alicornutopia.dreamwidth.org/22671.html?thread=14705551&style=site#cmt14705551'
-    ])
+    it "should detect all pages even if there's a broken-depth comment at the 25-per-page boundary" do
+      url = 'https://alicornutopia.dreamwidth.org/22671.html?thread=14691983#cmt14691983'
+      stub_fixture(url, 'scrape_threaded_broken_boundary_depth')
+      scraper = setup_scraper(url)
+      expect(scraper.send(:page_links)).to eq([
+        'https://alicornutopia.dreamwidth.org/22671.html?thread=14698383&style=site#cmt14698383',
+        'https://alicornutopia.dreamwidth.org/22671.html?thread=14698639&style=site#cmt14698639',
+        'https://alicornutopia.dreamwidth.org/22671.html?thread=14705551&style=site#cmt14705551'
+      ])
+    end
+
+    def setup_scraper(url)
+      scraper = PostScraper.new(url, nil, nil, nil, true)
+      scraper.instance_variable_set('@html_doc', scraper.send(:doc_from_url, url))
+      scraper
+    end
   end
 
   it "should raise an error when an unexpected character is found" do
@@ -191,101 +195,76 @@ RSpec.describe PostScraper do
     expect(Character.count).to eq(8)
   end
 
-  it "doesn't recreate characters and icons if they exist" do
-    url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat'
-    stub_fixture(url, 'scrape_no_replies')
+  context "with icons" do
+    let(:user) { create(:user, username: "Marri") }
+    let(:board) { create(:board, creator: user) }
+    let(:icon) { create(:icon, keyword: 'sad', url: 'http://v.dreamwidth.org/8517100/2343677', user: user) }
+    let(:url) { 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat' }
+    let(:scraper) { PostScraper.new(url, board.id) }
 
-    user = create(:user, username: "Marri")
-    board = create(:board, creator: user)
-    nita = create(:character, user: user, screenname: 'wild_pegasus_appeared', name: 'Juanita')
-    icon = create(:icon, keyword: 'sad', url: 'http://v.dreamwidth.org/8517100/2343677', user: user)
-    gallery = create(:gallery, user: user)
-    gallery.icons << icon
-    nita.galleries << gallery
+    before(:each) do
+      gallery = create(:gallery, user: user, icons: [icon])
+      create(:character, user: user, screenname: 'wild_pegasus_appeared', name: 'Juanita', galleries: [gallery])
+      stub_fixture(url, 'scrape_no_replies')
+    end
 
-    expect(User.count).to eq(1)
-    expect(Icon.count).to eq(1)
-    expect(Character.count).to eq(1)
+    it "doesn't recreate characters and icons if they exist" do
+      expect(scraper).not_to receive(:print).with("User ID or username for wild_pegasus_appeared? ")
+      expect(scraper.send(:logger)).to receive(:info).with("Importing thread 'linear b'") # just to quiet it
 
-    scraper = PostScraper.new(url, board.id)
-    expect(scraper).not_to receive(:print).with("User ID or username for wild_pegasus_appeared? ")
-    expect(scraper.send(:logger)).to receive(:info).with("Importing thread 'linear b'") # just to quiet it
+      expect { scraper.scrape! }.to not_change{User.count}.and not_change{Icon.count}.and not_change{Character.count}
+    end
 
-    scraper.scrape!
-    expect(User.count).to eq(1)
-    expect(Icon.count).to eq(1)
-    expect(Character.count).to eq(1)
+    it "doesn't recreate icons if they already exist for that character with new urls" do
+      icon.update!(url: 'http://glowfic.com/uploaded/icon.png')
+
+      expect(scraper).not_to receive(:print).with("User ID or username for wild_pegasus_appeared? ")
+      expect(scraper.send(:logger)).to receive(:info).with("Importing thread 'linear b'") # just to quiet it
+
+      expect { scraper.scrape! }.to not_change{User.count}.and not_change{Icon.count}.and not_change{Character.count}
+    end
   end
 
-  it "doesn't recreate icons if they already exist for that character with new urls" do
-    url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat'
-    stub_fixture(url, 'scrape_no_replies')
+  describe "#set_from_icon" do
+    let(:user) { create(:user) }
+    let(:gallery) { create(:gallery, user: user) }
+    let(:char) { create(:character, user: user, galleries: [gallery]) }
+    let(:tag) { build(:reply, user: user, character: char) }
+    let(:scraper) { PostScraper.new('') }
 
-    user = create(:user, username: "Marri")
-    board = create(:board, creator: user)
-    nita = create(:character, user: user, screenname: 'wild_pegasus_appeared', name: 'Juanita')
-    icon = create(:icon, keyword: 'sad', url: 'http://glowfic.com/uploaded/icon.png', user: user)
-    gallery = create(:gallery, user: user)
-    gallery.icons << icon
-    nita.galleries << gallery
+    it "handles icons with descriptions" do
+      icon = create(:icon, user: user, keyword: 'keyword blah')
+      gallery.icons << icon
+      expect(tag.icon_id).to be_nil
 
-    expect(User.count).to eq(1)
-    expect(Icon.count).to eq(1)
-    expect(Character.count).to eq(1)
+      scraper.send(:set_from_icon, tag, 'http://irrelevanturl.com', 'keyword blah (Accessbility description.)')
+      expect(Icon.count).to eq(1)
+      expect(tag.icon_id).to eq(icon.id)
+    end
 
-    scraper = PostScraper.new(url, board.id)
-    expect(scraper).not_to receive(:print).with("User ID or username for wild_pegasus_appeared? ")
-    expect(scraper.send(:logger)).to receive(:info).with("Importing thread 'linear b'") # just to quiet it
+    context "with kappa icons" do
+      let(:user) { create(:user, id: 3) }
 
-    scraper.scrape!
-    expect(User.count).to eq(1)
-    expect(Icon.count).to eq(1)
-    expect(Character.count).to eq(1)
-  end
+      it "works" do
+        icon = create(:icon, user: user, keyword: '⑮ mountains')
+        gallery.icons << icon
+        expect(tag.icon_id).to be_nil
 
-  it "handles Kappa icons" do
-    kappa = create(:user, id: 3)
-    char = create(:character, user: kappa)
-    gallery = create(:gallery, user: kappa)
-    char.galleries << gallery
-    icon = create(:icon, user: kappa, keyword: '⑮ mountains')
-    gallery.icons << icon
-    tag = build(:reply, user: kappa, character: char)
-    expect(tag.icon_id).to be_nil
-    scraper = PostScraper.new('')
-    scraper.send(:set_from_icon, tag, 'http://irrelevanturl.com', 'f.1 mountains')
-    expect(Icon.count).to eq(1)
-    expect(tag.icon_id).to eq(icon.id)
-  end
+        scraper.send(:set_from_icon, tag, 'http://irrelevanturl.com', 'f.1 mountains')
+        expect(Icon.count).to eq(1)
+        expect(tag.icon_id).to eq(icon.id)
+      end
 
-  it "handles icons with descriptions" do
-    user = create(:user)
-    char = create(:character, user: user)
-    gallery = create(:gallery, user: user)
-    char.galleries << gallery
-    icon = create(:icon, user: user, keyword: 'keyword blah')
-    gallery.icons << icon
-    tag = build(:reply, user: user, character: char)
-    expect(tag.icon_id).to be_nil
-    scraper = PostScraper.new('')
-    scraper.send(:set_from_icon, tag, 'http://irrelevanturl.com', 'keyword blah (Accessbility description.)')
-    expect(Icon.count).to eq(1)
-    expect(tag.icon_id).to eq(icon.id)
-  end
+      it "works with descriptions" do
+        icon = create(:icon, user: user, keyword: '⑮ keyword blah')
+        gallery.icons << icon
+        expect(tag.icon_id).to be_nil
 
-  it "handles kappa icons with descriptions" do
-    kappa = create(:user, id: 3)
-    char = create(:character, user: kappa)
-    gallery = create(:gallery, user: kappa)
-    char.galleries << gallery
-    icon = create(:icon, user: kappa, keyword: '⑮ keyword blah')
-    gallery.icons << icon
-    tag = build(:reply, user: kappa, character: char)
-    expect(tag.icon_id).to be_nil
-    scraper = PostScraper.new('')
-    scraper.send(:set_from_icon, tag, 'http://irrelevanturl.com', 'f.1 keyword blah (Accessbility description.)')
-    expect(Icon.count).to eq(1)
-    expect(tag.icon_id).to eq(icon.id)
+        scraper.send(:set_from_icon, tag, 'http://irrelevanturl.com', 'f.1 keyword blah (Accessbility description.)')
+        expect(Icon.count).to eq(1)
+        expect(tag.icon_id).to eq(icon.id)
+      end
+    end
   end
 
   it "can fail a download" do

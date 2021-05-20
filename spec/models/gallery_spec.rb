@@ -1,7 +1,8 @@
 RSpec.describe Gallery do
+  let(:user) { create(:user) }
+  let(:icon) { create(:icon, user: user) }
+
   it "adds icons if it saves successfully" do
-    user = create(:user)
-    icon = create(:icon, user: user)
     expect(icon.has_gallery).to eq(false)
     gallery = build(:gallery, user: user)
     gallery.icon_ids = [icon.id]
@@ -11,27 +12,25 @@ RSpec.describe Gallery do
   end
 
   it "only adds icons if it saves successfully" do
-    user = create(:user)
-    icon = create(:icon, user: user)
     expect(icon.has_gallery).to eq(false)
-    gallery = build(:gallery, user: user, name: nil)
-    gallery.icon_ids = [icon.id]
+    gallery = build(:gallery, user: user, name: nil, icons: [icon])
     expect(gallery).not_to be_valid
     expect(gallery.save).to eq(false)
     expect(icon.reload.has_gallery).to eq(false)
   end
 
   it "returns icons in keyword order" do
-    gallery = create(:gallery)
-    gallery.icons << create(:icon, keyword: 'zzz', user: gallery.user)
-    gallery.icons << create(:icon, keyword: 'yyy', user: gallery.user)
-    gallery.icons << create(:icon, keyword: 'xxx', user: gallery.user)
+    gallery = create(:gallery, user: user)
+    gallery.icons << create(:icon, keyword: 'zzz', user: user)
+    gallery.icons << create(:icon, keyword: 'yyy', user: user)
+    gallery.icons << create(:icon, keyword: 'xxx', user: user)
     expect(gallery.icons.pluck(:keyword)).to eq(['xxx', 'yyy', 'zzz'])
   end
 
   describe "#gallery_groups_data" do
+    let(:group) { create(:gallery_group) }
+
     it "works without with_gallery_groups scope" do
-      group = create(:gallery_group)
       gallery = create(:gallery, gallery_groups: [group])
       galleries = Gallery.where(id: gallery.id).select(:id)
       expect(galleries).to eq([gallery])
@@ -40,19 +39,16 @@ RSpec.describe Gallery do
 
     context "with scope" do
       it "works for galleries without gallery groups" do
-        gallery1 = create(:gallery)
-        gallery2 = create(:gallery)
-        galleries = Gallery.where(id: [gallery1.id, gallery2.id]).select(:id).with_gallery_groups.ordered_by_id
-        expect(galleries).to eq([gallery1, gallery2])
+        list = create_list(:gallery, 2)
+        galleries = Gallery.where(id: list.map(&:id)).select(:id).with_gallery_groups.ordered_by_id
+        expect(galleries).to eq(list)
         expect(galleries.map(&:gallery_groups_data)).to eq([[], []])
       end
 
       it "works for galleries with same gallery group" do
-        group = create(:gallery_group)
-        gallery1 = create(:gallery, gallery_groups: [group])
-        gallery2 = create(:gallery, gallery_groups: [group])
-        galleries = Gallery.where(id: [gallery1.id, gallery2.id]).select(:id).with_gallery_groups.ordered_by_id
-        expect(galleries).to eq([gallery1, gallery2])
+        list = create_list(:gallery, 2, gallery_groups: [group])
+        galleries = Gallery.where(id: list.map(&:id)).select(:id).with_gallery_groups.ordered_by_id
+        expect(galleries).to eq(list)
         groups = galleries.map(&:gallery_groups_data)
         expect(groups.first.map(&:id)).to eq([group.id])
         expect(groups.first.map(&:name)).to eq([group.name])
