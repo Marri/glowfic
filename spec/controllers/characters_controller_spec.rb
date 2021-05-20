@@ -979,6 +979,7 @@ RSpec.describe CharactersController do
           expect(audit).not_to be(nil)
           expect(audit.user).to eq(user)
         end
+      end
 
       it "succeeds with no other character" do
         perform_enqueued_jobs(only: UpdateModelJob) do
