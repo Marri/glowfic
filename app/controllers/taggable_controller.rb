@@ -12,6 +12,7 @@ class TaggableController < ApplicationController
 
   def show
     @page_title = @tag.name.to_s
+    @view = params[:view]
     @meta_og = og_data
 
     if @view == 'posts'
