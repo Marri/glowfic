@@ -182,8 +182,7 @@ RSpec.describe BlocksController, type: :controller do
     end
 
     it "requires successful validation" do
-      block = create(:block)
-      login_as(block.blocking_user)
+      login_as(user)
       put :update, params: { id: block.id, block: { block_interactions: 0 } }
       expect(flash[:error][:message]).to eq("Block could not be saved.")
       expect(flash[:error][:array]).to eq(["Block must choose at least one action to prevent"])

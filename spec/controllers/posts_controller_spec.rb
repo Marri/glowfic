@@ -36,59 +36,60 @@ RSpec.describe PostsController do
       expect(assigns(assign_variable)).to match_array(posts)
     end
 
-    it "does not show posts with blocked or blocking authors" do
-      post1 = create(:post, authors_locked: true)
-      post2 = create(:post, authors_locked: true)
-      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
-      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
-      get controller_action, params: params
-      expect(response.status).to eq(200)
-      expect(assigns(assign_variable)).to match_array(posts)
-    end
+    context "with blocking" do
+      let(:post1) { create(:post, authors_locked: true) }
+      let(:post2) { create(:post, authors_locked: true) }
 
-    it "shows posts with a blocked (but not blocking) author with show_blocked" do
-      post1 = create(:post, authors_locked: true)
-      post2 = create(:post, authors_locked: true)
-      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
-      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
-      params[:show_blocked] = true
-      posts << post1
-      get controller_action, params: params
-      expect(response.status).to eq(200)
-      expect(assigns(assign_variable)).to match_array(posts)
-    end
+      it "does not show posts with blocked or blocking authors" do
+        create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+        create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+        get controller_action, params: params
+        expect(response.status).to eq(200)
+        expect(assigns(assign_variable)).to match_array(posts)
+      end
 
-    it "shows your own posts with blocked or but not blocking authors" do
-      post1 = create(:post, authors_locked: true, author_ids: [user.id])
-      create(:reply, post: post1, user: user)
-      post2 = create(:post, authors_locked: true, author_ids: [user.id])
-      create(:reply, post: post2, user: user)
-      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
-      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
-      posts << post2
-      get controller_action, params: params
-      expect(response.status).to eq(200)
-      expect(assigns(assign_variable)).to match_array(posts)
-    end
+      it "shows posts with a blocked (but not blocking) author with show_blocked" do
+        create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+        create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+        params[:show_blocked] = true
+        posts << post1
+        get controller_action, params: params
+        expect(response.status).to eq(200)
+        expect(assigns(assign_variable)).to match_array(posts)
+      end
 
-    it "shows unlocked posts with incomplete blocking" do
-      post1 = create(:post)
-      post2 = create(:post)
-      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
-      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
-      get controller_action, params: params
-      expect(response.status).to eq(200)
-      expect(assigns(assign_variable)).to match_array(posts + [post1, post2])
-    end
+      it "shows your own posts with blocked or but not blocking authors" do
+        post1 = create(:post, authors_locked: true, author_ids: [user.id])
+        create(:reply, post: post1, user: user)
+        post2 = create(:post, authors_locked: true, author_ids: [user.id])
+        create(:reply, post: post2, user: user)
+        create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+        create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+        posts << post2
+        get controller_action, params: params
+        expect(response.status).to eq(200)
+        expect(assigns(assign_variable)).to match_array(posts)
+      end
 
-    it "does not show unlocked posts with full blocking" do
-      post1 = create(:post)
-      post2 = create(:post)
-      create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :all)
-      create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :all)
-      get controller_action, params: params
-      expect(response.status).to eq(200)
-      expect(assigns(assign_variable)).to match_array(posts)
+      it "shows unlocked posts with incomplete blocking" do
+        post1 = create(:post)
+        post2 = create(:post)
+        create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :posts)
+        create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :posts)
+        get controller_action, params: params
+        expect(response.status).to eq(200)
+        expect(assigns(assign_variable)).to match_array(posts + [post1, post2])
+      end
+
+      it "does not show unlocked posts with full blocking" do
+        post1 = create(:post)
+        post2 = create(:post)
+        create(:block, blocking_user: user, blocked_user: post1.user, hide_them: :all)
+        create(:block, blocking_user: post2.user, blocked_user: user, hide_me: :all)
+        get controller_action, params: params
+        expect(response.status).to eq(200)
+        expect(assigns(assign_variable)).to match_array(posts)
+      end
     end
   end
 
@@ -380,6 +381,7 @@ RSpec.describe PostsController do
       include ActiveJob::TestHelper
 
       let(:user) { create(:importing_user) }
+      let(:url) { 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat' }
 
       it "requires valid user" do
         login
@@ -398,7 +400,6 @@ RSpec.describe PostsController do
       it "requires extant usernames" do
         clear_enqueued_jobs
         login_as(user)
-        url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat'
         stub_fixture(url, 'scrape_no_replies')
         post :create, params: { button_import: true, dreamwidth_url: url }
         expect(response).to render_template(:new)
@@ -411,7 +412,6 @@ RSpec.describe PostsController do
         clear_enqueued_jobs
         login_as(user)
         create(:character, user: user, screenname: 'wild-pegasus-appeared')
-        url = 'http://wild-pegasus-appeared.dreamwidth.org/403.html?style=site&view=flat'
         stub_fixture(url, 'scrape_no_replies')
         post :create, params: { button_import: true, dreamwidth_url: url }
         expect(response).to redirect_to(posts_url)

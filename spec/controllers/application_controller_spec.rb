@@ -156,6 +156,7 @@ RSpec.describe ApplicationController do
 
     context "when logged in" do
       let(:user) { create(:user) }
+      let(:other_user) { create(:user) }
 
       before(:each) { login_as(user) }
 
@@ -219,9 +220,6 @@ RSpec.describe ApplicationController do
       end
 
       it "can calculate unread count" do
-        user = create(:user)
-        other_user = create(:user)
-
         unread_post = create(:post, num_replies: 3)
         read_post = create(:post, num_replies: 2)
         one_unread = create(:post)

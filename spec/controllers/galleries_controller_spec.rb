@@ -56,6 +56,7 @@ RSpec.describe GalleriesController do
   describe "POST create" do
     let(:user) { create(:user) }
     let(:icon) { create(:icon, user: user) }
+    let(:group) { create(:gallery_group) }
 
     it "requires login" do
       post :create
@@ -66,7 +67,6 @@ RSpec.describe GalleriesController do
     context "with views" do
       render_views
       it "keeps variables on failed save" do
-        group = create(:gallery_group)
         login_as(user)
         post :create, params: { gallery: {gallery_group_ids: [group.id], icon_ids: [icon.id]} }
         expect(response.status).to eq(200)
@@ -91,7 +91,6 @@ RSpec.describe GalleriesController do
 
     it "succeeds" do
       expect(Gallery.count).to be_zero
-      group = create(:gallery_group)
       login_as(user)
       post :create, params: { gallery: {name: 'Test Gallery', icon_ids: [icon.id], gallery_group_ids: [group.id]} }
       expect(Gallery.count).to eq(1)

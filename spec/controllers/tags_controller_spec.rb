@@ -189,17 +189,18 @@ RSpec.describe TagsController do
       end
 
       context "gallery group" do
+        let(:group) { create(:gallery_group) }
+        let(:character) { create(:character, gallery_groups: [group]) }
+
         it "succeeds with valid character tag" do
-          group = create(:gallery_group)
-          character = create(:character, gallery_groups: [group])
+          character
           get :show, params: { id: group.id, view: 'characters' }
           expect(response.status).to eq(200)
           expect(assigns(:characters)).to match_array([character])
         end
 
         it "succeeds for logged in users with valid character tag" do
-          group = create(:gallery_group)
-          character = create(:character, gallery_groups: [group])
+          character
           login
           get :show, params: { id: group.id, view: 'characters' }
           expect(response.status).to eq(200)
@@ -207,7 +208,6 @@ RSpec.describe TagsController do
         end
 
         it "orders galleries correctly" do
-          group = create(:gallery_group)
           gallery2 = create(:gallery, gallery_groups: [group], name: "b")
           gallery3 = create(:gallery, gallery_groups: [group], name: "c")
           gallery1 = create(:gallery, gallery_groups: [group], name: "a")
@@ -218,17 +218,18 @@ RSpec.describe TagsController do
       end
 
       context "setting" do
+        let(:setting) { create(:setting) }
+        let(:character) { create(:character, settings: [setting]) }
+
         it "succeeds with valid character tag" do
-          setting = create(:setting)
-          character = create(:character, settings: [setting])
+          character
           get :show, params: { id: setting.id, view: 'characters' }
           expect(response.status).to eq(200)
           expect(assigns(:characters)).to match_array([character])
         end
 
         it "succeeds for logged in users with valid character tag" do
-          setting = create(:setting)
-          character = create(:character, settings: [setting])
+          character
           login
           get :show, params: { id: setting.id, view: 'characters' }
           expect(response.status).to eq(200)
@@ -242,7 +243,6 @@ RSpec.describe TagsController do
         end
 
         it "succeeds for settings without characters" do
-          setting = create(:setting)
           get :show, params: { id: setting.id, view: 'characters' }
           expect(response.status).to eq(200)
           expect(assigns(:characters)).to be_empty
@@ -252,6 +252,8 @@ RSpec.describe TagsController do
   end
 
   describe "GET edit" do
+    let(:tag) { create(:label) }
+
     it "requires login" do
       get :edit, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -274,7 +276,6 @@ RSpec.describe TagsController do
     end
 
     it "allows admin to edit the tag" do
-      tag = create(:label)
       login_as(create(:admin_user))
       get :edit, params: { id: tag.id }
       expect(response.status).to eq(200)
@@ -282,7 +283,6 @@ RSpec.describe TagsController do
 
     it "allows mod to edit the tag" do
       stub_const("Permissible::MOD_PERMS", [:edit_tags])
-      tag = create(:label)
       login_as(create(:mod_user))
       get :edit, params: { id: tag.id }
       expect(response.status).to eq(200)
