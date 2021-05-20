@@ -1,12 +1,5 @@
 # frozen_string_literal: true
-class SettingsController < ApplicationController
-  include Taggable
-
-  before_action :login_required, except: [:index, :show]
-  before_action :find_model, except: :index
-  before_action :require_edit_permission, only: [:edit, :update]
-  before_action :require_delete_permission, only: [:destroy]
-
+class SettingsController < TaggableController
   def index
     @settings = Setting::Searcher.new.search(name: params[:name], page: page)
     @post_counts = Post.visible_to(current_user).joins(setting_posts: :setting).where(setting_posts: {setting_id: @settings.map(&:id)})
@@ -14,23 +7,8 @@ class SettingsController < ApplicationController
     @page_title = 'Settings'
   end
 
-  def show
-    @page_title = @setting.name.to_s
-    @view = params[:view]
-    @meta_og = og_data
-    @tag = @setting
-
-    if @view == 'posts'
-      @posts = posts_from_relation(@setting.posts.ordered)
-    elsif @view == 'characters'
-      @characters = @setting.characters.includes(:user, :template).ordered.paginate(page: page)
-    elsif @view != 'settings'
-      @view = 'info'
-    end
-  end
-
   def edit
-    @page_title = "Edit Setting: #{@setting.name}"
+    super
     build_editor
   end
 
@@ -59,10 +37,6 @@ class SettingsController < ApplicationController
   def destroy
     if @setting.destroy
       flash[:success] = "Setting deleted."
-
-      url_params = {}
-      url_params[:page] = page if params[:page].present?
-      url_params[:view] = params[:view] if params[:view].present?
       redirect_to settings_path(url_params)
     else
       flash[:error] = {
@@ -76,53 +50,14 @@ class SettingsController < ApplicationController
   private
 
   def find_model
-    unless (@setting = Setting.find_by_id(params[:id]))
+    unless (@setting = Setting.find_by(id: params[:id]))
       flash[:error] = "Setting could not be found."
       redirect_to settings_path
     end
-  end
-
-  def require_edit_permission
-    unless @setting.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this setting."
-      redirect_to setting_path(@setting)
-    end
-  end
-
-  def require_delete_permission
-    unless @setting.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this setting."
-      redirect_to setting_path(@setting)
-    end
+    @tag = @setting
   end
 
   def build_editor
-    return unless @setting.is_a?(Setting)
     use_javascript('tags/edit')
-  end
-
-  def og_data
-    desc = []
-    desc << generate_short(@setting.description) if @setting.description.present?
-    stats = []
-    post_count = @setting.posts.privacy_public.count
-    stats << "#{post_count} " + "post".pluralize(post_count) if post_count > 0
-    character_count = @setting.characters.count
-    stats << "#{character_count} " + "character".pluralize(character_count) if character_count > 0
-    desc << stats.join(', ')
-    title = [@setting.name]
-    title << @setting.user.username if @setting.owned? && !@setting.user.deleted?
-    title << 'Setting'
-    {
-      url: setting_url(@setting),
-      title: title.join(' · '),
-      description: desc.join("\n"),
-    }
-  end
-
-  def permitted_params
-    permitted = [:type, :description, :owned]
-    permitted.insert(0, :name, :user_id) if current_user.admin? || @setting.user == current_user
-    params.fetch(:setting, {}).permit(permitted)
   end
 end

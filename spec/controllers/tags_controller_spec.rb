@@ -284,7 +284,7 @@ RSpec.describe TagsController do
     it "handles destroy failure" do
       tag = create(:label)
       login_as(tag.user)
-      expect_any_instance_of(Tag).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'fake error')
+      expect_any_instance_of(Tag).to receive(:destroy).and_return(false)
       delete :destroy, params: { id: tag.id }
       expect(response).to redirect_to(tag_url(tag))
       expect(flash[:error]).to eq({message: "Tag could not be deleted.", array: []})
