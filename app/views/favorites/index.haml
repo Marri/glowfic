@@ -33,4 +33,11 @@
           %td.centered.no-posts.odd{colspan: 2} — No favorites yet —
 
 - else
-  = render 'posts/list', posts: @posts, show_unread_count: true
+  = form_tag mark_posts_path, :method => :post do
+    = render 'posts/list', posts: @posts, show_unread_count: true, check_box_name: 'marked_ids[]'
+    - unless @posts.empty?
+      %table
+        %tr
+          %td.right-align.padding-5{colspan: 8, class: cycle('even', 'odd')}
+            = submit_tag "Mark Read", class: 'button'
+            = submit_tag "Mark Unread", class: 'button'

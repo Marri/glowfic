@@ -21,6 +21,7 @@
         %td.right-align.padding-5{colspan: 8, class: cycle('even', 'odd')}
           = submit_tag "Hide from Unread", class: 'button'
           = submit_tag "Mark Read", class: 'button'
+          = submit_tag "Mark Unread", class: 'button'
 %br
 
 = form_tag mark_continuities_path, :method => :post do
