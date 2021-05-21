@@ -173,4 +173,44 @@ RSpec.describe Reply do
       expect(post.replies.ordered).to eq([first_reply, third_reply, second_reply])
     end
   end
+
+  describe "callbacks" do
+    include ActiveJob::TestHelper
+
+    let(:author) { create(:user) }
+    let(:post) { create(:post) }
+    let(:now) { Time.zone.now }
+
+    after(:each) { clear_enqueued_jobs }
+
+    it "enqueues a job on first reply by author on an open post" do
+      create(:reply, post: post, user: author)
+      expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, author.id).on_queue('notifier')
+    end
+
+    it "enqueues a job on first reply by author on a closed post" do
+      post = create(:post, authors_locked: true, unjoined_authors: [author])
+      create(:reply, post: post, user: author)
+      expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, author.id).on_queue('notifier')
+    end
+
+    it "does not enqueue a job if the post is by author" do
+      post = Timecop.freeze(now) { create(:post, user: author) }
+      Timecop.freeze(now + 1.second) do
+        expect { create(:reply, post: post, user: author) }.not_to enqueue_job(NotifyFollowersOfNewPostJob)
+      end
+    end
+
+    it "does not enqueue a job if there is a previous reply by author" do
+      Timecop.freeze(now) { create(:reply, post: post, user: author) }
+      Timecop.freeze(now + 1.second) do
+        expect { create(:reply, post: post, user: author) }.not_to enqueue_job(NotifyFollowersOfNewPostJob)
+      end
+    end
+
+    it "does not enqueue jobs for imports" do
+      post
+      expect { create(:reply, post: post, user: author, is_import: true) }.not_to enqueue_job(NotifyFollowersOfNewPostJob)
+    end
+  end
 end
