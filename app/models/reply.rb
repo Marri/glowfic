@@ -12,8 +12,8 @@ class Reply < ApplicationRecord
   validate :author_can_write_in_post, on: :create
   audited associated_with: :post, except: :reply_order, update_with_comment_only: false
 
-  after_create :notify_other_authors, :destroy_draft, :update_active_char, :set_last_reply, :update_post
-  after_create_commit :update_post_authors # this can generate notification jobs
+  after_create :notify_other_authors, :destroy_draft, :update_active_char, :set_last_reply, :update_post, :update_post_authors
+  after_create_commit :notify_of_new_authors
   after_update :update_post
   after_destroy :set_previous_reply_to_last, :remove_post_author
   after_commit :update_flat_post
@@ -122,8 +122,11 @@ class Reply < ApplicationRecord
     else
       post.post_authors.create!(user_id: user_id, joined: true, joined_at: created_at)
     end
+  end
 
+  def notify_of_new_authors
     return if is_import
+    return unless post.author_for(user).joined_at.utc.to_i == created_at.utc.to_i
     post.user_joined(user)
   end
 
