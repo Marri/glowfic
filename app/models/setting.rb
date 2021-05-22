@@ -72,6 +72,10 @@ class Setting < ApplicationRecord
     characters.count
   end
 
+  def type
+    'setting'
+  end
+
   def merge_with(other_setting)
     transaction do
       # rubocop:disable Rails/SkipsModelValidations
