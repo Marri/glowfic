@@ -21,8 +21,8 @@ class Icon < ApplicationRecord
 
   before_validation :use_icon_host
   before_save :use_https
-  after_update_commit :delete_from_s3
-  after_destroy_commit :clear_icon_ids, :delete_from_s3
+  after_commit :delete_from_s3, on: [:update, :destroy]
+  after_destroy_commit :clear_icon_ids
 
   scope :ordered, -> { order(Arel.sql('lower(keyword) asc'), created_at: :asc, id: :asc) }
 
