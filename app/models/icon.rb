@@ -54,8 +54,13 @@ class Icon < ApplicationRecord
 
   def delete_from_s3
     return unless destroyed? || s3_key_previously_changed?
-    return unless s3_key_previous_change[0].present?
-    DeleteIconFromS3Job.perform_later(s3_key_previous_change[0])
+    if destroyed?
+      return unless s3_key.present?
+      DeleteIconFromS3Job.perform_later(s3_key)
+    else
+      return unless s3_key_previous_change[0].present?
+      DeleteIconFromS3Job.perform_later(s3_key_previous_change[0])
+    end
   end
 
   def uploaded_url_yours
