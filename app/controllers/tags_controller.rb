@@ -43,9 +43,6 @@ class TagsController < TaggableController
   private
 
   def find_model
-    unless (@tag = Tag.find_by(id: params[:id]))
-      flash[:error] = "Tag could not be found."
-      redirect_to tags_path
-    end
+    super(Tag, tags_path)
   end
 end

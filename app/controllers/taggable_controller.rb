@@ -86,6 +86,13 @@ class TaggableController < ApplicationController
     end
   end
 
+  def find_model(klass, path)
+    unless (@tag = klass.find_by(id: params[:id]))
+      flash[:error] = "#{klass.model_name.to_s.titleize} could not be found."
+      redirect_to path
+    end
+  end
+
   def tag_or_setting
     @tag.is_a?(Setting) ? 'setting' : 'tag'
   end

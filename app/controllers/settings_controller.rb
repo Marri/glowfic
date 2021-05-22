@@ -50,11 +50,8 @@ class SettingsController < TaggableController
   private
 
   def find_model
-    unless (@setting = Setting.find_by(id: params[:id]))
-      flash[:error] = "Setting could not be found."
-      redirect_to settings_path
-    end
-    @tag = @setting
+    super(Setting, settings_path)
+    @setting = @tag
   end
 
   def build_editor
