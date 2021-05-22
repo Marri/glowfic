@@ -10,7 +10,7 @@ class Message < ApplicationRecord
 
   before_validation :set_thread_id, :remove_deleted_recipient
   before_create :check_recipient
-  after_create :notify_recipient
+  after_create_commit :notify_recipient
 
   scope :ordered_by_id, -> { order(id: :asc) }
   scope :ordered_by_thread, -> { order(thread_id: :asc, id: :desc) }

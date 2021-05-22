@@ -21,8 +21,8 @@ class Icon < ApplicationRecord
 
   before_validation :use_icon_host
   before_save :use_https
-  before_update :delete_from_s3
-  after_destroy :clear_icon_ids, :delete_from_s3
+  after_commit :delete_from_s3, on: [:update, :destroy]
+  after_destroy_commit :clear_icon_ids
 
   scope :ordered, -> { order(Arel.sql('lower(keyword) asc'), created_at: :asc, id: :asc) }
 
@@ -53,9 +53,10 @@ class Icon < ApplicationRecord
   end
 
   def delete_from_s3
-    return unless destroyed? || s3_key_changed?
-    return unless s3_key_was.present?
-    DeleteIconFromS3Job.perform_later(s3_key_was)
+    return unless destroyed? || s3_key_previously_changed?
+    key = destroyed? ? s3_key : s3_key_previous_change[0]
+    return unless key.present?
+    DeleteIconFromS3Job.perform_later(key)
   end
 
   def uploaded_url_yours

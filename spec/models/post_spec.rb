@@ -1151,9 +1151,9 @@ RSpec.describe Post do
 
   context "callbacks" do
     include ActiveJob::TestHelper
+    before(:each) { clear_enqueued_jobs }
 
     it "should enqueue a message after creation" do
-      clear_enqueued_jobs
       author = create(:user)
       notified = create(:user)
       create(:favorite, user: notified, favorite: author)
@@ -1162,28 +1162,28 @@ RSpec.describe Post do
     end
 
     it "should only enqueue a message on authors' first join" do
-      clear_enqueued_jobs
+      now = Time.zone.now
       author = create(:user)
 
       # first post triggers job
-      post = create(:post, user: author)
+      post = Timecop.freeze(now) { create(:post, user: author) }
       expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, post.user_id).on_queue('notifier')
 
       # original author posting again does not trigger job
       expect {
-        create(:reply, post: post, user: author)
+        Timecop.freeze(now + 1.second) { create(:reply, post: post, user: author) }
       }.not_to enqueue_job(NotifyFollowersOfNewPostJob)
 
       # new author posting triggers job
       new_author = create(:user)
       expect {
-        create(:reply, post: post, user: new_author)
+        Timecop.freeze(now + 2.seconds) { create(:reply, post: post, user: new_author) }
       }.to enqueue_job(NotifyFollowersOfNewPostJob)
 
       # further posts don't trigger
       expect {
-        create(:reply, post: post, user: author)
-        create(:reply, post: post, user: new_author)
+        Timecop.freeze(now + 3.seconds) { create(:reply, post: post, user: author) }
+        Timecop.freeze(now + 4.seconds) { create(:reply, post: post, user: new_author) }
       }.not_to enqueue_job(NotifyFollowersOfNewPostJob)
     end
   end
