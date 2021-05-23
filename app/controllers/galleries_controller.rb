@@ -4,21 +4,12 @@ class GalleriesController < UploadingController
 
   before_action :login_required, except: [:index, :show, :search]
   before_action :find_model, only: [:destroy, :edit, :update] # assumes login_required
+  before_action :find_user, only: [:index]
   before_action :setup_new_icons, only: [:add, :icon]
   before_action :set_s3_url, only: [:edit, :add, :icon]
   before_action :editor_setup, only: [:new, :edit]
 
   def index
-    if params[:user_id].present?
-      unless (@user = User.active.find_by_id(params[:user_id]))
-        flash[:error] = 'User could not be found.'
-        redirect_to root_path and return
-      end
-    else
-      return if login_required
-      @user = current_user
-    end
-
     @page_title = if @user.id == current_user.try(:id)
       "Your Galleries"
     else
@@ -63,15 +54,7 @@ class GalleriesController < UploadingController
 
   def show
     if params[:id].to_s == '0' # avoids casting nils to 0
-      if params[:user_id].present?
-        unless (@user = User.active.find_by_id(params[:user_id]))
-          flash[:error] = 'User could not be found.'
-          redirect_to root_path and return
-        end
-      else
-        return if login_required
-        @user = current_user
-      end
+      return unless find_user
       @page_title = 'Galleryless Icons'
     else
       @gallery = Gallery.find_by_id(params[:id])
@@ -224,6 +207,19 @@ class GalleriesController < UploadingController
       flash[:error] = "That is not your gallery."
       redirect_to user_galleries_path(current_user) and return
     end
+  end
+
+  def find_user
+    if params[:user_id].present?
+      unless (@user = User.active.find_by_id(params[:user_id]))
+        flash[:error] = 'User could not be found.'
+        redirect_to root_path and return false
+      end
+    else
+      return false if login_required
+      @user = current_user
+    end
+    true
   end
 
   def setup_new_icons
