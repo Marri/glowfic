@@ -1,16 +1,24 @@
 extends: stylelint-config-recommended
 plugins:
+- stylelint-declaration-strict-value
+- stylelint-group-selectors
 - stylelint-order
 - stylelint-scss
 
 rules:
-  at-rule-empty-line-before:
-  - always
-  - except:
-    - blockless-after-same-name-blockless
-    - first-nested
-    ignore:
-    - after-comment
+  no-descending-specificity: null
+  at-rule-no-unknown: null
+  scss/at-rule-no-unknown: true
+  plugin/stylelint-group-selectors: true
+
+  scale-unlimited/declaration-strict-value:
+  - - "/color$/"
+  - ignoreValues:
+    - inherit
+    - transparent
+    - unset
+
+  at-rule-empty-line-before: null
   at-rule-name-case: lower
   at-rule-name-space-after: always-single-line
   at-rule-semicolon-newline-after: always
@@ -21,14 +29,9 @@ rules:
   block-opening-brace-newline-after: always-multi-line
   block-opening-brace-space-after: always-single-line
   block-opening-brace-space-before: always
-  color-hex-case: lower
-  color-hex-length: short
-  comment-empty-line-before:
-  - always
-  - except:
-    - first-nested
-    ignore:
-    - stylelint-commands
+  color-hex-case: upper
+  color-hex-length: long
+  comment-empty-line-before: null
   comment-whitespace-inside: always
   custom-property-empty-line-before:
   - always
@@ -48,14 +51,7 @@ rules:
   declaration-colon-newline-after: always-multi-line
   declaration-colon-space-after: always-single-line
   declaration-colon-space-before: never
-  declaration-empty-line-before:
-  - always
-  - except:
-    - after-declaration
-    - first-nested
-    ignore:
-    - after-comment
-    - inside-single-line-block
+  declaration-empty-line-before: null
   function-comma-newline-after: always-multi-line
   function-comma-space-after: always-single-line
   function-comma-space-before: never
@@ -65,7 +61,7 @@ rules:
   function-parentheses-space-inside: never-single-line
   function-whitespace-after: always
   indentation: 2
-  length-zero-no-unit: true
+  length-zero-no-unit: null
   max-empty-lines: 1
   media-feature-colon-space-after: always
   media-feature-colon-space-before: never
@@ -93,7 +89,7 @@ rules:
   selector-combinator-space-after: always
   selector-combinator-space-before: always
   selector-descendant-combinator-no-non-space: true
-  selector-list-comma-newline-after: always
+  selector-list-comma-newline-after: null
   selector-list-comma-space-before: never
   selector-max-empty-lines: 0
   selector-pseudo-class-case: lower
