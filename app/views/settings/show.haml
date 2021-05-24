@@ -1,0 +1,11 @@
+- content_for :breadcrumbs do
+  = link_to "Settings", settings_path
+  &raquo;
+  %b= @setting.name
+
+= render 'tags/infobox'
+
+- if @view == 'settings'
+  = render 'settings'
+- else
+  = render "tags/#{@view}"

@@ -10,7 +10,6 @@ class Api::V1::TagsController < Api::ApiController
   param :page, :number, required: false, desc: 'Page in results (25 per page)'
   param :t, Tag::TYPES, required: true, desc: 'Type of the tag to search'
   param :user_id, :number, required: false, desc: 'Filter GalleryGroups to the current user'
-  param :tag_id, :number, required: false, desc: 'Used for settings so we don\'t show the current setting as a possible parent setting of itself'
   error 422, "Invalid parameters provided"
   def index
     type = find_type
@@ -22,8 +21,6 @@ class Api::V1::TagsController < Api::ApiController
       user_char_tags = GalleryGroup.joins(character_tags: [:character]).where(characters: {user_id: user_id}).pluck(:id)
       queryset = queryset.where(id: user_gal_tags + user_char_tags)
     end
-
-    queryset = queryset.where.not(id: params[:tag_id]) if type == Setting && params[:tag_id].present?
 
     tags = paginate queryset, per_page: 25
     render json: {results: tags}

@@ -24,4 +24,13 @@ module TagHelper
       {multiple: true}.merge(opts),
     )
   end
+
+  def tag_or_setting_link(tag, **args)
+    return unless tag.id.present?
+    if tag.class == Setting
+      setting_path(tag, args)
+    else
+      tag_path(tag, args)
+    end
+  end
 end

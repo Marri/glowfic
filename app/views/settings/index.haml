@@ -1,0 +1,46 @@
+- col_count = 4
+
+%table
+  %thead
+    %tr
+      %th.table-title{colspan: col_count} Settings
+    %tr
+      %th.subber.padding-10{colspan: col_count}
+        = form_tag settings_path, method: :get do
+          Search for a setting:
+          = text_field_tag :name, params[:name], id: 'tag-search-name', placeholder: 'Name (case-insensitive)'
+          = submit_tag "Search", class: 'button', id: 'tag-search'
+    %tr
+      %th.sub Name
+      %th.sub Owner
+      %th.sub Posts
+      %th.sub Characters
+      %th.sub
+  %tbody
+    - @settings.each do |setting|
+      - klass = cycle('even', 'odd')
+      %tr
+        %td{class: klass}= link_to setting.name, setting_path(setting)
+        %td{class: klass}
+          = link_to setting.user do
+            - if setting.owned?
+              = setting.user.username
+            - else
+              %em= setting.user.deleted? ? 'deleted user' : setting.user.username
+        %td{class: klass}= @post_counts.fetch(setting.id, 0)
+        %td{class: klass}= setting.character_count
+        %td.width-70.right-align{class: klass}
+          - if setting.editable_by?(current_user)
+            = link_to edit_setting_path(setting) do
+              = image_tag "icons/pencil.png", alt: 'Edit'
+          - if setting.deletable_by?(current_user)
+            = link_to delete_path(setting), method: :delete, data: { confirm: "Are you sure you want to delete #{setting.name}?" } do
+              = image_tag "icons/cross.png", alt: 'Delete'
+            &nbsp;
+    - if @settings.empty?
+      %tr
+        %td.centered.padding-10{ class: cycle('even', 'odd'), colspan: col_count } — No matching settings —
+  - if @settings.total_pages > 1
+    %tfoot
+      %tr
+        %td{colspan: 6}= render 'posts/paginator', paginated: @settings

@@ -7,7 +7,7 @@ class Tag < ApplicationRecord
   has_many :gallery_tags, dependent: :destroy, inverse_of: :tag
   has_many :galleries, through: :gallery_tags, dependent: :destroy
 
-  TYPES = %w(Setting Label ContentWarning GalleryGroup)
+  TYPES = %w(Label ContentWarning GalleryGroup)
 
   validates :name, :type, presence: true
   validates :name, uniqueness: { scope: :type }
@@ -34,8 +34,7 @@ class Tag < ApplicationRecord
     return false unless user
     return true if deletable_by?(user)
     return true if user.has_permission?(:edit_tags)
-    return false unless is_a?(Setting)
-    !owned?
+    false
   end
 
   def deletable_by?(user)
@@ -79,10 +78,6 @@ class Tag < ApplicationRecord
       CharacterTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
       GalleryTag.where(tag_id: other_tag.id).where(gallery_id: gallery_tags.select(:gallery_id).distinct.pluck(:gallery_id)).delete_all
       GalleryTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
-      Tag::SettingTag.where(tag_id: other_tag.id, tagged_id: self.id).delete_all
-      Tag::SettingTag.where(tag_id: self.id, tagged_id: other_tag.id).delete_all
-      Tag::SettingTag.where(tag_id: other_tag.id).update_all(tag_id: self.id)
-      Tag::SettingTag.where(tagged_id: other_tag.id).update_all(tagged_id: self.id)
       other_tag.destroy
       # rubocop:enable Rails/SkipsModelValidations
     end

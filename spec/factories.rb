@@ -178,10 +178,6 @@ FactoryBot.define do
       type { 'Label' }
     end
 
-    factory :setting, class: :setting do
-      type { 'Setting' }
-    end
-
     factory :content_warning, class: :content_warning do
       type { 'ContentWarning' }
     end
@@ -189,6 +185,13 @@ FactoryBot.define do
     factory :gallery_group, class: :gallery_group do
       type { 'GalleryGroup' }
     end
+  end
+
+  factory :setting do
+    sequence :name do |n|
+      "Setting#{n}"
+    end
+    user
   end
 
   factory :message do

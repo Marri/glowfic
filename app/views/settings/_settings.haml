@@ -5,4 +5,4 @@
   %tbody
     - @tag.child_settings.each do |setting|
       %tr
-        %td{class: cycle('even', 'odd')}= link_to setting.name, tag_path(setting)
+        %td{class: cycle('even', 'odd')}= link_to setting.name, setting_path(setting)

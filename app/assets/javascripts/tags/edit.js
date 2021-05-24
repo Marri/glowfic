@@ -1,5 +1,5 @@
 /* global createTagSelect */
 $(document).ready(function() {
-  var tagID = $("#tag_parent_setting_ids").data('tag-id');
-  createTagSelect("Setting", "parent_setting", "tag", {tag_id: tagID});
+  var settingID = $("#setting_parent_setting_ids").data('setting-id');
+  createTagSelect("Setting", "parent_setting", "setting", {setting_id: settingID});
 });

@@ -99,6 +99,7 @@ Rails.application.routes.draw do
     collection { get :search }
   end
   resources :tags, except: [:new, :create]
+  resources :settings, except: [:new, :create]
 
   # Indexes
   resources :indexes
@@ -135,6 +136,7 @@ Rails.application.routes.draw do
         collection { post :reorder }
       end
       resources :tags, only: [:index, :show]
+      resources :settings, only: [:index, :show]
       resources :templates, only: :index
       resources :users, only: :index do
         member { get :posts }
