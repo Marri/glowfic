@@ -16,7 +16,7 @@ gem 'aws-sdk-rails', '~> 2'
 gem 'aws-sdk-s3', '~> 1'
 gem 'aws-sdk-ses', '~> 1'
 gem 'barnes' # heroku ruby-specific metrics
-gem 'bootstrap'
+gem 'bootstrap', '~> 4.5' # pin until major version is handled
 gem 'exception_notification'
 gem 'get_process_mem'
 gem 'gon', '~> 6.4.0'
