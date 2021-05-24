@@ -1,0 +1,19 @@
+extends: stylelint-config-standard
+plugins:
+- stylelint-order
+- stylelint-scss
+rules:
+  color-hex-case: upper
+  color-hex-length: long
+  selector-list-comma-newline-after: null
+  no-descending-specificity: null
+  at-rule-no-unknown: null
+  declaration-empty-line-before: never
+  at-rule-empty-life-before: null
+  length-zero-no-unit: null
+  comment-empty-line-before: null
+
+  scss/at-rule-no-unknown: true
+
+ignoreFiles:
+- 'app/assets/stylesheets/normalize.scss'
