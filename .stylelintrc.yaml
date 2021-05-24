@@ -1,7 +1,6 @@
 extends: stylelint-config-standard
 plugins:
 - stylelint-declaration-strict-value
-#- stylelint-group-selectors
 - stylelint-order
 - stylelint-scss
 
@@ -9,7 +8,6 @@ rules:
   no-descending-specificity: null
   at-rule-no-unknown: null
   scss/at-rule-no-unknown: true
-#  plugin/stylelint-group-selectors: true
 
   scale-unlimited/declaration-strict-value:
   - - "/color$/"
@@ -29,6 +27,7 @@ rules:
   declaration-block-semicolon-newline-after: always
   #declaration-colon-newline-after: always-multi-line
   declaration-empty-line-before: null
+  declaration-no-important: true
 
   #function-comma-newline-after: always-multi-line
   #function-max-empty-lines: 0
