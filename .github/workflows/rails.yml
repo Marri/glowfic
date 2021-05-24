@@ -1,0 +1,56 @@
+# For more information see:
+# - https://docs.github.com/en/actions/guides/building-and-testing-ruby
+# - https://github.com/niclin/rails-github-actions-example/blob/master/.github/workflows/rails.yml
+
+name: Rails
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: RSpec Suite
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # reference: https://github.com/actions/example-services/blob/master/.github/workflows/postgres-service.yml
+        image: postgres:11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: glowfic_test
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        # reference: https://docs.github.com/en/actions/guides/creating-redis-service-containers#running-jobs-in-containers
+        image: redis:4
+        ports:
+        - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    env:
+      GLOWFIC_DATABASE_USER: postgres
+      GLOWFIC_DATABASE_PASS: postgres
+      GLOWFIC_DATABASE_PORT: ${{ job.services.postgres.ports[5432] }}
+      CC_TEST_REPORTER_ID: 1e0c6dba9930e839038860b6d73301226c821937f57ed35d06fc0e4b7bddf5f6
+      RAILS_ENV: test
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Chrome
+        run: sudo apt-get install -y google-chrome
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6.7
+          bundler-cache: true  # runs bundle install (with version based on Gemfile.lock) and automatically caches result
+      - name: Load database schema
+        run: bundle exec rails db:schema:load --trace
+      - name: Run rspec tests and report coverage
+        uses: paambaati/codeclimate-action@v2.2.4
+        with:
+          coverageCommand: bundle exec rspec spec
