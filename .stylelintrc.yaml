@@ -18,12 +18,22 @@ rules:
   scss/at-mixin-pattern: '[\-a-z]+' # hypenated lowercase
   scss/at-mixin-argumentless-call-parentheses: never
   scss/at-mixin-parentheses-space-before: never
+  scss/no-duplicate-mixins: true
+
+  scss/comment-no-empty: true
 
   scss/dollar-variable-colon-space-after: always
   scss/dollar-variable-colon-space-before: never
   scss/dollar-variable-pattern: '[a-z_]+' # snakecase
+  scss/no-duplicate-dollar-variables: true
+
+  scss/operator-no-newline-after: true
+  scss/operator-no-newline-before: true
+  scss/operator-no-unspaced: true
 
   scss/percent-placeholder-pattern: '[\-a-z]+' # hypenated lowercase
+
+  scss/selector-no-redundant-nesting-selector: true
 
   scale-unlimited/declaration-strict-value:
   - - "/color$/"
