@@ -12,24 +12,24 @@ rules:
   scss/at-import-partial-extension: never
   scss/at-import-no-partial-leading-underscore: true
 
-  scss/at-function-pattern: '[\-a-z]+' # hypenated lowercase
+  scss/at-function-pattern: '^[\-a-z]+$' # hypenated lowercase
   scss/at-function-parentheses-space-before: never
 
-  scss/at-mixin-pattern: '[\-a-z]+' # hypenated lowercase
+  scss/at-mixin-pattern: '^[\-a-z]+$' # hypenated lowercase
   scss/at-mixin-argumentless-call-parentheses: never
   scss/at-mixin-parentheses-space-before: never
   scss/no-duplicate-mixins: true
 
   scss/dollar-variable-colon-space-after: always
   scss/dollar-variable-colon-space-before: never
-  scss/dollar-variable-pattern: '[a-z_]+' # snakecase
+  scss/dollar-variable-pattern: '^[a-z_0-9]+$' # snakecase
   scss/no-duplicate-dollar-variables: true
 
   scss/operator-no-newline-after: true
   scss/operator-no-newline-before: true
   scss/operator-no-unspaced: true
 
-  scss/percent-placeholder-pattern: '[\-a-z]+' # hypenated lowercase
+  scss/percent-placeholder-pattern: '^[\-a-z]+$' # hypenated lowercase
 
   at-rule-empty-line-before: null
   at-rule-disallowed-list:
@@ -92,13 +92,11 @@ rules:
   selector-list-comma-newline-after: null
   # selector-pseudo-class-case: lower
   # selector-pseudo-element-case: lower
-  # selector-pseudo-element-colon-notation: double
   # selector-type-case: lower
   selector-max-universal: 0
-  selector-class-pattern: '[_\-a-z0-9]+'
-  selector-id-pattern: '[_\-a-z]'
+  selector-class-pattern: '^[_\-a-z0-9]+$'
+  selector-id-pattern: '^[_\-a-z]+$'
   selector-attribute-quotes: always
-  scss/selector-no-redundant-nesting-selector: true
 
   string-quotes: single
 
@@ -107,6 +105,9 @@ rules:
   # value-keyword-case: lower
   # value-list-comma-newline-after: always-multi-line
   # value-list-max-empty-lines: 0
+
+reportNeedlessDisables: true
+reportInvalidScopeDisables: true
 
 ignoreFiles:
 - 'app/assets/stylesheets/normalize.scss'
