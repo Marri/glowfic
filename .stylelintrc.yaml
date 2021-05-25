@@ -20,8 +20,6 @@ rules:
   scss/at-mixin-parentheses-space-before: never
   scss/no-duplicate-mixins: true
 
-  scss/comment-no-empty: true
-
   scss/dollar-variable-colon-space-after: always
   scss/dollar-variable-colon-space-before: never
   scss/dollar-variable-pattern: '[a-z_]+' # snakecase
@@ -32,19 +30,6 @@ rules:
   scss/operator-no-unspaced: true
 
   scss/percent-placeholder-pattern: '[\-a-z]+' # hypenated lowercase
-
-  scss/selector-no-redundant-nesting-selector: true
-
-  scale-unlimited/declaration-strict-value:
-  - - "/color$/"
-  - ignoreValues:
-    - inherit
-    - transparent
-    - unset
-
-  declaration-property-value-disallowed-list:
-    transition: all
-    transition-property: all
 
   at-rule-empty-line-before: null
   at-rule-disallowed-list:
@@ -62,6 +47,7 @@ rules:
     ignore:
     - after-comment
     - stylelint-commands
+  scss/comment-no-empty: true
 
   custom-property-empty-line-before: null
 
@@ -69,6 +55,15 @@ rules:
   #declaration-colon-newline-after: always-multi-line
   declaration-empty-line-before: null
   declaration-no-important: true
+  declaration-property-value-disallowed-list:
+    transition: all
+    transition-property: all
+  scale-unlimited/declaration-strict-value:
+  - - "/color$/"
+  - ignoreValues:
+    - inherit
+    - transparent
+    - unset
 
   #function-comma-newline-after: always-multi-line
   #function-max-empty-lines: 0
@@ -83,7 +78,6 @@ rules:
   # media-feature-name-case: lower
   # media-query-list-comma-newline-after: always-multi-line
 
-  # number-leading-zero: always
   # number-no-trailing-zeros: true
 
   # property-case: lower
@@ -104,6 +98,7 @@ rules:
   selector-class-pattern: '[_\-a-z0-9]+'
   selector-id-pattern: '[_\-a-z]'
   selector-attribute-quotes: always
+  scss/selector-no-redundant-nesting-selector: true
 
   string-quotes: single
 
