@@ -9,6 +9,22 @@ rules:
   at-rule-no-unknown: null
   scss/at-rule-no-unknown: true
 
+  scss/at-import-partial-extension: never
+  scss/at-import-no-partial-leading-underscore: true
+
+  scss/at-function-pattern: '[\-a-z]+' # hypenated lowercase
+  scss/at-function-parentheses-space-before: never
+
+  scss/at-mixin-pattern: '[\-a-z]+' # hypenated lowercase
+  scss/at-mixin-argumentless-call-parentheses: never
+  scss/at-mixin-parentheses-space-before: never
+
+  scss/dollar-variable-colon-space-after: always
+  scss/dollar-variable-colon-space-before: never
+  scss/dollar-variable-pattern: '[a-z_]+' # snakecase
+
+  scss/percent-placeholder-pattern: '[\-a-z]+' # hypenated lowercase
+
   scale-unlimited/declaration-strict-value:
   - - "/color$/"
   - ignoreValues:
@@ -16,10 +32,18 @@ rules:
     - transparent
     - unset
 
+  declaration-property-value-disallowed-list:
+    transition: all
+    transition-property: all
+
   at-rule-empty-line-before: null
+  at-rule-disallowed-list:
+    - warn
+    - debug
 
   color-hex-case: upper
   color-hex-length: long
+  color-named: never
 
   comment-empty-line-before:
   - always
@@ -41,6 +65,7 @@ rules:
   #function-name-case: lower
   #function-parentheses-newline-inside: always-multi-line
   #function-parentheses-space-inside: never-single-line
+  function-url-quotes: always
 
   length-zero-no-unit: null
   # max-empty-lines: 1
@@ -65,6 +90,12 @@ rules:
   # selector-pseudo-element-case: lower
   # selector-pseudo-element-colon-notation: double
   # selector-type-case: lower
+  selector-max-universal: 0
+  selector-class-pattern: '[_\-a-z0-9]+'
+  selector-id-pattern: '[_\-a-z]'
+  selector-attribute-quotes: always
+
+  string-quotes: single
 
   # unit-case: lower
 
