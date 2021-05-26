@@ -122,3 +122,4 @@ reportInvalidScopeDisables: true
 
 ignoreFiles:
 - 'app/assets/stylesheets/normalize.scss'
+- 'public/*'
