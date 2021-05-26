@@ -55,6 +55,8 @@ rules:
   #declaration-colon-newline-after: always-multi-line
   declaration-empty-line-before: null
   declaration-no-important: true
+  declaration-property-unit-allowed-list:
+    font-size: ['em', 'rem', '%']
   declaration-property-value-disallowed-list:
     transition: all
     transition-property: all
@@ -70,7 +72,6 @@ rules:
   #function-name-case: lower
   #function-parentheses-newline-inside: always-multi-line
   #function-parentheses-space-inside: never-single-line
-  function-url-quotes: always
 
   length-zero-no-unit: null
   # max-empty-lines: 1
