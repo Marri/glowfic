@@ -11,10 +11,10 @@ body {
 
 html {
   box-sizing: border-box;
-  font-size: 16px; // sass-lint:disable-line property-units
+  font-size: 16px; // stylelint-disable-line declaration-property-unit-allowed-list
 }
 
-*, ::before, ::after { // sass-lint:disable-line no-universal-selectors
+*, ::before, ::after { // stylelint-disable-line selector-max-universal
   box-sizing: inherit;
 }
 

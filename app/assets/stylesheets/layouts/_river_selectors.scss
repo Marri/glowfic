@@ -24,10 +24,11 @@ a:visited { color: $font_color_link_visited; }
 
 /* - content */
 #content .odd, #content .even, .post-post, .post-reply, #post-editor {
-  // sass-lint:disable-block no-important
+  // stylelint-disable declaration-no-important
   background-color: $bg_color_even !important;
   border-top: solid 1px $bg_color_content_border;
   blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, 0.2) !important; }
+  // stylelint-enable declaration-no-important
 }
 
 .post-edit-box img {

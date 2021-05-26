@@ -490,7 +490,7 @@ The copy box can't be invisible/hidden or copy fails but opacity works
   height: 20px;
 }
 
-#_hiddenCopyText_ { // sass-lint:disable-line id-name-format
+#_hiddenCopyText_ { // stylelint-disable-line selector-id-pattern
   height: 0px;
   width: 0px;
   opacity: 0;
