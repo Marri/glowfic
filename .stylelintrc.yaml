@@ -47,6 +47,7 @@ rules:
     ignore:
     - after-comment
     - stylelint-commands
+    severity: warning
   scss/comment-no-empty: true
 
   custom-property-empty-line-before: null
@@ -106,6 +107,15 @@ rules:
   # value-keyword-case: lower
   # value-list-comma-newline-after: always-multi-line
   # value-list-max-empty-lines: 0
+
+  order/order:
+  - - type: at-rule
+      name: extend
+    - type: at-rule
+      name: include
+    - declarations
+    - rules
+  - severity: warning
 
 reportNeedlessDisables: true
 reportInvalidScopeDisables: true
