@@ -11,10 +11,10 @@ body {
 
 html {
   box-sizing: border-box;
-  font-size: 16px; // sass-lint:disable-line property-units
+  font-size: 16px; // stylelint-disable-line declaration-property-unit-allowed-list
 }
 
-*, ::before, ::after { // sass-lint:disable-line no-universal-selectors
+*, ::before, ::after { // stylelint-disable-line selector-max-universal
   box-sizing: inherit;
 }
 
@@ -111,6 +111,7 @@ button, .button {
   filter: grayscale(1); /* Edge, Firefox */
   -webkit-filter: grayscale(1); /* Chrome, Safari, Opera */
 }
+
 /* With appropriate <a> tags to look like links */
 a.disabled-arrow {
   cursor: default;
@@ -143,7 +144,7 @@ a.disabled-arrow {
 
 .link-box.action-new { background-color: $bg_color_linkbox_new; }
 .link-box.action-delete { background-color: $bg_color_linkbox_delete; }
-.link-box.action-edit { background-color: $bg_color_linkbox_edit;}
+.link-box.action-edit { background-color: $bg_color_linkbox_edit; }
 .link-box.action-favorite { background-color: $bg_color_linkbox_favorite; }
 .link-box.action-dismiss { background-color: $bg_color_linkbox_dismiss; }
 

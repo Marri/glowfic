@@ -1,0 +1,4 @@
+app/assets/stylesheets/normalize.scss
+coverage/**/*
+spec/support/fixtures/**/*
+public/**/*

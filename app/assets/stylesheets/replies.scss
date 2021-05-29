@@ -257,7 +257,11 @@ div.post-subheader { width: 100%; }
   display: block;
 }
 
-#reply_content { height: 130px; }
+#reply_content {
+  height: 130px;
+  box-sizing: content-box;
+}
+
 #post_content { height: 312px; }
 
 #post-form-wrapper {
@@ -270,7 +274,6 @@ div.post-subheader { width: 100%; }
   background-repeat: no-repeat;
 }
 
-#reply_content { box-sizing: content-box; }
 #post-editor { position: relative; }
 
 #post_form {
