@@ -119,7 +119,3 @@ rules:
 
 reportNeedlessDisables: true
 reportInvalidScopeDisables: true
-
-ignoreFiles:
-- 'app/assets/stylesheets/normalize.scss'
-- 'public/**'
