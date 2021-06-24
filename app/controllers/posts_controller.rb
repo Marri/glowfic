@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 class PostsController < WritableController
-  include Taggable
-
   before_action :login_required, except: [:index, :show, :history, :warnings, :search, :stats]
   before_action :find_model, only: [:show, :history, :delete_history, :stats, :warnings, :edit, :update, :destroy]
   before_action :require_permission, only: [:edit, :delete_history]
@@ -131,9 +129,6 @@ class PostsController < WritableController
     preview and return if params[:button_preview].present?
 
     @post = current_user.posts.new(permitted_params)
-    @post.settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
-    @post.content_warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
-    @post.labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     begin
       @post.save!
@@ -195,9 +190,6 @@ class PostsController < WritableController
 
     @post.assign_attributes(permitted_params)
     @post.board ||= Board.find_by(id: Board::ID_SANDBOX)
-    settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
-    warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
-    labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     is_author = @post.author_ids.include?(current_user.id)
     if current_user.id != @post.user_id && @post.audit_comment.blank? && !is_author
@@ -208,9 +200,6 @@ class PostsController < WritableController
 
     begin
       Post.transaction do
-        @post.settings = settings
-        @post.content_warnings = warnings
-        @post.labels = labels
         @post.save!
         @post.author_for(current_user).update!(private_note: @post.private_note) if is_author
       end
@@ -311,9 +300,6 @@ class PostsController < WritableController
 
     @author_ids = params.fetch(:post, {}).fetch(:unjoined_author_ids, [])
     @viewer_ids = params.fetch(:post, {}).fetch(:viewer_ids, [])
-    @settings = process_tags(Setting, obj_param: :post, id_param: :setting_ids)
-    @content_warnings = process_tags(ContentWarning, obj_param: :post, id_param: :content_warning_ids)
-    @labels = process_tags(Label, obj_param: :post, id_param: :label_ids)
 
     @written = @post
 
@@ -453,7 +439,10 @@ class PostsController < WritableController
       :character_alias_id,
       :authors_locked,
       :audit_comment,
-      :private_note
+      :private_note,
+      content_warning_list: [],
+      label_list: [],
+      setting_list: [],
     ]
 
     # prevents us from setting (and saving) associations on preview()

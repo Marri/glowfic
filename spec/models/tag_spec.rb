@@ -36,18 +36,6 @@ RSpec.describe Tag do
     end
   end
 
-  describe "#id_for_select" do
-    it "uses ID if persisted" do
-      tag = create(:label)
-      expect(tag.id_for_select).to eq(tag.id)
-    end
-
-    it "uses name with prepended underscore otherwise" do
-      tag = build(:label, name: 'tag')
-      expect(tag.id_for_select).to eq('_tag')
-    end
-  end
-
   describe "#post_count" do
     it "works" do
       tag1 = create(:label)

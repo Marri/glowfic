@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 class TagsController < ApplicationController
-  include Taggable
-
   before_action :login_required, except: [:index, :show]
   before_action :find_model, except: :index
   before_action :require_permission, except: [:index, :show, :destroy]
@@ -46,7 +44,6 @@ class TagsController < ApplicationController
 
     begin
       Tag.transaction do
-        @tag.parent_settings = process_tags(Setting, obj_param: :tag, id_param: :parent_setting_ids) if @tag.is_a?(Setting)
         @tag.save!
       end
     rescue ActiveRecord::RecordInvalid
@@ -114,8 +111,10 @@ class TagsController < ApplicationController
     stats = []
     post_count = @tag.posts.privacy_public.count
     stats << "#{post_count} " + "post".pluralize(post_count) if post_count > 0
-    gallery_count = @tag.galleries.count
-    stats << "#{gallery_count} " + "gallery".pluralize(gallery_count) if gallery_count > 0
+    if @tag.is_a?(GalleryGroup)
+      gallery_count = @tag.galleries.count
+      stats << "#{gallery_count} " + "gallery".pluralize(gallery_count) if gallery_count > 0
+    end
     character_count = @tag.characters.count
     stats << "#{character_count} " + "character".pluralize(character_count) if character_count > 0
     desc << stats.join(', ')
@@ -130,7 +129,7 @@ class TagsController < ApplicationController
   end
 
   def permitted_params
-    permitted = [:type, :description, :owned]
+    permitted = [:type, :description, :owned, parent_setting_list: []]
     permitted.insert(0, :name, :user_id) if current_user.admin? || @tag.user == current_user
     params.fetch(:tag, {}).permit(permitted)
   end

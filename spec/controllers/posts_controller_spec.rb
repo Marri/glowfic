@@ -449,9 +449,9 @@ RSpec.describe PostsController do
             character_id: char1.id,
             icon_id: icon.id,
             character_alias_id: calias.id,
-            setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-            content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-            label_ids: [label1.id, '_'+label2.name, '_other'],
+            setting_list: [setting1.name, '_'+setting2.name, '_other'],
+            content_warning_list: [warning1.name, '_'+warning2.name, '_other'],
+            label_list: [label1.name, '_'+label2.name, '_other'],
             unjoined_author_ids: [user.id, coauthor.id]
           }
         }
@@ -467,12 +467,14 @@ RSpec.describe PostsController do
         expect(assigns(:author_ids)).to match_array([user.id, coauthor.id])
 
         # tags
-        expect(assigns(:post).settings.size).to eq(0)
-        expect(assigns(:post).content_warnings.size).to eq(0)
-        expect(assigns(:post).labels.size).to eq(0)
-        expect(assigns(:settings).map(&:id_for_select)).to match_array([setting1.id, setting2.id, '_other'])
-        expect(assigns(:content_warnings).map(&:id_for_select)).to match_array([warning1.id, warning2.id, '_other'])
-        expect(assigns(:labels).map(&:id_for_select)).to match_array([label1.id, label2.id, '_other'])
+        post = assigns(:post)
+        expect(post.settings.size).to eq(0)
+        expect(post.content_warnings.size).to eq(0)
+        expect(post.labels.size).to eq(0)
+        expect(post.setting_list).to match_array([setting1.name, setting2.name, 'other'])
+        expect(post.content_warning_list).to match_array([warning1.name, warning2.name, 'other'])
+        expect(post.label_list).to match_array([label1.name, label2.name, 'other'])
+
         expect(Setting.count).to eq(2)
         expect(ContentWarning.count).to eq(2)
         expect(Label.count).to eq(2)
@@ -534,10 +536,10 @@ RSpec.describe PostsController do
     it "creates new labels" do
       existing_name = create(:label)
       existing_case = create(:label)
-      tags = ['_atag', '_atag', create(:label).id, '', '_' + existing_name.name, '_' + existing_case.name.upcase]
+      tags = ['_atag', '_atag', create(:label).name, '', '_' + existing_name.name, '_' + existing_case.name.upcase]
       login
       expect {
-        post :create, params: { post: {subject: 'a', board_id: create(:board).id, label_ids: tags} }
+        post :create, params: { post: {subject: 'a', board_id: create(:board).id, label_list: tags} }
       }.to change{Label.count}.by(1)
       expect(Label.last.name).to eq('atag')
       expect(assigns(:post).labels.count).to eq(4)
@@ -549,14 +551,14 @@ RSpec.describe PostsController do
       tags = [
         '_atag',
         '_atag',
-        create(:setting).id,
+        create(:setting).name,
         '',
         '_' + existing_name.name,
         '_' + existing_case.name.upcase
       ]
       login
       expect {
-        post :create, params: { post: {subject: 'a', board_id: create(:board).id, setting_ids: tags} }
+        post :create, params: { post: {subject: 'a', board_id: create(:board).id, setting_list: tags} }
       }.to change{Setting.count}.by(1)
       expect(Setting.last.name).to eq('atag')
       expect(assigns(:post).settings.count).to eq(4)
@@ -568,7 +570,7 @@ RSpec.describe PostsController do
       tags = [
         '_atag',
         '_atag',
-        create(:content_warning).id,
+        create(:content_warning).name,
         '',
         '_' + existing_name.name,
         '_' + existing_case.name.upcase
@@ -576,7 +578,11 @@ RSpec.describe PostsController do
       login
       expect {
         post :create, params: {
-          post: {subject: 'a', board_id: create(:board).id, content_warning_ids: tags}
+          post: {
+            subject: 'a',
+            board_id: create(:board).id,
+            content_warning_list: tags
+          }
         }
       }.to change{ContentWarning.count}.by(1)
       expect(ContentWarning.last.name).to eq('atag')
@@ -749,9 +755,9 @@ RSpec.describe PostsController do
         post: {
           subject: 'asubjct',
           content: 'acontnt',
-          setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-          content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-          label_ids: [label1.id, '_'+label2.name, '_other'],
+          setting_list: [setting1.name, '_'+setting2.name, '_other'],
+          content_warning_list: [warning1.name, '_'+warning2.name, '_other'],
+          label_list: [label1.name, '_'+label2.name, '_other'],
           character_id: char1.id,
           unjoined_author_ids: [user.id, coauthor.id]
         }
@@ -783,12 +789,14 @@ RSpec.describe PostsController do
       expect(templateless.plucked_characters).to eq([[char1.id, char1.name]])
 
       # tags
-      expect(assigns(:post).settings.size).to eq(3)
-      expect(assigns(:post).content_warnings.size).to eq(3)
-      expect(assigns(:post).labels.size).to eq(3)
-      expect(assigns(:post).settings.map(&:id_for_select)).to match_array([setting1.id, setting2.id, '_other'])
-      expect(assigns(:post).content_warnings.map(&:id_for_select)).to match_array([warning1.id, warning2.id, '_other'])
-      expect(assigns(:post).labels.map(&:id_for_select)).to match_array([label1.id, label2.id, '_other'])
+      post = assigns(:post)
+      expect(post.setting_list).to match_array([setting1.name, setting2.name, 'other'])
+      expect(post.content_warning_list).to match_array([warning1.name, warning2.name, 'other'])
+      expect(post.label_list).to match_array([label1.name, label2.name, 'other'])
+
+      expect(post.settings.size).to eq(0)
+      expect(post.content_warnings.size).to eq(0)
+      expect(post.labels.size).to eq(0)
       expect(Setting.count).to eq(2)
       expect(ContentWarning.count).to eq(2)
       expect(Label.count).to eq(2)
@@ -825,9 +833,9 @@ RSpec.describe PostsController do
             character_alias_id: calias.id,
             privacy: :access_list,
             viewer_ids: [viewer.id],
-            setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-            content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-            label_ids: [label1.id, '_'+label2.name, '_other'],
+            setting_list: [setting1.name, '_'+setting2.name, '_other'],
+            content_warning_list: [warning1.name, '_'+warning2.name, '_other'],
+            label_list: [label1.name, '_'+label2.name, '_other'],
             unjoined_author_ids: [coauthor.id]
           }
         }
@@ -861,9 +869,11 @@ RSpec.describe PostsController do
       expect(post.settings.size).to eq(3)
       expect(post.content_warnings.size).to eq(3)
       expect(post.labels.size).to eq(3)
-      expect(post.settings.map(&:id_for_select)).to match_array([setting1.id, setting2.id, Setting.last.id])
-      expect(post.content_warnings.map(&:id_for_select)).to match_array([warning1.id, warning2.id, ContentWarning.last.id])
-      expect(post.labels.map(&:id_for_select)).to match_array([label1.id, label2.id, Label.last.id])
+
+      expect(post.settings.pluck(:id)).to match_array([setting1, setting2, Setting.last].map(&:id))
+      expect(post.content_warnings.pluck(:id)).to match_array([warning1.id, warning2.id, ContentWarning.last.id])
+      expect(post.labels.pluck(:id)).to match_array([label1.id, label2.id, Label.last.id])
+
       expect(Setting.count).to eq(3)
       expect(ContentWarning.count).to eq(3)
       expect(Label.count).to eq(3)
@@ -1532,9 +1542,9 @@ RSpec.describe PostsController do
       expect(templateless.plucked_characters).to eq(expected)
 
       # tags
-      expect(assigns(:post).settings.map(&:id_for_select)).to match_array([setting.id])
-      expect(assigns(:post).content_warnings.map(&:id_for_select)).to match_array([warning.id])
-      expect(assigns(:post).labels.map(&:id_for_select)).to match_array([label.id])
+      expect(assigns(:post).settings.map(&:id)).to match_array([setting.id])
+      expect(assigns(:post).content_warnings.map(&:id)).to match_array([warning.id])
+      expect(assigns(:post).labels.map(&:id)).to match_array([label.id])
     end
   end
 
@@ -1918,16 +1928,16 @@ RSpec.describe PostsController do
         expect(PostTag.count).to eq(6)
 
         # for each type: keep one, remove one, create one, existing one
-        setting_ids = [setting.id, '_setting', '_dupesetting']
-        warning_ids = [warning.id, '_warning', '_dupewarning']
-        label_ids = [label.id, '_label', '_dupelabel']
+        setting_names = [setting.name, '_setting', '_dupesetting']
+        warning_names = [warning.name, '_warning', '_dupewarning']
+        label_names = [label.name, '_label', '_dupelabel']
         put :update, params: {
           id: post.id,
           button_preview: true,
           post: {
-            setting_ids: setting_ids,
-            content_warning_ids: warning_ids,
-            label_ids: label_ids
+            setting_list: setting_names,
+            content_warning_list: warning_names,
+            label_list: label_names
           }
         }
         expect(response).to render_template(:preview)
@@ -1936,9 +1946,10 @@ RSpec.describe PostsController do
         expect(post.settings.size).to eq(2)
         expect(post.content_warnings.size).to eq(2)
         expect(post.labels.size).to eq(2)
-        expect(assigns(:settings).map(&:name)).to match_array([setting.name, 'setting', 'dupesetting'])
-        expect(assigns(:content_warnings).map(&:name)).to match_array([warning.name, 'warning', 'dupewarning'])
-        expect(assigns(:labels).map(&:name)).to match_array([label.name, 'label', 'dupelabel'])
+        expect(post.setting_list).to match_array([setting.name, 'setting', 'dupesetting'])
+        expect(post.content_warning_list).to match_array([warning.name, 'warning', 'dupewarning'])
+        expect(post.label_list).to match_array([label.name, 'label', 'dupelabel'])
+
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
@@ -1976,9 +1987,9 @@ RSpec.describe PostsController do
             character_id: char1.id,
             icon_id: icon.id,
             character_alias_id: calias.id,
-            setting_ids: [setting1.id, '_'+setting2.name, '_other'],
-            content_warning_ids: [warning1.id, '_'+warning2.name, '_other'],
-            label_ids: [label1.id, '_'+label2.name, '_other'],
+            setting_list: [setting1.name, '_'+setting2.name, '_other'],
+            content_warning_list: [warning1.name, '_'+warning2.name, '_other'],
+            label_list: [label1.name, '_'+label2.name, '_other'],
             unjoined_author_ids: [coauthor.id],
             viewer_ids: [viewer.id]
           }
@@ -2018,19 +2029,20 @@ RSpec.describe PostsController do
         expect(templateless.plucked_characters).to eq([[char1.id, char1.name]])
 
         # tags
-        expect(assigns(:post).settings.size).to eq(0)
-        expect(assigns(:post).content_warnings.size).to eq(0)
-        expect(assigns(:post).labels.size).to eq(0)
-        expect(assigns(:settings).map(&:id_for_select)).to match_array([setting1.id, setting2.id, '_other'])
-        expect(assigns(:content_warnings).map(&:id_for_select)).to match_array([warning1.id, warning2.id, '_other'])
-        expect(assigns(:labels).map(&:id_for_select)).to match_array([label1.id, label2.id, '_other'])
+        post = assigns(:post)
+        expect(post.settings.size).to eq(0)
+        expect(post.content_warnings.size).to eq(0)
+        expect(post.labels.size).to eq(0)
+        expect(post.setting_list).to match_array([setting1.name, setting2.name, 'other'])
+        expect(post.content_warning_list).to match_array([warning1.name, warning2.name, 'other'])
+        expect(post.label_list).to match_array([label1.name, label2.name, 'other'])
         expect(Setting.count).to eq(2)
         expect(ContentWarning.count).to eq(2)
         expect(Label.count).to eq(2)
         expect(PostTag.count).to eq(0)
 
         # in storage
-        post = assigns(:post).reload
+        post = post.reload
         expect(post.user).to eq(user)
         expect(post.subject).to eq('old')
         expect(post.content).to eq('example')
@@ -2101,26 +2113,26 @@ RSpec.describe PostsController do
         expect(PostTag.count).to eq(6)
 
         # for each type: keep one, remove one, create one, existing one
-        setting_ids = [setting.id, '_setting', '_dupesetting']
-        warning_ids = [warning.id, '_warning', '_dupewarning']
-        label_ids = [label.id, '_label', '_dupelabel']
+        setting_names = [setting.name, '_setting', '_dupesetting']
+        warning_names = [warning.name, '_warning', '_dupewarning']
+        label_names = [label.name, '_label', '_dupelabel']
         put :update, params: {
           id: post.id,
           post: {
-            setting_ids: setting_ids,
-            content_warning_ids: warning_ids,
-            label_ids: label_ids
+            setting_list: setting_names,
+            content_warning_list: warning_names,
+            label_list: label_names
           }
         }
         expect(response).to redirect_to(post_url(post))
         post = assigns(:post)
 
-        expect(post.settings.size).to eq(3)
-        expect(post.content_warnings.size).to eq(3)
-        expect(post.labels.size).to eq(3)
-        expect(post.settings.map(&:name)).to match_array([setting.name, 'setting', 'dupesetting'])
-        expect(post.content_warnings.map(&:name)).to match_array([warning.name, 'warning', 'dupewarning'])
-        expect(post.labels.map(&:name)).to match_array([label.name, 'label', 'dupelabel'])
+        expect(post.settings.reload.size).to eq(3)
+        expect(post.content_warnings.reload.size).to eq(3)
+        expect(post.labels.reload.size).to eq(3)
+        expect(post.settings.pluck(:name)).to match_array([setting.name, 'setting', 'dupesetting'])
+        expect(post.content_warnings.pluck(:name)).to match_array([warning.name, 'warning', 'dupewarning'])
+        expect(post.labels.pluck(:name)).to match_array([label.name, 'label', 'dupelabel'])
         expect(Setting.count).to eq(4)
         expect(ContentWarning.count).to eq(4)
         expect(Label.count).to eq(4)
@@ -2134,21 +2146,25 @@ RSpec.describe PostsController do
         user = create(:user)
         login_as(user)
         post = create(:post, user: user)
-        setting_ids = ['_setting']
+        setting_names = ['_setting']
         setting = create(:setting, name: 'setting')
-        warning_ids = ['_warning']
+        warning_names = ['_warning']
         warning = create(:content_warning, name: 'warning')
-        label_ids = ['_label']
+        label_names = ['_label']
         tag = create(:label, name: 'label')
         put :update, params: {
           id: post.id,
-          post: {setting_ids: setting_ids, content_warning_ids: warning_ids, label_ids: label_ids}
+          post: {
+            setting_list: setting_names,
+            content_warning_list: warning_names,
+            label_list: label_names
+          }
         }
         expect(response).to redirect_to(post_url(post))
         post = assigns(:post)
-        expect(post.settings).to eq([setting])
-        expect(post.content_warnings).to eq([warning])
-        expect(post.labels).to eq([tag])
+        expect(post.settings.reload).to eq([setting])
+        expect(post.content_warnings.reload).to eq([warning])
+        expect(post.labels.reload).to eq([tag])
       end
 
       it "correctly updates when adding new authors" do
@@ -2295,16 +2311,16 @@ RSpec.describe PostsController do
         put :update, params: {
           id: post.id,
           post: {
-            setting_ids: [setting1, setting2, setting3].map(&:id),
-            content_warning_ids: [warning1, warning2, warning3].map(&:id),
-            label_ids: [tag1, tag2, tag3].map(&:id)
+            setting_list: [setting1, setting2, setting3].map(&:name),
+            content_warning_list: [warning1, warning2, warning3].map(&:name),
+            label_list: [tag1, tag2, tag3].map(&:name)
           }
         }
         expect(response).to redirect_to(post_url(post))
         post = assigns(:post)
-        expect(post.settings).to eq([setting1, setting2, setting3])
-        expect(post.content_warnings).to eq([warning1, warning2, warning3])
-        expect(post.labels).to eq([tag1, tag2, tag3])
+        expect(post.settings.reload).to eq([setting1, setting2, setting3])
+        expect(post.content_warnings.reload).to eq([warning1, warning2, warning3])
+        expect(post.labels.reload).to eq([tag1, tag2, tag3])
       end
 
       it "requires valid update" do
@@ -2322,6 +2338,7 @@ RSpec.describe PostsController do
         login_as(user)
 
         post = create(:post, user: user, settings: [setting, rems], content_warnings: [warning, remw], labels: [label, reml])
+
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
@@ -2336,16 +2353,16 @@ RSpec.describe PostsController do
         expect(controller).to receive(:setup_layout_gon).and_call_original
 
         # for each type: keep one, remove one, create one, existing one
-        setting_ids = [setting.id, '_setting', '_dupesetting']
-        warning_ids = [warning.id, '_warning', '_dupewarning']
-        label_ids = [label.id, '_label', '_dupelabel']
+        setting_names = [setting.name, '_setting', '_dupesetting']
+        warning_names = [warning.name, '_warning', '_dupewarning']
+        label_names = [label.name, '_label', '_dupelabel']
         put :update, params: {
           id: post.id,
           post: {
             subject: '',
-            setting_ids: setting_ids,
-            content_warning_ids: warning_ids,
-            label_ids: label_ids,
+            setting_list: setting_names,
+            content_warning_list: warning_names,
+            label_list: label_names,
             unjoined_author_ids: [coauthor.id]
           }
         }
@@ -2368,14 +2385,16 @@ RSpec.describe PostsController do
         expect(templateless.name).to eq('Templateless')
         expect(templateless.plucked_characters).to eq([[char1.id, char1.name]])
 
-        # tags change only in memory when save fails
         post = assigns(:post)
-        expect(post.settings.size).to eq(3)
-        expect(post.content_warnings.size).to eq(3)
-        expect(post.labels.size).to eq(3)
-        expect(post.settings.map(&:name)).to match_array([setting.name, 'setting', 'dupesetting'])
-        expect(post.content_warnings.map(&:name)).to match_array([warning.name, 'warning', 'dupewarning'])
-        expect(post.labels.map(&:name)).to match_array([label.name, 'label', 'dupelabel'])
+
+        # tags change only in list when save fails
+        expect(post.setting_list).to match_array([setting.name, 'setting', 'dupesetting'])
+        expect(post.content_warning_list).to match_array([warning.name, 'warning', 'dupewarning'])
+        expect(post.label_list).to match_array([label.name, 'label', 'dupelabel'])
+
+        expect(post.settings.size).to eq(2)
+        expect(post.content_warnings.size).to eq(2)
+        expect(post.labels.size).to eq(2)
         expect(Setting.count).to eq(3)
         expect(ContentWarning.count).to eq(3)
         expect(Label.count).to eq(3)
@@ -2425,9 +2444,9 @@ RSpec.describe PostsController do
             icon_id: icon.id,
             privacy: :access_list,
             viewer_ids: [viewer.id],
-            setting_ids: [setting.id],
-            content_warning_ids: [warning.id],
-            label_ids: [tag.id],
+            setting_list: [setting.name],
+            content_warning_list: [warning.name],
+            label_list: [tag.name],
             unjoined_author_ids: [coauthor.id]
           }
         }

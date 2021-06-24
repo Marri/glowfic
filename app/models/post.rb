@@ -5,6 +5,7 @@ class Post < ApplicationRecord
   include PgSearch::Model
   include Post::Status
   include Presentable
+  include Tag::Taggable
   include Viewable
   include Writable
 
@@ -56,6 +57,12 @@ class Post < ApplicationRecord
       content
     ),
     using: { tsearch: { dictionary: "english" } },
+  )
+
+  has_tags(
+    content_warning: ContentWarning,
+    label: Label,
+    setting: Setting,
   )
 
   scope :ordered, -> { order(tagged_at: :desc).order(Arel.sql('lower(subject) asc'), id: :asc) }

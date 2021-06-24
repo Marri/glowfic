@@ -55,11 +55,6 @@ class Tag < ApplicationRecord
     tag_json
   end
 
-  def id_for_select
-    return id if persisted? # id present on unpersisted records when associated record is invalid
-    "_#{name}"
-  end
-
   def post_count
     return read_attribute(:post_count) if has_attribute?(:post_count)
     posts.count

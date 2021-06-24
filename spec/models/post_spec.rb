@@ -747,30 +747,43 @@ RSpec.describe Post do
   end
 
   describe "#reset_warnings" do
-    let(:post) { create(:post) }
     let(:warning) { create(:content_warning) }
+    let(:post) { create(:post, content_warnings: [warning]) }
     let(:user) { create(:user) }
 
     before(:each) do
-      post.content_warnings << warning
       post.hide_warnings_for(user)
+      post.save!
     end
 
     it "does not reset on update" do
-      post.description = 'new description'
-      post.save!
+      post.update!(description: 'new description')
+      expect(post.reload).not_to be_show_warnings_for(user)
+    end
+
+    it "does not reset on settings change" do
+      post.update!(setting_list: [create(:setting).name])
       expect(post.reload).not_to be_show_warnings_for(user)
     end
 
     it "does not reset on remove" do
-      post.content_warnings.delete(warning)
+      post.update!(content_warning_list: [])
       expect(post.reload).not_to be_show_warnings_for(user)
     end
 
     it "resets with new warning without changing read time" do
       at_time = 3.days.ago
       post.mark_read(user, at_time: at_time, force: true)
-      post.content_warnings << create(:content_warning)
+      post.content_warning_list += [create(:content_warning).name]
+      post.save!
+      expect(post.reload).to be_show_warnings_for(user)
+      expect(post.last_read(user)).to be_the_same_time_as(at_time)
+    end
+
+    it "resets with warning replacement without changing read time" do
+      at_time = 3.days.ago
+      post.mark_read(user, at_time: at_time, force: true)
+      post.update!(content_warning_list: [create(:content_warning)])
       expect(post.reload).to be_show_warnings_for(user)
       expect(post.last_read(user)).to be_the_same_time_as(at_time)
     end
@@ -890,13 +903,13 @@ RSpec.describe Post do
 
     it "is true with warnings" do
       warning = create(:content_warning)
-      post = create(:post, content_warning_ids: [warning.id])
+      post = create(:post, content_warnings: [warning])
       expect(post.has_content_warnings?).to be true
     end
 
     it "is true with preloaded warnings" do
       warning = create(:content_warning)
-      post = create(:post, content_warning_ids: [warning.id])
+      post = create(:post, content_warnings: [warning])
       post = Post.where(id: post.id).with_has_content_warnings.first
       expect(post.has_content_warnings?).to be true
     end

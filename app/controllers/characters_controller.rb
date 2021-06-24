@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 class CharactersController < ApplicationController
-  include Taggable
   include CharacterSplit
 
   before_action :login_required, except: [:index, :show, :facecasts, :search]
@@ -38,13 +37,10 @@ class CharactersController < ApplicationController
 
   def create
     @character = Character.new(user: current_user)
-    @character.assign_attributes(permitted_params)
-    @character.settings = process_tags(Setting, obj_param: :character, id_param: :setting_ids)
-    @character.gallery_groups = process_tags(GalleryGroup, obj_param: :character, id_param: :gallery_group_ids)
     build_template
 
     begin
-      @character.save!
+      @character.update!(permitted_params)
     rescue ActiveRecord::RecordInvalid
       @page_title = "New Character"
       flash.now[:error] = {
@@ -82,8 +78,6 @@ class CharactersController < ApplicationController
           render :edit and return
         end
 
-        @character.settings = process_tags(Setting, obj_param: :character, id_param: :setting_ids)
-        @character.gallery_groups = process_tags(GalleryGroup, obj_param: :character, id_param: :gallery_group_ids)
         @character.save!
       end
     rescue ActiveRecord::RecordInvalid
@@ -105,8 +99,8 @@ class CharactersController < ApplicationController
 
     begin
       Character.transaction do
-        dupe.gallery_groups = @character.gallery_groups
-        dupe.settings = @character.settings
+        dupe.gallery_group_list = @character.gallery_group_list
+        dupe.setting_list = @character.setting_list
         dupe.ungrouped_gallery_ids = @character.ungrouped_gallery_ids
         @character.aliases.find_each do |calias|
           dupalias = calias.dup
@@ -402,6 +396,8 @@ class CharactersController < ApplicationController
       :retired,
       :cluster,
       ungrouped_gallery_ids: [],
+      setting_list: [],
+      gallery_group_list: [],
     ]
     if @character.user == current_user
       permitted.last[:template_attributes] = [:name, :id]

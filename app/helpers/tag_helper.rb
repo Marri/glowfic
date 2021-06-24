@@ -15,11 +15,11 @@ module TagHelper
     else
       preview_collection
     end
-    selected_ids = collection.map(&:id_for_select)
+    selected_ids = collection.map(&:name)
 
     form.select(
       attr_name,
-      options_from_collection_for_select(collection, :id_for_select, :name, selected_ids),
+      options_from_collection_for_select(collection, :name, :name, selected_ids),
       {},
       {multiple: true}.merge(opts),
     )

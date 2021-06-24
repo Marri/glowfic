@@ -1,5 +1,6 @@
 class Character < ApplicationRecord
   include Presentable
+  include Tag::Taggable
 
   belongs_to :user, optional: false
   belongs_to :template, inverse_of: :characters, optional: true
@@ -29,6 +30,11 @@ class Character < ApplicationRecord
 
   before_validation :strip_spaces
   after_destroy :clear_char_ids
+
+  has_tags(
+    gallery_group: GalleryGroup,
+    setting: Setting,
+  )
 
   scope :ordered, -> { order(name: :asc).order(Arel.sql('lower(screenname) asc'), created_at: :asc, id: :asc) }
   scope :with_name, -> (charname) { where("lower(concat_ws(' | ', name, nickname, screenname)) LIKE ?", "%#{charname.downcase}%") }
