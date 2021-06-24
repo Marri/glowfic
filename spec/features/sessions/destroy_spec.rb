@@ -3,6 +3,7 @@ RSpec.feature "Logging out", :type => :feature do
     user = login
     expect(page).to have_selector('#user-info', text: user.username)
     click_button "Log out"
+    page.accept_confirm
 
     expect(page).to have_selector('.flash.success', text: 'You have been logged out.')
     expect(page).to have_no_selector('#user-info')

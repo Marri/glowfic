@@ -86,7 +86,7 @@
                 %li= link_to 'Favorites', favorites_path
                 %li= link_to "Post", new_post_path
               = link_to logout_path, method: :delete, id: :"header-logout" do
-                = button_tag "Log out", class: 'button'
+                = button_tag "Log out", class: 'button', :onclick => 'return confirm("Press OK to confirm logout");'
             - elsif !current_page?(login_path)
               = form_tag login_path, method: :post, id: 'header-form' do
                 #header-forms
