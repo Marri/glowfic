@@ -50,7 +50,7 @@ class PostImporter < Object
 
   def calculate_missing_usernames
     usernames = dreamwidth_doc.css('.poster span.ljuser b').map(&:text).uniq
-    usernames -= PostScraper::BASE_ACCOUNTS.keys
+    usernames -= ReplyScraper::BASE_ACCOUNTS.keys
     poster_names = dreamwidth_doc.css('.entry-poster span.ljuser b')
     usernames -= [poster_names.last.text] if poster_names.count > 1
     usernames -= Character.where(screenname: usernames).pluck(:screenname)
