@@ -22,6 +22,8 @@ class Post::Author < ApplicationRecord
 
   def notify_followers
     return if post.is_import || post.last_reply&.is_import
-    NotifyFollowersOfNewPostJob.perform_later(post_id, user_id)
+    return if user_id == post.user_id
+    return unless joined?
+    NotifyFollowersOfNewPostJob.perform_later(post_id, user_id, 'join')
   end
 end

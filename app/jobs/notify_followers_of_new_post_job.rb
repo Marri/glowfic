@@ -1,32 +1,45 @@
 class NotifyFollowersOfNewPostJob < ApplicationJob
   queue_as :notifier
 
-  def perform(post_id, user_id)
+  ACTIONS = ['new', 'join']
+
+  def perform(post_id, user_id, action)
     post = Post.find_by(id: post_id)
-    user = User.find_by(id: user_id)
-    return unless post && user
+    return unless post && ACTIONS.include?(action)
     return if post.privacy_private?
 
-    if post.user_id == user_id
-      notify_of_post_creation(post, user)
+    if action == 'new'
+      return unless user_id.is_a?(Array)
+      users = User.where(id: user_id)
+      return unless users
+      notify_of_post_creation(post, users)
     else
+      user = User.find_by(id: user_id)
+      return unless user
       notify_of_post_joining(post, user)
     end
   end
 
-  def notify_of_post_creation(post, post_user)
-    favorites = Favorite.where(favorite: post_user).or(Favorite.where(favorite: post.board))
-    user_ids = favorites.select(:user_id).distinct.pluck(:user_id)
-    users = filter_users(post, user_ids)
+  def notify_of_post_creation(post, users)
+    favorites = Favorite.where(favorite: users).or(Favorite.where(favorite: post.board))
+    notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
 
-    return if users.empty?
+    return if notified.empty?
 
-    message = "#{post_user.username} has just posted a new post entitled #{post.subject} in the #{post.board.name} continuity"
-    other_authors = post.authors.where.not(id: post_user.id)
-    message += " with #{other_authors.pluck(:username).join(', ')}" if other_authors.exists?
-    message += ". #{ScrapePostJob.view_post(post.id)}"
+    message = "#{post.user.username} has just posted a new post"
+    other_authors = users.reject{|u| u.id = post.user_id}
+    message += " with #{other_authors.pluck(:username).join(', ')}" unless other_authors.empty?
+    message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
-    users.each { |user| Message.send_site_message(user.id, "New post by #{post_user.username}", message) }
+    notified.each do |user|
+      favorited_authors = favorites.where(user: user).where(favorite_type: 'User')
+      favorited_authors = favorited_authors.joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
+      if favorited_authors.empty?
+        Message.send_site_message(user.id, "New post by #{post.user.username}", message)
+      else
+        Message.send_site_message(user.id, "New post by #{favorited_authors.to_sentence}", message)
+      end
+    end
   end
 
   def notify_of_post_joining(post, new_user)

@@ -5,13 +5,19 @@ RSpec.describe NotifyFollowersOfNewPostJob do
   it "does nothing with invalid post id" do
     expect(Favorite).not_to receive(:where)
     user = create(:user)
-    NotifyFollowersOfNewPostJob.perform_now(-1, user.id)
+    NotifyFollowersOfNewPostJob.perform_now(-1, user.id, 'new')
   end
 
   it "does nothing with invalid user id" do
     expect(Favorite).not_to receive(:where)
     post = create(:post)
-    NotifyFollowersOfNewPostJob.perform_now(post.id, -1)
+    NotifyFollowersOfNewPostJob.perform_now(post.id, -1, 'join')
+  end
+
+  it "does nothing with invalid action" do
+    expect(Favorite).not_to receive(:where)
+    post = create(:post)
+    NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id, '')
   end
 
   context "on new posts" do
@@ -30,7 +36,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         }.to change { Message.count }.by(1)
         author_msg = Message.where(recipient: notified).last
         expect(author_msg.subject).to include("New post by #{author.username}")
-        expected = "#{author.username} has just posted a new post entitled #{title} in the #{board.name} continuity with #{coauthor.username}."
+        expected = "#{author.username} has just posted a new post with #{coauthor.username} entitled #{title} in the #{board.name} continuity."
         expect(author_msg.message).to include(expected)
       end
 
