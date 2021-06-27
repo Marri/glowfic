@@ -1,7 +1,7 @@
 class NotifyFollowersOfNewPostJob < ApplicationJob
   queue_as :notifier
 
-  ACTIONS = ['new', 'join']
+  ACTIONS = ['new', 'join', 'access', 'public']
 
   def perform(post_id, user_id, action)
     post = Post.find_by(id: post_id)
@@ -13,10 +13,14 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
       users = User.where(id: user_id)
       return unless users
       notify_of_post_creation(post, users)
-    else
+    elsif action == 'join'
       user = User.find_by(id: user_id)
       return unless user
       notify_of_post_joining(post, user)
+    elsif action == 'access'
+      user = User.find_by(id: user_id)
+      return unless user
+      notify_of_post_access(post, user)
     end
   end
 
@@ -56,6 +60,22 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
       Message.send_site_message(user.id, subject, message)
     end
   end
+
+  def notify_of_post_access(post, viewer)
+    return unless Favorite.where(favorite: post.authors).or(Favorite.where(favorite: post.board)).where(user: viewer).exists?
+    favorited_authors = favorites.where(user: user).where(favorite_type: 'User')
+      .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
+    subject = "You now have access to a post"
+    subject += " by #{favorited_authors.to_sentence} " if favorited_authors.present?
+    subject += " in #{post.board.name}" if Favorite.between(viewer, post.board)
+
+    message = "You have been given access to a post by #{post.joined_authors.pluck(:username).join(', ')} entitled #{post.subject} "
+    message += "in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
+
+    Message.send_site_message(user.id, subject, message)
+  end
+
+  private
 
   def filter_users(post, user_ids)
     user_ids &= PostViewer.where(post: post).pluck(:user_id) if post.privacy_access_list?
