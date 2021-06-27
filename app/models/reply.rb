@@ -121,9 +121,6 @@ class Reply < ApplicationRecord
     else
       post.post_authors.create!(user_id: user_id, joined: true, joined_at: created_at)
     end
-
-    return if is_import
-    post.user_joined(user)
   end
 
   def remove_post_author
