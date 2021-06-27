@@ -27,7 +27,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     return if notified.empty?
 
     message = "#{post.user.username} has just posted a new post"
-    other_authors = users.reject{|u| u.id = post.user_id}
+    other_authors = users.reject{|u| u.id == post.user_id}
     message += " with #{other_authors.pluck(:username).join(', ')}" unless other_authors.empty?
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
