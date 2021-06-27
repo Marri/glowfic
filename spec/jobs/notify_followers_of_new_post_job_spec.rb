@@ -1,5 +1,6 @@
 RSpec.describe NotifyFollowersOfNewPostJob do
-  before(:each) { ResqueSpec.reset! }
+  include ActiveJob::TestHelper
+  before(:each) { clear_enqueued_jobs }
 
   it "does nothing with invalid post id" do
     expect(Favorite).not_to receive(:where)
@@ -91,6 +92,12 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       create(:favorite, user: author, favorite: notified)
       post = create(:post, user: author, unjoined_authors: [notified])
       expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+    end
+
+    it "does not queue on imported posts" do
+      create(:favorite, user: notified, favorite: author)
+      create(:post, user: author, is_import: true)
+      expect(NotifyFollowersOfNewPostJob).not_to have_been_enqueued
     end
 
     describe "with blocking" do
@@ -252,6 +259,16 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       post = create(:post, user: author, unjoined_authors: [coauthor1, coauthor2])
       create(:reply, post: post, user: coauthor2)
       expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+    end
+
+    it "does not queue on imported replies" do
+      replier = create(:user)
+      notified = create(:user)
+      create(:favorite, user: notified, favorite: replier)
+      post = create(:post)
+      clear_enqueued_jobs
+      create(:reply, user: replier, post: post, is_import: true)
+      expect(NotifyFollowersOfNewPostJob).not_to have_been_enqueued
     end
 
     describe "with blocking" do
