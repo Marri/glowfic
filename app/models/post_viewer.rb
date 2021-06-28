@@ -20,7 +20,7 @@ class PostViewer < ApplicationRecord
   end
 
   def notify_followers
-    return unless post.privacy == :access_list
+    return unless post.privacy_access_list?
     NotifyFollowersOfNewPostJob.perform_later(post_id, user_id, 'access')
   end
 end
