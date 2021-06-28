@@ -102,6 +102,23 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
     end
 
+    context "with favorited coauthor" do
+      before(:each) { create(:favorite, user: notified, favorite: coauthor) }
+
+      include_examples "new"
+
+      it "does not send to authors" do
+        coauthor2 = create(:user)
+        create(:favorite, user: coauthor2, favorite: coauthor)
+
+        expect {
+          perform_enqueued_jobs do
+            create(:post, user: notified, unjoined_authors: [coauthor, coauthor2])
+          end
+        }.not_to change { Message.count }
+      end
+    end
+
     context "with favorited board" do
       let(:favorite) { board }
 
