@@ -1158,7 +1158,7 @@ RSpec.describe Post do
       notified = create(:user)
       create(:favorite, user: notified, favorite: author)
       post = create(:post, user: author)
-      expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, post.user_id).on_queue('notifier')
+      expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, [post.user_id], 'new').on_queue('notifier')
     end
 
     it "should only enqueue a message on authors' first join" do
@@ -1167,7 +1167,7 @@ RSpec.describe Post do
 
       # first post triggers job
       post = create(:post, user: author)
-      expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, post.user_id).on_queue('notifier')
+      expect(NotifyFollowersOfNewPostJob).to have_been_enqueued.with(post.id, [post.user_id], 'new').on_queue('notifier')
 
       # original author posting again does not trigger job
       expect {
