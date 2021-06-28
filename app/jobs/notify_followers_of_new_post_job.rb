@@ -75,6 +75,15 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     Message.send_site_message(user.id, subject, message)
   end
 
+  def self.notification_about(post, user, unread_only: false)
+    messages = Message.where(recipient: user, sender_id: 0).where('created_at >= ?', post.created_at)
+    messages = messages.unread if unread_only
+    messages.find_each do |notification|
+      return notification if notification.message.include?(ScrapePostJob.view_post(post.id))
+    end
+    nil
+  end
+
   private
 
   def filter_users(post, user_ids)
@@ -87,15 +96,6 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   def already_notified_about?(post, user)
     self.class.notification_about(post, user).present?
-  end
-
-  def self.notification_about(post, user, unread_only: false)
-    messages = Message.where(recipient: user, sender_id: 0).where('created_at >= ?', post.created_at)
-    messages = messages.unread if unread_only
-    messages.find_each do |notification|
-      return notification if notification.message.include?(ScrapePostJob.view_post(post.id))
-    end
-    nil
   end
 
   def blocked_user_ids(post)
