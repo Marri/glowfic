@@ -8,18 +8,20 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     return unless post && ACTIONS.include?(action)
     return if post.privacy_private?
 
-    if action == 'new'
+    if ['join', 'access'].includes?(action)
+      user = User.find_by(id: user_id)
+      return unless user
+    else
       return unless user_id.is_a?(Array)
       users = User.where(id: user_id)
       return unless users
+    end
+
+    if action == 'new'
       notify_of_post_creation(post, users)
     elsif action == 'join'
-      user = User.find_by(id: user_id)
-      return unless user
       notify_of_post_joining(post, user)
     elsif action == 'access'
-      user = User.find_by(id: user_id)
-      return unless user
       notify_of_post_access(post, user)
     end
   end
