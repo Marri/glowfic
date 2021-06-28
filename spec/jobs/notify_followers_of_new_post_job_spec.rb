@@ -128,10 +128,11 @@ RSpec.describe NotifyFollowersOfNewPostJob do
   end
 
   context "on joined posts" do
+    let(:author) { create(:user) }
+    let(:replier) { create(:user) }
+    let(:notified) { create(:user) }
+
     it "does not send twice if the user has favorited both the poster and the replier" do
-      author = create(:user)
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
@@ -147,9 +148,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not send twice if the poster changes their username" do
-      author = create(:user)
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
@@ -166,9 +164,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not send twice if the post subject changes" do
-      author = create(:user)
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
@@ -185,9 +180,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "sends twice for different posts" do
-      author = create(:user)
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
@@ -208,11 +200,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "sends the right message" do
-      author = create(:user)
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: replier)
-
       post = create(:post, user: author)
       reply = create(:reply, post: post, user: replier)
       expect {
@@ -226,8 +214,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not send unless visible" do
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: replier)
       post = create(:post, privacy: :access_list, viewers: [replier])
       create(:reply, post: post, user: replier)
@@ -235,8 +221,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not send if reader has config disabled" do
-      replier = create(:user)
-      notified = create(:user, favorite_notifications: false)
+      notified.update!(favorite_notifications: false)
       create(:favorite, user: notified, favorite: replier)
       post = create(:post)
       create(:reply, post: post, user: replier)
@@ -244,8 +229,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not send to the poster" do
-      author = create(:user)
-      replier = create(:user)
       create(:favorite, user: author, favorite: replier)
       post = create(:post, user: author)
       create(:reply, post: post, user: replier)
@@ -253,8 +236,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not send to coauthors" do
-      author = create(:user)
-      replier = create(:user)
       unjoined = create(:user)
       create(:favorite, user: unjoined, favorite: replier)
       post = create(:post, user: author, unjoined_authors: [replier, unjoined])
@@ -263,8 +244,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     it "does not queue on imported replies" do
-      replier = create(:user)
-      notified = create(:user)
       create(:favorite, user: notified, favorite: replier)
       post = create(:post)
       clear_enqueued_jobs
@@ -274,9 +253,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     describe "with blocking" do
       let(:board) { create(:board) }
-      let(:author) { create(:user) }
-      let(:replier) { create(:user) }
-      let(:notified) { create(:user) }
       let(:post) { create(:post, user: author, board: board) }
 
       before(:each) do
