@@ -314,4 +314,188 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
     end
   end
+
+  context "on newly accessible posts" do
+    let!(:author) { create(:user) }
+    let!(:coauthor) { create(:user) }
+    let!(:unjoined) { create(:user) }
+    let!(:notified) { create(:user) }
+    let!(:post) { create(:post, user: author, unjoined_authors: [coauthor, unjoined], privacy: :access_list, viewers: [coauthor, unjoined]) }
+
+    before(:each) { create(:reply, user: coauthor, post: post) }
+
+    shared_examples "access" do
+      it "works" do
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.to change { Message.count }.by(1)
+
+        author_msg = Message.where(recipient: notified).last
+        expected = "You have been given access to a post by #{author.username} and #{coauthor.username}"
+        expected += " entitled #{post.subject} in the #{post.board.name} continuity."
+        expect(author_msg.message).to include(expected)
+      end
+
+      it "works for self-threads" do
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.to change { Message.count }.by(1)
+
+        author_msg = Message.where(recipient: notified).last
+        expected = "You have been given access to a post by #{author.username} and #{coauthor.username}"
+        expected += " entitled #{post.subject} in the #{post.board.name} continuity."
+        expect(author_msg.message).to include(expected)
+      end
+
+      it "does not send on post creation" do
+        board = post.board
+        clear_enqueued_jobs
+        expect {
+          perform_enqueued_jobs do
+            create(:post, user: author, unjoined_authors: [coauthor, unjoined], board: board)
+          end
+        }.to change { Message.count }.by(1)
+
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to include("New post")
+      end
+
+      it "does not send for public threads" do
+        post.update!(privacy: :public)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.not_to change { Message.count }
+      end
+
+      it "does not send for private threads" do
+        post.update!(privacy: :private)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.not_to change { Message.count }
+      end
+
+      it "does not send if reader has config disabled" do
+        notified.update!(favorite_notifications: false)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.not_to change { Message.count }
+      end
+    end
+
+    context "with favorited author" do
+      before(:each) { create(:favorite, user: notified, favorite: author) }
+
+      include_examples "access"
+
+      it "does not send to coauthors" do
+        PostViewer.delete_all
+        create(:favorite, user: coauthor, favorite: author)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: coauthor, post: post) }
+        }.not_to change { Message.count }
+
+        create(:favorite, user: unjoined, favorite: author)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: unjoined, post: post) }
+        }.not_to change { Message.count }
+      end
+
+      it "has the correct title" do
+        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to eq("You now have access to a post by #{author.username}")
+      end
+    end
+
+    context "with favorited coauthor" do
+      before(:each) { create(:favorite, user: notified, favorite: coauthor) }
+
+      include_examples "access"
+
+      it "does not send to coauthors" do
+        PostViewer.delete_all
+        create(:favorite, user: unjoined, favorite: author)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: unjoined, post: post) }
+        }.not_to change { Message.count }
+      end
+
+      it "has the correct title" do
+        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to eq("You now have access to a post by #{coauthor.username}")
+      end
+    end
+
+    context "with favorited unjoined coauthor" do
+      before(:each) { create(:favorite, user: notified, favorite: unjoined) }
+
+      include_examples "access"
+
+      it "has the correct title" do
+        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to eq("You now have access to a post by #{unjoined.username}")
+      end
+    end
+
+    context "with favorited board" do
+      before(:each) { create(:favorite, user: notified, favorite: post.board) }
+
+      include_examples "access"
+
+      it "does not send twice if the user has favorited both the poster and the continuity" do
+        create(:favorite, user: notified, favorite: author)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.to change { Message.count }.by(1)
+      end
+
+      it "does not send to coauthors" do
+        PostViewer.delete_all
+        create(:favorite, user: coauthor, favorite: author)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: coauthor, post: post) }
+        }.not_to change { Message.count }
+
+        create(:favorite, user: unjoined, favorite: author)
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: unjoined, post: post) }
+        }.not_to change { Message.count }
+      end
+
+      it "has the correct title" do
+        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to eq("You now have access to a post in #{post.board.name}")
+      end
+    end
+
+    context "with blocking" do
+      let!(:post) { create(:post, user: author, authors: [coauthor]) }
+      let(:viewer) { PostViewer.create!(user: notified, post: post) }
+
+      before(:each) { create(:favorite, user: notified, favorite: post.board) }
+
+      it "does not send to users the poster has blocked" do
+        create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
+        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
+      end
+
+      it "does not send to users a coauthor has blocked" do
+        create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
+        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking the poster" do
+        create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
+        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking a coauthor" do
+        create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
+        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
+      end
+    end
+  end
 end
