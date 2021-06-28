@@ -40,7 +40,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     notified.each do |user|
       favorited_authors = favorites.where(user: user).where(favorite_type: 'User')
         .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
-      title = favorited_authors.present? ? "New post by #{favorited_authors.to_sentence}" : "New post by #{post.user.username}"
+      title = favorited_authors.present? ? "New post by #{favorited_authors.to_sentence}" : "New post in #{post.board.name}"
       Message.send_site_message(user.id, title, message)
     end
   end
