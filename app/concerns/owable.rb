@@ -62,7 +62,7 @@ module Owable
 
     def notify_followers
       return if is_import
-      NotifyFollowersOfNewPostJob.perform_later(self.id, authors.ids, 'new')
+      NotifyFollowersOfNewPostJob.perform_later(self.id, [], 'new')
     end
   end
 end

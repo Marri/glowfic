@@ -11,14 +11,10 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     if ['join', 'access'].include?(action)
       user = User.find_by(id: user_id)
       return unless user
-    else
-      return unless user_id.is_a?(Array)
-      users = User.where(id: user_id)
-      return unless users
     end
 
     if action == 'new'
-      notify_of_post_creation(post, users)
+      notify_of_post_creation(post)
     elsif action == 'join'
       notify_of_post_joining(post, user)
     elsif action == 'access'
@@ -26,14 +22,14 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     end
   end
 
-  def notify_of_post_creation(post, users)
+  def notify_of_post_creation(post)
     favorites = favorites_for(post)
     notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id), true)
 
     return if notified.empty?
 
     message = "#{post.user.username} has just posted a new post"
-    other_authors = users.reject{|u| u.id == post.user_id}
+    other_authors = post.authors.reject{|u| u.id == post.user_id}
     message += " with #{other_authors.pluck(:username).join(', ')}" unless other_authors.empty?
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
