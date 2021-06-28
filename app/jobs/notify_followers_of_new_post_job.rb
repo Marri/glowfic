@@ -62,6 +62,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   def notify_of_post_access(post, viewer)
     return unless viewer.favorite_notifications? && post.author_ids.exclude?(viewer.id)
+    return if already_notified_about?(post, viewer)
     return unless Favorite.where(favorite: post.authors).or(Favorite.where(favorite: post.board)).where(user: viewer).exists?
     favorited_authors = Favorite.where(user: viewer).where(favorite: post.authors)
       .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
