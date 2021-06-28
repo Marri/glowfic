@@ -28,7 +28,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   def notify_of_post_creation(post, users)
     favorites = Favorite.where(favorite: users).or(Favorite.where(favorite: post.board))
-    notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
+    notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id), true)
 
     return if notified.empty?
 
@@ -55,14 +55,12 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     message += ". #{ScrapePostJob.view_post(post.id)}"
 
     users.each do |user|
-      next if already_notified_about?(post, user)
       Message.send_site_message(user.id, subject, message)
     end
   end
 
   def notify_of_post_access(post, viewer)
-    return unless viewer.favorite_notifications? && post.author_ids.exclude?(viewer.id)
-    return if already_notified_about?(post, viewer)
+    return if filter_users(post, [viewer.id]).empty?
     return unless Favorite.where(favorite: post.authors).or(Favorite.where(favorite: post.board)).where(user: viewer).exists?
     favorited_authors = Favorite.where(user: viewer).where(favorite: post.authors)
       .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
@@ -87,12 +85,14 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   private
 
-  def filter_users(post, user_ids)
+  def filter_users(post, user_ids, skip_previous=false)
     user_ids &= PostViewer.where(post: post).pluck(:user_id) if post.privacy_access_list?
     user_ids -= post.author_ids
     user_ids -= blocked_user_ids(post)
     return [] unless user_ids.present?
-    User.where(id: user_ids, favorite_notifications: true)
+    users = User.where(id: user_ids, favorite_notifications: true)
+    return users if skip_previous
+    users.reject{ |user| already_notified_about?(post, user) }
   end
 
   def already_notified_about?(post, user)
