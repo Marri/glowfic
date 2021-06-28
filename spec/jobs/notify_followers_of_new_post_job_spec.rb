@@ -19,79 +19,105 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     let(:coauthor) { create(:user) }
     let(:notified) { create(:user) }
     let(:board) { create(:board) }
+    let(:title) { 'test subject' }
 
     it "works for board favorites" do
       create(:favorite, user: notified, favorite: board)
-      post = create(:post, user: author, unjoined_authors: [coauthor], board: board)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.to change { Message.count }.by(1)
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [coauthor], board: board, subject: title)
+        end
+      }.to change { Message.count }.by(1)
+
       author_msg = Message.where(recipient: notified).last
       expect(author_msg.subject).to eq("New post by #{author.username}")
-      expected = "#{author.username} has just posted a new post entitled #{post.subject} in the #{board.name} continuity with #{coauthor.username}."
+      expected = "#{author.username} has just posted a new post entitled #{title} in the #{board.name} continuity with #{coauthor.username}."
       expect(author_msg.message).to include(expected)
     end
 
     it "works for user favorites" do
       create(:favorite, user: notified, favorite: author)
-      post = create(:post, user: author, unjoined_authors: [coauthor], board: board)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.to change { Message.count }.by(1)
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [coauthor], board: board, subject: title)
+        end
+      }.to change { Message.count }.by(1)
       author_msg = Message.where(recipient: notified).last
       expect(author_msg.subject).to include("New post by #{author.username}")
-      expected = "#{author.username} has just posted a new post entitled #{post.subject} in the #{board.name} continuity with #{coauthor.username}."
+      expected = "#{author.username} has just posted a new post entitled #{title} in the #{board.name} continuity with #{coauthor.username}."
       expect(author_msg.message).to include(expected)
     end
 
     it "works for self-threads" do
       create(:favorite, user: notified, favorite: author)
-      post = create(:post, user: author, unjoined_authors: [], subject: 'test')
-
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.to change { Message.count }.by(1)
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [], board: board, subject: title)
+        end
+      }.to change { Message.count }.by(1)
 
       author_msg = Message.where(recipient: notified).last
       expect(author_msg.subject).to eq("New post by #{author.username}")
-      expect(author_msg.message).to include("#{author.username} has just posted a new post entitled test in the #{post.board.name} continuity.")
+      expect(author_msg.message).to include("#{author.username} has just posted a new post entitled #{title} in the #{board.name} continuity.")
     end
 
     it "does not send twice if the user has favorited both the poster and the continuity" do
       create(:favorite, user: notified, favorite: board)
       create(:favorite, user: notified, favorite: author)
-      post = create(:post, user: author, board: board)
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
+        perform_enqueued_jobs do
+          create(:post, user: author, board: board)
+        end
       }.to change { Message.count }.by(1)
     end
 
     it "does not send for private posts" do
       create(:favorite, user: notified, favorite: author)
-      post = create(:post, user: author, privacy: :private)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, privacy: :private)
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not send to non-viewers for access-locked posts" do
       unnotified = create(:user)
       create(:favorite, user: unnotified, favorite: author)
       create(:favorite, user: notified, favorite: author)
-      post = create(:post, user: author, privacy: :access_list, viewers: [notified])
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.to change { Message.count }.by(1)
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, privacy: :access_list, viewers: [notified])
+        end
+      }.to change { Message.count }.by(1)
       expect(Message.where(recipient: unnotified)).not_to be_present
     end
 
     it "does not send if reader has config disabled" do
       notified.update!(favorite_notifications: false)
       create(:favorite, user: notified, favorite: author)
-      post = create(:post, user: author)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author)
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not send to the poster" do
       create(:favorite, user: author, favorite: board)
-      post = create(:post, user: author, board: board)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, board: board)
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not send to coauthors" do
-      create(:favorite, user: author, favorite: notified)
-      post = create(:post, user: author, unjoined_authors: [notified])
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+      create(:favorite, user: notified, favorite: author)
+      expect {
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [notified])
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not queue on imported posts" do
@@ -107,22 +133,22 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
       it "does not send to users the poster has blocked" do
         create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
       end
 
       it "does not send to users a coauthor has blocked" do
         create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
       end
 
       it "does not send to users who are blocking the poster" do
         create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
       end
 
       it "does not send to users who are blocking a coauthor" do
         create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
       end
     end
   end
@@ -136,111 +162,115 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
-      post = create(:post, user: author)
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
+        perform_enqueued_jobs do
+          post = create(:post, user: author)
+          create(:reply, post: post, user: replier)
+        end
       }.to change { Message.count }.by(1)
-
-      reply = create(:reply, post: post, user: replier)
-      expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, reply.user_id)
-      }.not_to change { Message.count }
     end
 
     it "does not send twice if the poster changes their username" do
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
-      post = create(:post, user: author)
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
+        perform_enqueued_jobs do
+          post = create(:post, user: author)
+          author.update!(username: author.username + 'new')
+          create(:reply, post: post, user: replier)
+        end
       }.to change { Message.count }.by(1)
-
-      author.update!(username: author.username + 'new')
-      reply = create(:reply, post: post, user: replier)
-      expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, reply.user_id)
-      }.not_to change { Message.count }
     end
 
     it "does not send twice if the post subject changes" do
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
-      post = create(:post, user: author)
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
+        perform_enqueued_jobs do
+          post = create(:post, user: author)
+          post.update!(subject: post.subject + 'new')
+          create(:reply, post: post, user: replier)
+        end
       }.to change { Message.count }.by(1)
-
-      post.update!(subject: post.subject + 'new')
-      reply = create(:reply, post: post, user: replier)
-      expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, reply.user_id)
-      }.not_to change { Message.count }
     end
 
     it "sends twice for different posts" do
       create(:favorite, user: notified, favorite: author)
       create(:favorite, user: notified, favorite: replier)
 
-      post = create(:post, user: author)
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id)
+        perform_enqueued_jobs { create(:post, user: author) }
       }.to change { Message.count }.by(1)
 
-      not_favorited_post = create(:post)
+      not_favorited_post = nil
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(not_favorited_post.id, not_favorited_post.user_id)
+        perform_enqueued_jobs do
+          not_favorited_post = create(:post)
+        end
       }.not_to change { Message.count }
 
-      reply = create(:reply, post: not_favorited_post, user: replier)
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(not_favorited_post.id, reply.user_id)
+        perform_enqueued_jobs do
+          create(:reply, post: not_favorited_post, user: replier)
+        end
       }.to change { Message.count }.by(1)
     end
 
     it "sends the right message" do
       create(:favorite, user: notified, favorite: replier)
-      post = create(:post, user: author)
-      reply = create(:reply, post: post, user: replier)
+      title = "test subject"
+
       expect {
-        NotifyFollowersOfNewPostJob.perform_now(post.id, reply.user_id)
+        perform_enqueued_jobs do
+          post = create(:post, user: author, subject: title)
+          create(:reply, post: post, user: replier)
+        end
       }.to change { Message.count }.by(1)
 
       message = Message.last
       expect(message.subject).to eq("#{replier.username} has joined a new thread")
-      expect(message.message).to include(post.subject)
+      expect(message.message).to include(title)
       expect(message.message).to include("with #{author.username}")
     end
 
     it "does not send unless visible" do
       create(:favorite, user: notified, favorite: replier)
-      post = create(:post, privacy: :access_list, viewers: [replier])
-      create(:reply, post: post, user: replier)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+
+      expect {
+        perform_enqueued_jobs do
+          post = create(:post, privacy: :access_list, viewers: [replier])
+          create(:reply, post: post, user: replier)
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not send if reader has config disabled" do
       notified.update!(favorite_notifications: false)
       create(:favorite, user: notified, favorite: replier)
-      post = create(:post)
-      create(:reply, post: post, user: replier)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+      expect { perform_enqueued_jobs { create(:reply, user: replier) } }.not_to change { Message.count }
     end
 
     it "does not send to the poster" do
       create(:favorite, user: author, favorite: replier)
-      post = create(:post, user: author)
-      create(:reply, post: post, user: replier)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+      expect {
+        perform_enqueued_jobs do
+          post = create(:post, user: author)
+          create(:reply, post: post, user: replier)
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not send to coauthors" do
       unjoined = create(:user)
       create(:favorite, user: unjoined, favorite: replier)
-      post = create(:post, user: author, unjoined_authors: [replier, unjoined])
-      create(:reply, post: post, user: replier)
-      expect { NotifyFollowersOfNewPostJob.perform_now(post.id, unjoined.id) }.not_to change { Message.count }
+      expect {
+        perform_enqueued_jobs do
+          post = create(:post, user: author, unjoined_authors: [replier, unjoined])
+          create(:reply, post: post, user: replier)
+        end
+      }.not_to change { Message.count }
     end
 
     it "does not queue on imported replies" do
@@ -253,41 +283,39 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     describe "with blocking" do
       let(:coauthor) { create(:user) }
-      let(:post) { create(:post, user: author, unjoined_authors: [coauthor]) }
+      let!(:post) { create(:post, user: author, unjoined_authors: [coauthor]) }
+      let(:reply) { create(:reply, post: post, user: replier) }
 
-      before(:each) do
-        create(:favorite, user: notified, favorite: replier)
-        create(:reply, post: post, user: replier)
-      end
+      before(:each) { create(:favorite, user: notified, favorite: replier) }
 
       it "does not send to users the joining user has blocked" do
         create(:block, blocking_user: replier, blocked_user: notified, hide_me: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
       end
 
       it "does not send to users who are blocking the joining user" do
         create(:block, blocked_user: replier, blocking_user: notified, hide_them: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
       end
 
       it "does not send to users the original poster has blocked" do
         create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
       end
 
       it "does not send to users who are blocking the original poster" do
         create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
       end
 
       it "does not send to users who a coauthor has blocked" do
         create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
       end
 
       it "does not send to users who are blocking a coauthor" do
         create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
       end
     end
   end
