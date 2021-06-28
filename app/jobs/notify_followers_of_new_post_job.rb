@@ -27,7 +27,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
   end
 
   def notify_of_post_creation(post, users)
-    favorites = Favorite.where(favorite: users).or(Favorite.where(favorite: post.board))
+    favorites = favorites_for(post)
     notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id), true)
 
     return if notified.empty?
@@ -61,7 +61,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   def notify_of_post_access(post, viewer)
     return if filter_users(post, [viewer.id]).empty?
-    return unless Favorite.where(favorite: post.authors).or(Favorite.where(favorite: post.board)).where(user: viewer).exists?
+    return unless favorites_for(post).where(user: viewer).exists?
     favorited_authors = Favorite.where(user: viewer).where(favorite: post.authors)
       .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
     subject = "You now have access to a post"
@@ -84,6 +84,10 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
   end
 
   private
+
+  def favorites_for(post)
+    Favorite.where(favorite: post.authors).or(Favorite.where(favorite: post.board))
+  end
 
   def filter_users(post, user_ids, skip_previous=false)
     user_ids &= PostViewer.where(post: post).pluck(:user_id) if post.privacy_access_list?
