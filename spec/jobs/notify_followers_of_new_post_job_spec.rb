@@ -252,11 +252,11 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     describe "with blocking" do
-      let(:board) { create(:board) }
-      let(:post) { create(:post, user: author, board: board) }
+      let(:coauthor) { create(:user) }
+      let(:post) { create(:post, user: author, unjoined_authors: [coauthor]) }
 
       before(:each) do
-        create(:favorite, user: notified, favorite: board)
+        create(:favorite, user: notified, favorite: replier)
         create(:reply, post: post, user: replier)
       end
 
@@ -267,6 +267,26 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
       it "does not send to users who are blocking the joining user" do
         create(:block, blocked_user: replier, blocking_user: notified, hide_them: :posts)
+        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+      end
+
+      it "does not send to users the original poster has blocked" do
+        create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
+        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking the original poster" do
+        create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
+        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+      end
+
+      it "does not send to users who a coauthor has blocked" do
+        create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
+        expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking a coauthor" do
+        create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
         expect { NotifyFollowersOfNewPostJob.perform_now(post.id, replier.id) }.not_to change { Message.count }
       end
     end
