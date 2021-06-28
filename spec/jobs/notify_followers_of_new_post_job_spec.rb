@@ -35,7 +35,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
           end
         }.to change { Message.count }.by(1)
         author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to include("New post by #{author.username}")
         expected = "#{author.username} has just posted a new post with #{coauthor.username} entitled #{title} in the #{board.name} continuity."
         expect(author_msg.message).to include(expected)
       end
@@ -100,9 +99,19 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         expect(author_msg.subject).to eq("New post by #{author.username}")
         expect(author_msg.message).to include("#{author.username} has just posted a new post entitled #{title} in the #{board.name} continuity.")
       end
+
+      it "has correct title" do
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [coauthor])
+        end
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to include("New post by #{author.username}")
+      end
     end
 
     context "with favorited coauthor" do
+      let(:favorite) { coauthor }
+
       before(:each) { create(:favorite, user: notified, favorite: coauthor) }
 
       include_examples "new"
@@ -116,6 +125,14 @@ RSpec.describe NotifyFollowersOfNewPostJob do
             create(:post, user: notified, unjoined_authors: [coauthor, coauthor2])
           end
         }.not_to change { Message.count }
+      end
+
+      it "has correct title" do
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [coauthor])
+        end
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to include("New post by #{coauthor.username}")
       end
     end
 
@@ -141,6 +158,14 @@ RSpec.describe NotifyFollowersOfNewPostJob do
             create(:post, user: notified, board: board)
           end
         }.not_to change { Message.count }
+      end
+
+      it "has correct title" do
+        perform_enqueued_jobs do
+          create(:post, user: author, unjoined_authors: [coauthor], board: board)
+        end
+        author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to include("New post in #{board.name}")
       end
     end
 
