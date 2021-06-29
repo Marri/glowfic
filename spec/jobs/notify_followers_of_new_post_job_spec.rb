@@ -519,6 +519,71 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
     end
 
+    context "with privacy change" do
+      before(:each) do
+        create(:favorite, user: notified, favorite: author)
+        post.update!(privacy: :private, viewers: [coauthor, unjoined, notified])
+        clear_enqueued_jobs
+      end
+
+      it "works" do
+        expect {
+          perform_enqueued_jobs { post.update!(privacy: :access_list) }
+        }.to change { Message.count }.by(1)
+      end
+
+      it "does not send twice for new viewer" do
+        PostViewer.find_by(user: notified, post: post).destroy!
+        post.reload
+        expect {
+          perform_enqueued_jobs do
+            post.update!(privacy: :access_list, viewers: [coauthor, unjoined, notified])
+          end
+        }.to change { Message.count }.by(1)
+      end
+
+      it "does not send if already notified" do
+        post.update!(privacy: :access_list, viewers: [coauthor, unjoined])
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.to change { Message.count }.by(1)
+
+        post.update!(privacy: :private)
+
+        expect {
+          perform_enqueued_jobs { post.update!(privacy: :access_list) }
+        }.not_to change { Message.count }
+      end
+
+      it "does not send for public threads" do
+        expect {
+          perform_enqueued_jobs { post.update!(privacy: :public) }
+        }.to change { Message.count }.by(1)
+        expect(Message.where(recipient: notified).last.message).to include('published')
+      end
+
+      it "does not send for registered threads" do
+        expect {
+          perform_enqueued_jobs { post.update!(privacy: :registered) }
+        }.to change { Message.count }.by(1)
+        expect(Message.where(recipient: notified).last.message).to include('published')
+      end
+
+      it "does not send for previously public threads" do
+        post.update!(privacy: :public)
+        post.reload
+        clear_enqueued_jobs
+        expect { perform_enqueued_jobs { post.update!(privacy: :access_list) } }.not_to change { Message.count }
+      end
+
+      it "does not send if reader has config disabled" do
+        notified.update!(favorite_notifications: false)
+        expect {
+          perform_enqueued_jobs { post.update!(privacy: :access_list) }
+        }.not_to change { Message.count }
+      end
+    end
+
     context "with blocking" do
       let!(:post) { create(:post, user: author, authors: [coauthor]) }
       let(:viewer) { PostViewer.create!(user: notified, post: post) }
