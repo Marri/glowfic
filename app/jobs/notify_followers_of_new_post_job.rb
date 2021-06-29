@@ -71,7 +71,9 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
     return if notified.empty?
 
-    message = "#{post.joined_authors.pluck(:username).to_sentence} have just published a post"
+    author_names = post.joined_authors.pluck(:username)
+
+    message = "#{author_names.to_sentence} #{'has'.pluralize(author_names.length)} published a post"
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
     notify_users_of_post(post, notified, message)
