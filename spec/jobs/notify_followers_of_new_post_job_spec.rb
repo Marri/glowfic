@@ -613,4 +613,185 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
     end
   end
+
+  context "on newly published posts" do
+    let!(:author) { create(:user) }
+    let!(:coauthor) { create(:user) }
+    let!(:notified) { create(:user) }
+    let!(:unjoined) { create(:user) }
+    let!(:board) { create(:board) }
+    let!(:post) { create(:post, user: author, board: board, authors: [coauthor, unjoined], privacy: :access_list) }
+
+    before(:each) { create(:reply, user: coauthor, post: post)}
+
+    shared_examples "publication all" do |privacy|
+      shared_examples "publication" do
+        it "works" do
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.to change { Message.count }.by(1)
+
+          author_msg = Message.where(recipient: notified).last
+          expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
+          expect(author_msg.message).to include(expected)
+        end
+
+        it "works for previously private posts" do
+          post.update!(privacy: :private)
+          clear_enqueued_jobs
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.to change { Message.count }.by(1)
+
+          author_msg = Message.where(recipient: notified).last
+          expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
+          expect(author_msg.message).to include(expected)
+        end
+
+        it "does not send on post creation" do
+          board = post.board
+          clear_enqueued_jobs
+          expect {
+            perform_enqueued_jobs do
+              create(:post, user: author, unjoined_authors: [coauthor, unjoined], board: board)
+            end
+          }.to change { Message.count }.by(1)
+
+          author_msg = Message.where(recipient: notified).last
+          expect(author_msg.message).not_to include('published')
+        end
+
+        it "does not send if reader has config disabled" do
+          notified.update!(favorite_notifications: false)
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.not_to change { Message.count }
+        end
+
+        it "does not send to coauthors" do
+          post.update!(unjoined_authors: [notified])
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.not_to change { Message.count }
+        end
+      end
+
+      context "with favorited author" do
+        before(:each) { create(:favorite, user: notified, favorite: author) }
+
+        include_examples "publication"
+
+        it "works for self-threads" do
+          post = create(:post, user: author, board: board, privacy: :access_list)
+          create(:reply, post: post, user: author)
+
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.to change { Message.count }.by(1)
+
+          author_msg = Message.where(recipient: notified).last
+          expected = "#{author.username} has published a post entitled #{post.subject} in the #{board.name} continuity."
+          expect(author_msg.message).to include(expected)
+        end
+
+        it "has correct title" do
+          perform_enqueued_jobs { post.update!(privacy: privacy) }
+          author_msg = Message.where(recipient: notified).last
+          expect(author_msg.subject).to include("New post by #{author.username}")
+        end
+      end
+
+      context "with favorited coauthor" do
+        before(:each) { create(:favorite, user: notified, favorite: coauthor) }
+
+        include_examples "publication"
+
+        it "does not send to authors" do
+          Favorite.delete_all
+          create(:favorite, user: author, favorite: coauthor)
+
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.not_to change { Message.count }
+        end
+
+        it "has correct title" do
+          perform_enqueued_jobs { post.update!(privacy: privacy) }
+          author_msg = Message.where(recipient: notified).last
+          expect(author_msg.subject).to include("New post by #{coauthor.username}")
+        end
+      end
+
+      context "with favorited board" do
+        before(:each) { create(:favorite, user: notified, favorite: board) }
+
+        include_examples "publication"
+
+        it "does not send twice if the user has favorited both the poster and the continuity" do
+          create(:favorite, user: notified, favorite: author)
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.to change { Message.count }.by(1)
+        end
+
+        it "does not send to the poster" do
+          Favorite.delete_all
+          create(:favorite, user: author, favorite: board)
+          expect {
+            perform_enqueued_jobs { post.update!(privacy: privacy) }
+          }.not_to change { Message.count }
+        end
+
+        it "has correct title" do
+          perform_enqueued_jobs { post.update!(privacy: privacy) }
+          author_msg = Message.where(recipient: notified).last
+          expect(author_msg.subject).to include("New post in #{board.name}")
+        end
+      end
+
+      context "with favorited unjoined coauthor" do
+        before(:each) { create(:favorite, user: notified, favorite: unjoined) }
+
+        include_examples "publication"
+
+        it "has correct title" do
+          perform_enqueued_jobs { post.update!(privacy: privacy) }
+          author_msg = Message.where(recipient: notified).last
+          expect(author_msg.subject).to include("New post by #{unjoined.username}")
+        end
+      end
+
+      context "with blocking" do
+        before(:each) { create(:favorite, user: notified, favorite: board) }
+
+        it "does not send to users the poster has blocked" do
+          create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
+          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+        end
+
+        it "does not send to users a coauthor has blocked" do
+          create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
+          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+        end
+
+        it "does not send to users who are blocking the poster" do
+          create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
+          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+        end
+
+        it "does not send to users who are blocking a coauthor" do
+          create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
+          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+        end
+      end
+    end
+
+    context "now public" do
+      include_examples 'publication all', :public
+    end
+
+    context "now registered" do
+      include_examples 'publication all', :registered
+    end
+  end
 end
