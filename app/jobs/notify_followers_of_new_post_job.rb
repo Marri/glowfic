@@ -19,6 +19,8 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
       notify_of_post_joining(post, user)
     elsif action == 'access'
       notify_of_post_access(post, user)
+    elsif action == 'public'
+      notify_of_post_publication(post)
     end
   end
 
@@ -33,12 +35,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     message += " with #{other_authors.pluck(:username).join(', ')}" unless other_authors.empty?
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
-    notified.each do |user|
-      favorited_authors = favorites.where(user: user).where(favorite_type: 'User')
-        .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
-      title = favorited_authors.present? ? "New post by #{favorited_authors.to_sentence}" : "New post in #{post.board.name}"
-      Message.send_site_message(user.id, title, message)
-    end
+    notify_users_of_post(post, notified, message)
   end
 
   def notify_of_post_joining(post, new_user)
@@ -58,8 +55,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
   def notify_of_post_access(post, viewer)
     return if filter_users(post, [viewer.id]).empty?
     return unless favorites_for(post).where(user: viewer).exists?
-    favorited_authors = Favorite.where(user: viewer).where(favorite: post.authors)
-      .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
+    favorited_authors = favorited_authors_for(post, viewer)
     subject = "You now have access to a post"
     subject += " by #{favorited_authors.to_sentence}" if favorited_authors.present?
     subject += " in #{post.board.name}" if Favorite.between(viewer, post.board)
@@ -68,6 +64,17 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     message += "in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
     Message.send_site_message(viewer.id, subject, message)
+  end
+
+  def notify_of_post_publication(post)
+    favorites = favorites_for(post)
+    notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
+    return if notified.empty?
+
+    message = "#{post.joined_authors.pluck(:username).to_sentence} have just published a post"
+    message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
+
+    notify_users_of_post(post, notified, message)
   end
 
   def self.notification_about(post, user, unread_only: false)
@@ -80,6 +87,19 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
   end
 
   private
+
+  def notify_users_of_post(post, users, message)
+    users.each do |user|
+      favorited_authors = favorited_authors_for(post, user)
+      title = favorited_authors.present? ? "New post by #{favorited_authors.to_sentence}" : "New post in #{post.board.name}"
+      Message.send_site_message(user.id, title, message)
+    end
+  end
+
+  def favorited_authors_for(post, user)
+    Favorite.where(user: user).where(favorite: post.authors)
+      .joins('INNER JOIN users on users.id = favorites.favorite_id').pluck('users.username')
+  end
 
   def favorites_for(post)
     Favorite.where(favorite: post.authors).or(Favorite.where(favorite: post.board))
