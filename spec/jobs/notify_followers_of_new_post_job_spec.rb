@@ -384,17 +384,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         expect(author_msg.message).to include(expected)
       end
 
-      it "works for self-threads" do
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.to change { Message.count }.by(1)
-
-        author_msg = Message.where(recipient: notified).last
-        expected = "You have been given access to a post by #{author.username} and #{coauthor.username}"
-        expected += " entitled #{post.subject} in the #{post.board.name} continuity."
-        expect(author_msg.message).to include(expected)
-      end
-
       it "does not send on post creation" do
         board = post.board
         clear_enqueued_jobs
@@ -434,6 +423,19 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       before(:each) { create(:favorite, user: notified, favorite: author) }
 
       include_examples "access"
+
+      it "works for self-threads" do
+        post = create(:post, user: author, privacy: :access_list)
+        create(:reply, user: author, post: post)
+
+        expect {
+          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
+        }.to change { Message.count }.by(1)
+
+        author_msg = Message.where(recipient: notified).last
+        expected = "You have been given access to a post by #{author.username} entitled #{post.subject} in the #{post.board.name} continuity."
+        expect(author_msg.message).to include(expected)
+      end
 
       it "does not send to coauthors" do
         PostViewer.delete_all
