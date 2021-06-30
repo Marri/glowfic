@@ -28,16 +28,16 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   def notify_of_post_creation(post)
     favorites = favorites_for(post)
-    notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id), true)
-
-    return if notified.empty?
+    user_ids = favorites.select(:user_id).distinct.pluck(:user_id)
+    users = filter_users(post, user_ids, true)
+    return if users.empty?
 
     message = "#{post.user.username} has just posted a new post"
-    other_authors = post.authors.reject{|u| u.id == post.user_id}
-    message += " with #{other_authors.pluck(:username).join(', ')}" unless other_authors.empty?
+    other_authors = post.authors.where.not(id: post.user_id)
+    message += " with #{other_authors.pluck(:username).to_sentence}" unless other_authors.empty?
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
-    notify_users_of_post(post, notified, message)
+    notify_users_of_post(post, users, message)
   end
 
   def notify_of_post_joining(post, new_user)
