@@ -69,7 +69,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
 
       it "does not send to authors" do
-        Favorites.delete_all
+        Favorite.delete_all
         [author, coauthor].each do |u|
           create(:favorite, user: u, favorite: favorite) unless u == favorite
         end
@@ -393,7 +393,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         post = create(:post, user: author, privacy: :access_list)
         create(:reply, user: author, post: post)
 
-        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
+        expect { perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) } }.to change { Message.count }.by(1)
 
         author_msg = Message.where(recipient: notified).last
         expected = "You have been given access to a post by #{author.username} entitled #{post.subject} in the #{post.board.name} continuity."
@@ -420,7 +420,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     context "with favorited board" do
-      let(:favorite) { board }
+      let(:favorite) { post.board }
       let(:msg_title) { "You now have access to a post in #{post.board.name}" }
 
       before(:each) { create(:favorite, user: notified, favorite: post.board) }
@@ -537,10 +537,8 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     before(:each) { create(:reply, user: coauthor, post: post)}
 
     [:registered, :public].each do |privacy|
-      context "now #{privacy}" do
-        def do_action
-          post.update!(privacy: privacy)
-        end
+      context "to #{privacy}" do
+        let(:do_action) { post.update!(privacy: privacy) }
 
         shared_examples "publication" do
           it "works" do
@@ -581,7 +579,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
           end
 
           it "does not send to authors" do
-            Favorites.delete_all
+            Favorite.delete_all
             [author, coauthor, unjoined].each do |u|
               create(:favorite, user: u, favorite: favorite) unless u == favorite
             end
