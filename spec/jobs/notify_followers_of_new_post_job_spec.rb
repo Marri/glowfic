@@ -395,11 +395,9 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         clear_enqueued_jobs
       end
 
-      it "works" do
-        expect {
-          perform_enqueued_jobs { post.update!(privacy: :access_list) }
-        }.to change { Message.count }.by(1)
-      end
+      let(:do_action) { post.update!(privacy: access_list) }
+
+      include_examples 'general'
 
       it "does not send twice for new viewer" do
         PostViewer.find_by(user: notified, post: post).destroy!
@@ -443,13 +441,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         post.reload
         clear_enqueued_jobs
         expect { perform_enqueued_jobs { post.update!(privacy: :access_list) } }.not_to change { Message.count }
-      end
-
-      it "does not send if reader has config disabled" do
-        notified.update!(favorite_notifications: false)
-        expect {
-          perform_enqueued_jobs { post.update!(privacy: :access_list) }
-        }.not_to change { Message.count }
       end
     end
 
