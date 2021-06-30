@@ -39,44 +39,33 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     let(:board) { create(:board) }
     let(:title) { 'test subject' }
 
+    def do_action(privacy: :public, viewers: [])
+      create(:post, user: author, unjoined_authors: [coauthor], board: board, subject: title, privacy: privacy, viewers: viewers)
+    end
+
     shared_examples "new" do
       it "works" do
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: author, unjoined_authors: [coauthor], board: board, subject: title)
-          end
-        }.to change { Message.count }.by(1)
+        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
         author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to eq(msg_title)
         expected = "#{author.username} has just posted a new post with #{coauthor.username} entitled #{title} in the #{board.name} continuity."
         expect(author_msg.message).to include(expected)
       end
 
       it "does not send for private posts" do
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: author, board: board, privacy: :private)
-          end
-        }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action(privacy: :private) } }.not_to change { Message.count }
       end
 
       it "does not send to non-viewers for access-locked posts" do
         unnotified = create(:user)
         create(:favorite, user: unnotified, favorite: favorite)
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: author, board: board, unjoined_authors: [coauthor], privacy: :access_list, viewers: [coauthor, notified])
-          end
-        }.to change { Message.count }.by(1)
+        expect { perform_enqueued_jobs { do_action(privacy: :access_list, viewers: [coauthor, notified]) } }.to change { Message.count }.by(1)
         expect(Message.where(recipient: unnotified)).not_to be_present
       end
 
       it "does not send if reader has config disabled" do
         notified.update!(favorite_notifications: false)
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: author, board: board)
-          end
-        }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
 
       it "does not send to authors" do
@@ -85,11 +74,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
           create(:favorite, user: u, favorite: favorite) unless u == favorite
         end
 
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: author, board: board, unjoined_authors: [coauthor])
-          end
-        }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
 
       it "does not queue on imported posts" do
@@ -100,6 +85,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     context "with favorited author" do
       let(:favorite) { author }
+      let(:msg_title) { "New post by #{author.username}" }
 
       before(:each) { create(:favorite, user: notified, favorite: author) }
 
@@ -113,37 +99,23 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         }.to change { Message.count }.by(1)
 
         author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq("New post by #{author.username}")
+        expect(author_msg.subject).to eq(msg_title)
         expect(author_msg.message).to include("#{author.username} has just posted a new post entitled #{title} in the #{board.name} continuity.")
-      end
-
-      it "has correct title" do
-        perform_enqueued_jobs do
-          create(:post, user: author, unjoined_authors: [coauthor])
-        end
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to include("New post by #{author.username}")
       end
     end
 
     context "with favorited coauthor" do
       let(:favorite) { coauthor }
+      let(:msg_title) { "New post by #{coauthor.username}" }
 
       before(:each) { create(:favorite, user: notified, favorite: coauthor) }
 
       include_examples "new"
-
-      it "has correct title" do
-        perform_enqueued_jobs do
-          create(:post, user: author, unjoined_authors: [coauthor])
-        end
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to include("New post by #{coauthor.username}")
-      end
     end
 
     context "with favorited board" do
       let(:favorite) { board }
+      let(:msg_title) { "New post in #{board.name}" }
 
       before(:each) { create(:favorite, user: notified, favorite: board) }
 
@@ -152,18 +124,8 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       it "does not send twice if the user has favorited both the poster and the continuity" do
         create(:favorite, user: notified, favorite: author)
         expect {
-          perform_enqueued_jobs do
-            create(:post, user: author, board: board)
-          end
+          perform_enqueued_jobs { do_action }
         }.to change { Message.count }.by(1)
-      end
-
-      it "has correct title" do
-        perform_enqueued_jobs do
-          create(:post, user: author, unjoined_authors: [coauthor], board: board)
-        end
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to include("New post in #{board.name}")
       end
     end
 
@@ -364,13 +326,16 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     before(:each) { create(:reply, user: coauthor, post: post) }
 
+    def do_action
+      PostViewer.create!(user: notified, post: post)
+    end
+
     shared_examples "access" do
       it "works" do
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.to change { Message.count }.by(1)
+        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
 
         author_msg = Message.where(recipient: notified).last
+        expect(author_msg.subject).to eq(msg_title)
         expected = "You have been given access to a post by #{author.username} and #{coauthor.username}"
         expected += " entitled #{post.subject} in the #{post.board.name} continuity."
         expect(author_msg.message).to include(expected)
@@ -391,27 +356,35 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
       it "does not send for public threads" do
         post.update!(privacy: :public)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
 
       it "does not send for private threads" do
         post.update!(privacy: :private)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+      end
+
+      it "does not send to coauthors" do
+        PostViewer.delete_all
+        [coauthor, unjoined].each do |u|
+          next if u == favorite
+          create(:favorite, user: u, favorite: author)
+          expect {
+            perform_enqueued_jobs { PostViewer.create!(user: u, post: post) }
+          }.not_to change { Message.count }
+        end
       end
 
       it "does not send if reader has config disabled" do
         notified.update!(favorite_notifications: false)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
     end
 
     context "with favorited author" do
+      let(:favorite) { author }
+      let(:msg_title) { "You now have access to a post by #{author.username}" }
+
       before(:each) { create(:favorite, user: notified, favorite: author) }
 
       include_examples "access"
@@ -420,96 +393,43 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         post = create(:post, user: author, privacy: :access_list)
         create(:reply, user: author, post: post)
 
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.to change { Message.count }.by(1)
+        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
 
         author_msg = Message.where(recipient: notified).last
         expected = "You have been given access to a post by #{author.username} entitled #{post.subject} in the #{post.board.name} continuity."
         expect(author_msg.message).to include(expected)
       end
-
-      it "does not send to coauthors" do
-        PostViewer.delete_all
-        create(:favorite, user: coauthor, favorite: author)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: coauthor, post: post) }
-        }.not_to change { Message.count }
-
-        create(:favorite, user: unjoined, favorite: author)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: unjoined, post: post) }
-        }.not_to change { Message.count }
-      end
-
-      it "has the correct title" do
-        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq("You now have access to a post by #{author.username}")
-      end
     end
 
     context "with favorited coauthor" do
+      let(:favorite) { coauthor }
+      let(:msg_title) { "You now have access to a post by #{coauthor.username}" }
+
       before(:each) { create(:favorite, user: notified, favorite: coauthor) }
 
       include_examples "access"
-
-      it "does not send to coauthors" do
-        PostViewer.delete_all
-        create(:favorite, user: unjoined, favorite: author)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: unjoined, post: post) }
-        }.not_to change { Message.count }
-      end
-
-      it "has the correct title" do
-        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq("You now have access to a post by #{coauthor.username}")
-      end
     end
 
     context "with favorited unjoined coauthor" do
+      let(:favorite) { unjoined }
+      let(:msg_title) { "You now have access to a post by #{unjoined.username}" }
+
       before(:each) { create(:favorite, user: notified, favorite: unjoined) }
 
       include_examples "access"
-
-      it "has the correct title" do
-        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq("You now have access to a post by #{unjoined.username}")
-      end
     end
 
     context "with favorited board" do
+      let(:favorite) { board }
+      let(:msg_title) { "You now have access to a post in #{post.board.name}" }
+
       before(:each) { create(:favorite, user: notified, favorite: post.board) }
 
       include_examples "access"
 
       it "does not send twice if the user has favorited both the poster and the continuity" do
         create(:favorite, user: notified, favorite: author)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        }.to change { Message.count }.by(1)
-      end
-
-      it "does not send to coauthors" do
-        PostViewer.delete_all
-        create(:favorite, user: coauthor, favorite: author)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: coauthor, post: post) }
-        }.not_to change { Message.count }
-
-        create(:favorite, user: unjoined, favorite: author)
-        expect {
-          perform_enqueued_jobs { PostViewer.create!(user: unjoined, post: post) }
-        }.not_to change { Message.count }
-      end
-
-      it "has the correct title" do
-        perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) }
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq("You now have access to a post in #{post.board.name}")
+        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
       end
     end
 
@@ -616,174 +536,140 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     before(:each) { create(:reply, user: coauthor, post: post)}
 
-    shared_examples "publication all" do |privacy|
-      shared_examples "publication" do
-        it "works" do
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.to change { Message.count }.by(1)
-
-          author_msg = Message.where(recipient: notified).last
-          expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
-          expect(author_msg.message).to include(expected)
+    [:registered, :public].each do |privacy|
+      context "now #{privacy}" do
+        def do_action
+          post.update!(privacy: privacy)
         end
 
-        it "works for previously private posts" do
-          post.update!(privacy: :private)
-          clear_enqueued_jobs
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.to change { Message.count }.by(1)
+        shared_examples "publication" do
+          it "works" do
+            expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
 
-          author_msg = Message.where(recipient: notified).last
-          expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
-          expect(author_msg.message).to include(expected)
-        end
+            author_msg = Message.where(recipient: notified).last
+            expect(author_msg.subject).to eq(msg_title)
+            expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
+            expect(author_msg.message).to include(expected)
+          end
 
-        it "does not send on post creation" do
-          board = post.board
-          clear_enqueued_jobs
-          expect {
-            perform_enqueued_jobs do
-              create(:post, user: author, unjoined_authors: [coauthor, unjoined], board: board)
+          it "works for previously private posts" do
+            post.update!(privacy: :private)
+            clear_enqueued_jobs
+            expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
+
+            author_msg = Message.where(recipient: notified).last
+            expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
+            expect(author_msg.message).to include(expected)
+          end
+
+          it "does not send on post creation" do
+            board = post.board
+            clear_enqueued_jobs
+            expect {
+              perform_enqueued_jobs do
+                create(:post, user: author, unjoined_authors: [coauthor, unjoined], board: board)
+              end
+            }.to change { Message.count }.by(1)
+
+            author_msg = Message.where(recipient: notified).last
+            expect(author_msg.message).not_to include('published')
+          end
+
+          it "does not send if reader has config disabled" do
+            notified.update!(favorite_notifications: false)
+            expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+          end
+
+          it "does not send to authors" do
+            Favorites.delete_all
+            [author, coauthor, unjoined].each do |u|
+              create(:favorite, user: u, favorite: favorite) unless u == favorite
             end
-          }.to change { Message.count }.by(1)
 
-          author_msg = Message.where(recipient: notified).last
-          expect(author_msg.message).not_to include('published')
+            expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+          end
         end
 
-        it "does not send if reader has config disabled" do
-          notified.update!(favorite_notifications: false)
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.not_to change { Message.count }
+        context "with favorited author" do
+          let(:favorite) { author }
+          let(:msg_title) { "New post by #{author.username}" }
+
+          before(:each) { create(:favorite, user: notified, favorite: author) }
+
+          include_examples "publication"
+
+          it "works for self-threads" do
+            post = create(:post, user: author, board: board, privacy: :access_list)
+            create(:reply, post: post, user: author)
+
+            expect {
+              perform_enqueued_jobs { post.update!(privacy: privacy) }
+            }.to change { Message.count }.by(1)
+
+            author_msg = Message.where(recipient: notified).last
+            expected = "#{author.username} has published a post entitled #{post.subject} in the #{board.name} continuity."
+            expect(author_msg.message).to include(expected)
+          end
         end
 
-        it "does not send to coauthors" do
-          post.update!(unjoined_authors: [notified])
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.not_to change { Message.count }
-        end
-      end
+        context "with favorited coauthor" do
+          let(:favorite) { coauthor }
+          let(:msg_title) { "New post by #{coauthor.username}" }
 
-      context "with favorited author" do
-        before(:each) { create(:favorite, user: notified, favorite: author) }
+          before(:each) { create(:favorite, user: notified, favorite: coauthor) }
 
-        include_examples "publication"
-
-        it "works for self-threads" do
-          post = create(:post, user: author, board: board, privacy: :access_list)
-          create(:reply, post: post, user: author)
-
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.to change { Message.count }.by(1)
-
-          author_msg = Message.where(recipient: notified).last
-          expected = "#{author.username} has published a post entitled #{post.subject} in the #{board.name} continuity."
-          expect(author_msg.message).to include(expected)
+          include_examples "publication"
         end
 
-        it "has correct title" do
-          perform_enqueued_jobs { post.update!(privacy: privacy) }
-          author_msg = Message.where(recipient: notified).last
-          expect(author_msg.subject).to include("New post by #{author.username}")
-        end
-      end
+        context "with favorited board" do
+          let(:favorite) { board }
+          let(:msg_title) { "New post in #{board.name}" }
 
-      context "with favorited coauthor" do
-        before(:each) { create(:favorite, user: notified, favorite: coauthor) }
+          before(:each) { create(:favorite, user: notified, favorite: board) }
 
-        include_examples "publication"
+          include_examples "publication"
 
-        it "does not send to authors" do
-          Favorite.delete_all
-          create(:favorite, user: author, favorite: coauthor)
-
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.not_to change { Message.count }
+          it "does not send twice if the user has favorited both the poster and the continuity" do
+            create(:favorite, user: notified, favorite: author)
+            expect {
+              perform_enqueued_jobs { post.update!(privacy: privacy) }
+            }.to change { Message.count }.by(1)
+          end
         end
 
-        it "has correct title" do
-          perform_enqueued_jobs { post.update!(privacy: privacy) }
-          author_msg = Message.where(recipient: notified).last
-          expect(author_msg.subject).to include("New post by #{coauthor.username}")
-        end
-      end
+        context "with favorited unjoined coauthor" do
+          let(:favorite) { unjoined }
+          let(:msg_title) { "New post by #{unjoined.username}" }
 
-      context "with favorited board" do
-        before(:each) { create(:favorite, user: notified, favorite: board) }
+          before(:each) { create(:favorite, user: notified, favorite: unjoined) }
 
-        include_examples "publication"
-
-        it "does not send twice if the user has favorited both the poster and the continuity" do
-          create(:favorite, user: notified, favorite: author)
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.to change { Message.count }.by(1)
+          include_examples "publication"
         end
 
-        it "does not send to the poster" do
-          Favorite.delete_all
-          create(:favorite, user: author, favorite: board)
-          expect {
-            perform_enqueued_jobs { post.update!(privacy: privacy) }
-          }.not_to change { Message.count }
-        end
+        context "with blocking" do
+          before(:each) { create(:favorite, user: notified, favorite: board) }
 
-        it "has correct title" do
-          perform_enqueued_jobs { post.update!(privacy: privacy) }
-          author_msg = Message.where(recipient: notified).last
-          expect(author_msg.subject).to include("New post in #{board.name}")
+          it "does not send to users the poster has blocked" do
+            create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
+            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+          end
+
+          it "does not send to users a coauthor has blocked" do
+            create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
+            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+          end
+
+          it "does not send to users who are blocking the poster" do
+            create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
+            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+          end
+
+          it "does not send to users who are blocking a coauthor" do
+            create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
+            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
+          end
         end
       end
-
-      context "with favorited unjoined coauthor" do
-        before(:each) { create(:favorite, user: notified, favorite: unjoined) }
-
-        include_examples "publication"
-
-        it "has correct title" do
-          perform_enqueued_jobs { post.update!(privacy: privacy) }
-          author_msg = Message.where(recipient: notified).last
-          expect(author_msg.subject).to include("New post by #{unjoined.username}")
-        end
-      end
-
-      context "with blocking" do
-        before(:each) { create(:favorite, user: notified, favorite: board) }
-
-        it "does not send to users the poster has blocked" do
-          create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-        end
-
-        it "does not send to users a coauthor has blocked" do
-          create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-        end
-
-        it "does not send to users who are blocking the poster" do
-          create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-        end
-
-        it "does not send to users who are blocking a coauthor" do
-          create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-          expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-        end
-      end
-    end
-
-    context "now public" do
-      include_examples 'publication all', :public
-    end
-
-    context "now registered" do
-      include_examples 'publication all', :registered
     end
   end
 
