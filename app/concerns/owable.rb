@@ -19,6 +19,7 @@ module Owable
 
     after_create :add_creator_to_authors
     after_save :update_board_cameos
+    after_commit :notify_followers, on: :create
 
     attr_accessor :private_note
 
@@ -57,6 +58,11 @@ module Owable
       new_cameos = all_authors.uniq.map(&:id) - board.board_authors.map(&:user_id)
       return if new_cameos.empty?
       new_cameos.each { |author| board.board_authors.create!(user_id: author, cameo: true) }
+    end
+
+    def notify_followers
+      return if is_import
+      NotifyFollowersOfNewPostJob.perform_later(self.id, [], 'new')
     end
   end
 end

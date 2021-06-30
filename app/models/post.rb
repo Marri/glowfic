@@ -41,7 +41,6 @@ class Post < ApplicationRecord
   before_validation :set_last_user, on: :create
   before_create :build_initial_flat_post, :set_timestamps
   before_update :set_timestamps
-  after_commit :notify_followers, on: :create
   after_commit :invalidate_caches, on: :update
 
   NON_EDITED_ATTRS = %w(id created_at updated_at edited_at tagged_at last_user_id last_reply_id section_order)
@@ -256,10 +255,6 @@ class Post < ApplicationRecord
     last_user.deleted?
   end
 
-  def user_joined(user)
-    NotifyFollowersOfNewPostJob.perform_later(self.id, user.id)
-  end
-
   def prev_post(user)
     adjacent_posts_for(user) { |relation| relation.reverse_order.find_by('section_order < ?', self.section_order) }
   end
@@ -321,11 +316,6 @@ class Post < ApplicationRecord
 
   def reset_warnings(_warning)
     Post::View.where(post_id: id).update_all(warnings_hidden: false) # rubocop:disable Rails/SkipsModelValidations
-  end
-
-  def notify_followers
-    return if is_import
-    NotifyFollowersOfNewPostJob.perform_later(self.id, user_id)
   end
 
   def invalidate_caches

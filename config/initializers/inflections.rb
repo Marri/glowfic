@@ -17,4 +17,5 @@
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular 'index', 'indexes'
+  inflect.irregular 'has', 'have'
 end
