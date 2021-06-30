@@ -1,5 +1,12 @@
 RSpec.describe NotifyFollowersOfNewPostJob do
   include ActiveJob::TestHelper
+
+  let(:author) { create(:user) }
+  let(:coauthor) { create(:user) }
+  let(:unjoined) { create(:user) }
+  let(:notified) { create(:user) }
+  let(:board) { create(:board) }
+
   before(:each) { clear_enqueued_jobs }
 
   context "validations" do
@@ -64,12 +71,33 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
   end
 
+  shared_examples 'blocking' do
+    context "with blocking" do
+      before(:each) { create(:favorite, user: notified, favorite: board) }
+
+      it "does not send to users the poster has blocked" do
+        create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+      end
+
+      it "does not send to users a coauthor has blocked" do
+        create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking the poster" do
+        create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+      end
+
+      it "does not send to users who are blocking a coauthor" do
+        create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+      end
+    end
+  end
+
   context "on new posts" do
-    let(:author) { create(:user) }
-    let(:coauthor) { create(:user) }
-    let(:unjoined) { create(:user) }
-    let(:notified) { create(:user) }
-    let(:board) { create(:board) }
     let(:title) { 'test subject' }
 
     def do_action(privacy: :public, viewers: [])
@@ -139,37 +167,17 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
     end
 
-    describe "with blocking" do
-      let(:post) { create(:post, user: author, board: board, authors: [coauthor]) }
-
-      before(:each) { create(:favorite, user: notified, favorite: board) }
-
-      it "does not send to users the poster has blocked" do
-        create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
-      end
-
-      it "does not send to users a coauthor has blocked" do
-        create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who are blocking the poster" do
-        create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who are blocking a coauthor" do
-        create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { post } }.not_to change { Message.count }
-      end
-    end
+    include_examples 'blocking'
   end
 
   context "on joined posts" do
-    let(:author) { create(:user) }
     let(:replier) { create(:user) }
-    let(:notified) { create(:user) }
+    let(:post) { create(:post, user: author, board: board, unjoined_authors: [coauthor, unjoined]) }
+
+    def do_action(privacy: nil, viewers: [])
+      post.update!(privacy: privacy, viewers: viewers) if privacy
+      create(:reply, post: post, user: replier)
+    end
 
     context "with both authors favorited" do
       before(:each) do
@@ -180,7 +188,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       it "does not send twice if the user has favorited both the poster and the replier" do
         expect {
           perform_enqueued_jobs do
-            post = create(:post, user: author)
+            post
             create(:reply, post: post, user: replier)
           end
         }.to change { Message.count }.by(1)
@@ -189,7 +197,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       it "does not send twice if the poster changes their username" do
         expect {
           perform_enqueued_jobs do
-            post = create(:post, user: author)
+            post
             author.update!(username: author.username + 'new')
             create(:reply, post: post, user: replier)
           end
@@ -199,7 +207,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       it "does not send twice if the post subject changes" do
         expect {
           perform_enqueued_jobs do
-            post = create(:post, user: author)
             post.update!(subject: post.subject + 'new')
             create(:reply, post: post, user: replier)
           end
@@ -208,7 +215,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
       it "sends twice for different posts" do
         expect {
-          perform_enqueued_jobs { create(:post, user: author) }
+          perform_enqueued_jobs { post }
         }.to change { Message.count }.by(1)
 
         not_favorited_post = nil
@@ -227,112 +234,58 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     context "with favorited replier" do
-      before(:each) { create(:favorite, user: notified, favorite: replier) }
-
-      it "sends the right message" do
-        title = "test subject"
-
-        expect {
-          perform_enqueued_jobs do
-            post = create(:post, user: author, subject: title)
-            create(:reply, post: post, user: replier)
-          end
-        }.to change { Message.count }.by(1)
-
-        message = Message.last
-        expect(message.subject).to eq("#{replier.username} has joined a new thread")
-        expect(message.message).to include(title)
-        expect(message.message).to include("with #{author.username}")
+      let(:favorite) { replier }
+      let(:msg_title) { "#{replier.username} has joined a new thread" }
+      let(:msg_content) do
+        author_ids = [author, coauthor].map(&:id)
+        authors = User.where(id: author_ids).ordered.pluck(:username).join(' and ')
+        "#{replier.username} has just joined the post entitled #{post.subject} with #{authors}"
       end
 
-      it "does not send unless visible" do
-        expect {
-          perform_enqueued_jobs do
-            post = create(:post, privacy: :access_list, viewers: [replier])
-            create(:reply, post: post, user: replier)
-          end
-        }.not_to change { Message.count }
+      before(:each) do
+        create(:reply, user: coauthor, post: post)
+        create(:favorite, user: notified, favorite: replier)
       end
 
-      it "does not send if reader has config disabled" do
-        notified.update!(favorite_notifications: false)
-        expect { perform_enqueued_jobs { create(:reply, user: replier) } }.not_to change { Message.count }
-      end
+      include_examples 'general'
+      include_examples 'privacy'
+      include_examples 'authors'
 
       it "does not queue on imported replies" do
-        post = create(:post)
         clear_enqueued_jobs
         create(:reply, user: replier, post: post, is_import: true)
         expect(NotifyFollowersOfNewPostJob).not_to have_been_enqueued
       end
-    end
 
-    it "does not send to the poster" do
-      create(:favorite, user: author, favorite: replier)
-      expect {
-        perform_enqueued_jobs do
-          post = create(:post, user: author)
-          create(:reply, post: post, user: replier)
-        end
-      }.not_to change { Message.count }
-    end
-
-    it "does not send to coauthors" do
-      unjoined = create(:user)
-      create(:favorite, user: unjoined, favorite: replier)
-      expect {
-        perform_enqueued_jobs do
-          post = create(:post, user: author, unjoined_authors: [replier, unjoined])
-          create(:reply, post: post, user: replier)
-        end
-      }.not_to change { Message.count }
+      it "does not queue if replier is already an unjoined author" do
+        post.update!(unjoined_authors: [coauthor, unjoined, replier])
+        clear_enqueued_jobs
+        create(:reply, user: replier, post: post)
+        expect(NotifyFollowersOfNewPostJob).not_to have_been_enqueued
+      end
     end
 
     describe "with blocking" do
-      let(:coauthor) { create(:user) }
-      let!(:post) { create(:post, user: author, unjoined_authors: [coauthor]) }
-      let(:reply) { create(:reply, post: post, user: replier) }
-
       before(:each) { create(:favorite, user: notified, favorite: replier) }
 
       it "does not send to users the joining user has blocked" do
         create(:block, blocking_user: replier, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
 
       it "does not send to users who are blocking the joining user" do
         create(:block, blocked_user: replier, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
-      end
-
-      it "does not send to users the original poster has blocked" do
-        create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who are blocking the original poster" do
-        create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who a coauthor has blocked" do
-        create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who are blocking a coauthor" do
-        create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { reply } }.not_to change { Message.count }
+        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
     end
+
+    include_examples 'blocking'
   end
 
   context "on newly accessible posts" do
-    let!(:author) { create(:user) }
-    let!(:coauthor) { create(:user) }
-    let!(:unjoined) { create(:user) }
-    let!(:notified) { create(:user) }
-    let!(:post) { create(:post, user: author, unjoined_authors: [coauthor, unjoined], privacy: :access_list, viewers: [coauthor, unjoined]) }
+    let(:post) do
+      create(:post, user: author, unjoined_authors: [coauthor, unjoined], board: board, privacy: :access_list, viewers: [coauthor, unjoined])
+    end
 
     before(:each) { create(:reply, user: coauthor, post: post) }
 
@@ -344,13 +297,12 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       let(:msg_content) do
         author_ids = [author, coauthor].map(&:id)
         authors = User.where(id: author_ids).ordered.pluck(:username).join(' and ')
-        "You have been given access to a post by #{authors} entitled #{post.subject} in the #{post.board.name} continuity."
+        "You have been given access to a post by #{authors} entitled #{post.subject} in the #{board.name} continuity."
       end
 
       include_examples 'general'
 
       it "does not send on post creation" do
-        board = post.board
         clear_enqueued_jobs
         expect {
           perform_enqueued_jobs do
@@ -393,13 +345,13 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       include_examples "access"
 
       it "works for self-threads" do
-        post = create(:post, user: author, privacy: :access_list)
+        post = create(:post, user: author, board: board, privacy: :access_list)
         create(:reply, user: author, post: post)
 
         expect { perform_enqueued_jobs { PostViewer.create!(user: notified, post: post) } }.to change { Message.count }.by(1)
 
         author_msg = Message.where(recipient: notified).last
-        expected = "You have been given access to a post by #{author.username} entitled #{post.subject} in the #{post.board.name} continuity."
+        expected = "You have been given access to a post by #{author.username} entitled #{post.subject} in the #{board.name} continuity."
         expect(author_msg.message).to include(expected)
       end
     end
@@ -423,10 +375,10 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     context "with favorited board" do
-      let(:favorite) { post.board }
-      let(:msg_title) { "You now have access to a post in #{post.board.name}" }
+      let(:favorite) { board }
+      let(:msg_title) { "You now have access to a post in #{board.name}" }
 
-      before(:each) { create(:favorite, user: notified, favorite: post.board) }
+      before(:each) { create(:favorite, user: notified, favorite: board) }
 
       include_examples "access"
 
@@ -501,40 +453,10 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       end
     end
 
-    context "with blocking" do
-      let!(:post) { create(:post, user: author, authors: [coauthor]) }
-      let(:viewer) { PostViewer.create!(user: notified, post: post) }
-
-      before(:each) { create(:favorite, user: notified, favorite: post.board) }
-
-      it "does not send to users the poster has blocked" do
-        create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
-      end
-
-      it "does not send to users a coauthor has blocked" do
-        create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who are blocking the poster" do
-        create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
-      end
-
-      it "does not send to users who are blocking a coauthor" do
-        create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-        expect { perform_enqueued_jobs { viewer } }.not_to change { Message.count }
-      end
-    end
+    include_examples 'blocking'
   end
 
   context "on newly published posts" do
-    let!(:author) { create(:user) }
-    let!(:coauthor) { create(:user) }
-    let!(:notified) { create(:user) }
-    let!(:unjoined) { create(:user) }
-    let!(:board) { create(:board) }
     let!(:post) { create(:post, user: author, board: board, authors: [coauthor, unjoined], privacy: :access_list) }
 
     before(:each) { create(:reply, user: coauthor, post: post)}
@@ -564,7 +486,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
           end
 
           it "does not send on post creation" do
-            board = post.board
             clear_enqueued_jobs
             expect {
               perform_enqueued_jobs do
@@ -633,40 +554,12 @@ RSpec.describe NotifyFollowersOfNewPostJob do
           include_examples "publication"
         end
 
-        context "with blocking" do
-          before(:each) { create(:favorite, user: notified, favorite: board) }
-
-          it "does not send to users the poster has blocked" do
-            create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-          end
-
-          it "does not send to users a coauthor has blocked" do
-            create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-          end
-
-          it "does not send to users who are blocking the poster" do
-            create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-          end
-
-          it "does not send to users who are blocking a coauthor" do
-            create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-            expect { perform_enqueued_jobs { post.update!(privacy: privacy) } }.not_to change { Message.count }
-          end
-        end
+        include_examples 'blocking'
       end
     end
   end
 
   context "on revived posts" do
-    let!(:author) { create(:user) }
-    let!(:coauthor) { create(:user) }
-    let!(:notified) { create(:user) }
-    let!(:unjoined) { create(:user) }
-    let!(:board) { create(:board) }
-
     shared_examples "reactivation" do
       shared_examples "active" do
         let(:msg_title) { "#{post.subject} resumed" }
@@ -743,29 +636,7 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         include_examples 'active'
       end
 
-      context "with blocking" do
-        before(:each) { create(:favorite, user: notified, favorite: board) }
-
-        it "does not send to users the poster has blocked" do
-          create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
-          expect { perform_enqueued_jobs { do_action} }.not_to change { Message.count }
-        end
-
-        it "does not send to users a coauthor has blocked" do
-          create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
-          expect { perform_enqueued_jobs { do_action} }.not_to change { Message.count }
-        end
-
-        it "does not send to users who are blocking the poster" do
-          create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
-          expect { perform_enqueued_jobs { do_action} }.not_to change { Message.count }
-        end
-
-        it "does not send to users who are blocking a coauthor" do
-          create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
-          expect { perform_enqueued_jobs { do_action} }.not_to change { Message.count }
-        end
-      end
+      include_examples 'blocking'
     end
 
     context "with abandoned posts" do
