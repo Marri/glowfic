@@ -33,7 +33,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     return if users.empty?
 
     message = "#{post.user.username} has just posted a new post"
-    other_authors = post.authors.where.not(id: post.user_id)
+    other_authors = post.authors.where.not(id: post.user_id).ordered
     message += " with #{other_authors.pluck(:username).to_sentence}" unless other_authors.empty?
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
 
@@ -46,7 +46,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
     subject = "#{new_user.username} has joined a new thread"
     message = "#{new_user.username} has just joined the post entitled #{post.subject} with "
-    message += post.joined_authors.where.not(id: new_user.id).pluck(:username).join(', ')
+    message += post.joined_authors.where.not(id: new_user.id).ordered.pluck(:username).to_sentence
     message += ". #{ScrapePostJob.view_post(post.id)}"
 
     users.each do |user|
@@ -73,7 +73,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     notified = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
     return if notified.empty?
 
-    author_names = post.joined_authors.pluck(:username)
+    author_names = post.joined_authors.ordered.pluck(:username)
 
     message = "#{author_names.to_sentence} #{'has'.pluralize(author_names.length)} published a post"
     message += " entitled #{post.subject} in the #{post.board.name} continuity. #{ScrapePostJob.view_post(post.id)}"
@@ -86,7 +86,7 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     users = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
     return if users.empty?
 
-    author_names = post.joined_authors.pluck(:username)
+    author_names = post.joined_authors.ordered.pluck(:username)
     title = "#{post.subject} resumed"
     message = "#{post.subject} by #{author_names.to_sentence}, in the #{post.board.name} continuity,"
     message += " has been resumed. #{ScrapePostJob.view_post(post.id)}"
