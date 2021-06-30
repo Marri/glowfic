@@ -2,28 +2,34 @@ RSpec.describe NotifyFollowersOfNewPostJob do
   include ActiveJob::TestHelper
   before(:each) { clear_enqueued_jobs }
 
-  it "does nothing with invalid post id" do
-    expect(Favorite).not_to receive(:where)
-    user = create(:user)
-    NotifyFollowersOfNewPostJob.perform_now(-1, user.id, 'new')
+  context "validations" do
+    it "does nothing with invalid post id" do
+      expect(Favorite).not_to receive(:where)
+      user = create(:user)
+      NotifyFollowersOfNewPostJob.perform_now(-1, user.id, 'new')
+    end
+
+    it "does nothing with invalid user id on join" do
+      expect(Favorite).not_to receive(:where)
+      post = create(:post)
+      NotifyFollowersOfNewPostJob.perform_now(post.id, -1, 'join')
+    end
+
+    it "does nothing with invalid user id on access" do
+      expect(Favorite).not_to receive(:where)
+      post = create(:post)
+      NotifyFollowersOfNewPostJob.perform_now(post.id, -1, 'access')
+    end
+
+    it "does nothing with invalid action" do
+      expect(Favorite).not_to receive(:where)
+      post = create(:post)
+      NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id, '')
+    end
   end
 
-  it "does nothing with invalid user id on join" do
-    expect(Favorite).not_to receive(:where)
-    post = create(:post)
-    NotifyFollowersOfNewPostJob.perform_now(post.id, -1, 'join')
-  end
+  shared_examples "general" do
 
-  it "does nothing with invalid user id on access" do
-    expect(Favorite).not_to receive(:where)
-    post = create(:post)
-    NotifyFollowersOfNewPostJob.perform_now(post.id, -1, 'access')
-  end
-
-  it "does nothing with invalid action" do
-    expect(Favorite).not_to receive(:where)
-    post = create(:post)
-    NotifyFollowersOfNewPostJob.perform_now(post.id, post.user_id, '')
   end
 
   context "on new posts" do
@@ -73,10 +79,15 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         }.not_to change { Message.count }
       end
 
-      it "does not send to coauthors" do
+      it "does not send to authors" do
+        Favorites.delete_all
+        [author, coauthor].each do |u|
+          create(:favorite, user: u, favorite: favorite) unless u == favorite
+        end
+
         expect {
           perform_enqueued_jobs do
-            create(:post, user: author, board: board, unjoined_authors: [notified])
+            create(:post, user: author, board: board, unjoined_authors: [coauthor])
           end
         }.not_to change { Message.count }
       end
@@ -122,17 +133,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
       include_examples "new"
 
-      it "does not send to authors" do
-        coauthor2 = create(:user)
-        create(:favorite, user: coauthor2, favorite: coauthor)
-
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: notified, unjoined_authors: [coauthor, coauthor2])
-          end
-        }.not_to change { Message.count }
-      end
-
       it "has correct title" do
         perform_enqueued_jobs do
           create(:post, user: author, unjoined_authors: [coauthor])
@@ -156,14 +156,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
             create(:post, user: author, board: board)
           end
         }.to change { Message.count }.by(1)
-      end
-
-      it "does not send to the poster" do
-        expect {
-          perform_enqueued_jobs do
-            create(:post, user: notified, board: board)
-          end
-        }.not_to change { Message.count }
       end
 
       it "has correct title" do
