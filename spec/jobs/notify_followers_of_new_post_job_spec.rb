@@ -389,13 +389,19 @@ RSpec.describe NotifyFollowersOfNewPostJob do
     end
 
     context "with privacy change" do
+      let(:msg_title) { "You now have access to a post by #{author.username}" }
+      let(:msg_content) do
+        author_ids = [author, coauthor].map(&:id)
+        authors = User.where(id: author_ids).ordered.pluck(:username).join(' and ')
+        "You have been given access to a post by #{authors} entitled #{post.subject} in the #{board.name} continuity"
+      end
+      let(:do_action) { post.update!(privacy: :access_list) }
+
       before(:each) do
         create(:favorite, user: notified, favorite: author)
         post.update!(privacy: :private, viewers: [coauthor, unjoined, notified])
         clear_enqueued_jobs
       end
-
-      let(:do_action) { post.update!(privacy: access_list) }
 
       include_examples 'general'
 
