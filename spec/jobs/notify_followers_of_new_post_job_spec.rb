@@ -29,53 +29,59 @@ RSpec.describe NotifyFollowersOfNewPostJob do
   end
 
   shared_examples "general" do
+    it "works" do
+      expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
+      author_msg = Message.where(recipient: notified).last
+      expect(author_msg.subject).to eq(msg_title)
+      expect(author_msg.message).to include(msg_content)
+    end
 
+    it "does not send if reader has config disabled" do
+      notified.update!(favorite_notifications: false)
+      expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+    end
+  end
+
+  shared_examples 'authors' do
+    it "does not send to authors" do
+      Favorite.delete_all
+      authors = [author, coauthor, unjoined].reject{ |u| u == favorite }
+      authors.each { |u| create(:favorite, user: u, favorite: favorite) }
+      expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
+    end
+  end
+
+  shared_examples 'privacy' do
+    it "does not send for private posts" do
+      expect { perform_enqueued_jobs { do_action(privacy: :private) } }.not_to change { Message.count }
+    end
+
+    it "does not send to non-viewers for access-locked posts" do
+      unnotified = create(:user)
+      create(:favorite, user: unnotified, favorite: favorite)
+      expect { perform_enqueued_jobs { do_action(privacy: :access_list, viewers: [coauthor, notified]) } }.to change { Message.count }.by(1)
+      expect(Message.where(recipient: unnotified)).not_to be_present
+    end
   end
 
   context "on new posts" do
     let(:author) { create(:user) }
     let(:coauthor) { create(:user) }
+    let(:unjoined) { create(:user) }
     let(:notified) { create(:user) }
     let(:board) { create(:board) }
     let(:title) { 'test subject' }
 
     def do_action(privacy: :public, viewers: [])
-      create(:post, user: author, unjoined_authors: [coauthor], board: board, subject: title, privacy: privacy, viewers: viewers)
+      create(:post, user: author, unjoined_authors: [coauthor, unjoined], board: board, subject: title, privacy: privacy, viewers: viewers)
     end
 
     shared_examples "new" do
-      it "works" do
-        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq(msg_title)
-        expected = "#{author.username} has just posted a new post with #{coauthor.username} entitled #{title} in the #{board.name} continuity."
-        expect(author_msg.message).to include(expected)
-      end
+      let(:msg_content) {"#{author.username} has just posted a new post with #{coauthor.username} entitled #{title} in the #{board.name} continuity."}
 
-      it "does not send for private posts" do
-        expect { perform_enqueued_jobs { do_action(privacy: :private) } }.not_to change { Message.count }
-      end
-
-      it "does not send to non-viewers for access-locked posts" do
-        unnotified = create(:user)
-        create(:favorite, user: unnotified, favorite: favorite)
-        expect { perform_enqueued_jobs { do_action(privacy: :access_list, viewers: [coauthor, notified]) } }.to change { Message.count }.by(1)
-        expect(Message.where(recipient: unnotified)).not_to be_present
-      end
-
-      it "does not send if reader has config disabled" do
-        notified.update!(favorite_notifications: false)
-        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
-      end
-
-      it "does not send to authors" do
-        Favorite.delete_all
-        [author, coauthor].each do |u|
-          create(:favorite, user: u, favorite: favorite) unless u == favorite
-        end
-
-        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
-      end
+      shared_examples 'general'
+      shared_examples 'authors'
+      shared_examples 'privacy'
 
       it "does not queue on imported posts" do
         create(:post, user: author, board: board, is_import: true)
@@ -326,20 +332,20 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     before(:each) { create(:reply, user: coauthor, post: post) }
 
-    def do_action
+    def do_action(privacy: nil, viewers: [])
+      post.update!(privacy: privacy, viewers: viewers) if privacy
       PostViewer.create!(user: notified, post: post)
     end
 
     shared_examples "access" do
-      it "works" do
-        expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
-
-        author_msg = Message.where(recipient: notified).last
-        expect(author_msg.subject).to eq(msg_title)
-        expected = "You have been given access to a post by #{author.username} and #{coauthor.username}"
-        expected += " entitled #{post.subject} in the #{post.board.name} continuity."
-        expect(author_msg.message).to include(expected)
+      let(:msg_content) do
+        author_ids = [author, coauthor].map(&:id)
+        authors = User.where(id: author_ids).ordered.pluck(:username).join(' and ')
+        "You have been given access to a post by #{authors} entitled #{post.subject} in the #{post.board.name} continuity."
       end
+
+      include_examples 'general'
+      include_examples 'privacy'
 
       it "does not send on post creation" do
         board = post.board
@@ -373,11 +379,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
             perform_enqueued_jobs { PostViewer.create!(user: u, post: post) }
           }.not_to change { Message.count }
         end
-      end
-
-      it "does not send if reader has config disabled" do
-        notified.update!(favorite_notifications: false)
-        expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
       end
     end
 
@@ -541,14 +542,14 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         let(:do_action) { post.update!(privacy: privacy) }
 
         shared_examples "publication" do
-          it "works" do
-            expect { perform_enqueued_jobs { do_action } }.to change { Message.count }.by(1)
-
-            author_msg = Message.where(recipient: notified).last
-            expect(author_msg.subject).to eq(msg_title)
-            expected = "#{author.username} and #{coauthor.username} have published a post entitled #{post.subject} in the #{board.name} continuity."
-            expect(author_msg.message).to include(expected)
+          let(:msg_content) do
+            author_ids = [author, coauthor].map(&:id)
+            authors = User.where(id: author_ids).ordered.pluck(:username).join(' and ')
+            "#{authors} have published a post entitled #{post.subject} in the #{board.name} continuity."
           end
+
+          include_examples 'general'
+          include_examples 'authors'
 
           it "works for previously private posts" do
             post.update!(privacy: :private)
@@ -571,20 +572,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
             author_msg = Message.where(recipient: notified).last
             expect(author_msg.message).not_to include('published')
-          end
-
-          it "does not send if reader has config disabled" do
-            notified.update!(favorite_notifications: false)
-            expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
-          end
-
-          it "does not send to authors" do
-            Favorite.delete_all
-            [author, coauthor, unjoined].each do |u|
-              create(:favorite, user: u, favorite: favorite) unless u == favorite
-            end
-
-            expect { perform_enqueued_jobs { do_action } }.not_to change { Message.count }
           end
         end
 
@@ -680,39 +667,15 @@ RSpec.describe NotifyFollowersOfNewPostJob do
 
     shared_examples "reactivation" do
       shared_examples "active" do
-        it "works" do
-          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
-          author_msg = Message.where(recipient: notified).last
-          expected = "#{post.subject} by #{author.username} and #{coauthor.username}, in the #{board.name} continuity, has been resumed."
-          expect(author_msg.subject).to eq("#{post.subject} resumed")
-          expect(author_msg.message).to include(expected)
+        let(:msg_content) do
+          author_ids = [author, coauthor].map(&:id)
+          authors = User.where(id: author_ids).ordered.pluck(:username).join(' and ')
+          "#{post.subject} by #{authors}, in the #{board.name} continuity, has been resumed."
         end
 
-        it "does not send for private posts" do
-          post.update!(privacy: :private)
-          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
-        end
-
-        it "does not send to non-viewers for access-locked posts" do
-          unnotified = create(:user)
-          create(:favorite, user: unnotified, favorite: favorite)
-          post.update!(privacy: :access_list, viewers: [coauthor, unjoined, notified])
-          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
-          expect(Message.where(recipient: unnotified)).not_to be_present
-        end
-
-        it "does not send if reader has config disabled" do
-          notified.update!(favorite_notifications: false)
-          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
-        end
-
-        it "does not send to authors" do
-          Favorite.delete_all
-          [author, coauthor, unjoined].each do |user|
-            create(:favorite, user: user, favorite: favorite) unless favorite == user
-          end
-          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
-        end
+        include_examples 'general'
+        include_examples 'authors'
+        include_examples 'privacy'
       end
 
       context "with favorited author" do
@@ -810,7 +773,8 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         post.update!(status: :abandoned)
       end
 
-      def update_post
+      def do_action(privacy: nil, viewers: [])
+        post.update!(privacy: privacy, viewers: viewers) if privacy
         post.update!(status: :active)
       end
 
@@ -825,7 +789,8 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         post.update!(status: :hiatus)
       end
 
-      def update_post
+      def do_action(privacy: nil, viewers: [])
+        post.update!(privacy: privacy, viewers: viewers) if privacy
         create(:reply, user: author, post: post)
       end
 
@@ -846,7 +811,13 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         end
       end
 
-      def update_post
+      def do_action(privacy: nil, viewers: [])
+        if privacy
+          Timecop.freeze(now - 2.months) do
+            post.update!(privacy: privacy, viewers: viewers)
+          end
+        end
+
         Timecop.freeze(now) do
           create(:reply, user: author, post: post)
         end
