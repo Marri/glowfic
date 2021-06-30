@@ -1,7 +1,7 @@
 class NotifyFollowersOfNewPostJob < ApplicationJob
   queue_as :notifier
 
-  ACTIONS = ['new', 'join', 'access', 'public']
+  ACTIONS = ['new', 'join', 'access', 'public', 'active']
 
   def perform(post_id, user_id, action)
     post = Post.find_by(id: post_id)
@@ -21,6 +21,8 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
       notify_of_post_access(post, user)
     elsif action == 'public'
       notify_of_post_publication(post)
+    elsif action == 'active'
+      notify_of_post_activity(post)
     end
   end
 
@@ -79,6 +81,19 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
     notify_users_of_post(post, notified, message)
   end
 
+  def notify_of_post_activity(post)
+    favorites = favorites_for(post).or(Favorite.where(favorite: post))
+    users = filter_users(post, favorites.select(:user_id).distinct.pluck(:user_id))
+    return if users.empty?
+
+    author_names = post.joined_authors.pluck(:username)
+    title = "#{post.subject} resumed"
+    message = "#{post.subject} by #{author_names.to_sentence}, in the #{post.board.name} continuity,"
+    message += " has been resumed. #{ScrapePostJob.view_post(post.id)}"
+
+    notify_users_of_post(post, users, message, title)
+  end
+
   def self.notification_about(post, user, unread_only: false)
     messages = Message.where(recipient: user, sender_id: 0).where('created_at >= ?', post.created_at)
     messages = messages.unread if unread_only
@@ -90,10 +105,10 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   private
 
-  def notify_users_of_post(post, users, message)
+  def notify_users_of_post(post, users, message, title=nil)
     users.each do |user|
       favorited_authors = favorited_authors_for(post, user)
-      title = favorited_authors.present? ? "New post by #{favorited_authors.to_sentence}" : "New post in #{post.board.name}"
+      title ||= favorited_authors.present? ? "New post by #{favorited_authors.to_sentence}" : "New post in #{post.board.name}"
       Message.send_site_message(user.id, title, message)
     end
   end

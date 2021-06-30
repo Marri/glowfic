@@ -794,4 +794,189 @@ RSpec.describe NotifyFollowersOfNewPostJob do
       include_examples 'publication all', :registered
     end
   end
+
+  context "on revived posts" do
+    let!(:author) { create(:user) }
+    let!(:coauthor) { create(:user) }
+    let!(:notified) { create(:user) }
+    let!(:unjoined) { create(:user) }
+    let!(:board) { create(:board) }
+
+    shared_examples "reactivation" do
+      shared_examples "active" do
+        it "works" do
+          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
+          author_msg = Message.where(recipient: notified).last
+          expected = "#{post.subject} by #{author.username} and #{coauthor.username}, in the #{board.name} continuity, has been resumed."
+          expect(author_msg.subject).to eq("#{post.subject} resumed")
+          expect(author_msg.message).to include(expected)
+        end
+
+        it "does not send for private posts" do
+          post.update!(privacy: :private)
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+
+        it "does not send to non-viewers for access-locked posts" do
+          unnotified = create(:user)
+          create(:favorite, user: unnotified, favorite: favorite)
+          post.update!(privacy: :access_list, viewers: [coauthor, unjoined, notified])
+          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
+          expect(Message.where(recipient: unnotified)).not_to be_present
+        end
+
+        it "does not send if reader has config disabled" do
+          notified.update!(favorite_notifications: false)
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+
+        it "does not send to authors" do
+          Favorite.delete_all
+          [author, coauthor, unjoined].each do |user|
+            create(:favorite, user: user, favorite: favorite) unless favorite == user
+          end
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+      end
+
+      context "with favorited author" do
+        let(:favorite) { author }
+
+        before(:each) { create(:favorite, user: notified, favorite: author) }
+
+        include_examples 'active'
+
+        it "works for self-threads" do
+          post.last_reply.update_columns(user_id: author.id) # rubocop:disable Rails/SkipsModelValidations
+          post.post_authors.where.not(user_id: author.id).delete_all
+
+          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
+
+          author_msg = Message.where(recipient: notified).last
+          expected = "#{post.subject} by #{author.username}, in the #{board.name} continuity, has been resumed."
+          expect(author_msg.subject).to eq("#{post.subject} resumed")
+          expect(author_msg.message).to include(expected)
+        end
+
+        it "works with only top post" do
+          post.last_reply.destroy!
+          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
+        end
+      end
+
+      context "with favorited coauthor" do
+        let(:favorite) { coauthor }
+
+        before(:each) { create(:favorite, user: notified, favorite: coauthor) }
+
+        include_examples 'active'
+      end
+
+      context "with favorited unjoined coauthor" do
+        let(:favorite) { unjoined }
+
+        before(:each) { create(:favorite, user: notified, favorite: unjoined) }
+
+        include_examples 'active'
+      end
+
+      context "with favorited board" do
+        let(:favorite) { board }
+
+        before(:each) { create(:favorite, user: notified, favorite: board) }
+
+        include_examples 'active'
+
+        it "does not send twice if the user has favorited both the poster and the continuity" do
+          create(:favorite, user: notified, favorite: author)
+          expect { perform_enqueued_jobs { update_post } }.to change { Message.count }.by(1)
+        end
+      end
+
+      context "with favorited post" do
+        let(:favorite) { post }
+
+        before(:each) { create(:favorite, user: notified, favorite: post) }
+
+        include_examples 'active'
+      end
+
+      context "with blocking" do
+        before(:each) { create(:favorite, user: notified, favorite: board) }
+
+        it "does not send to users the poster has blocked" do
+          create(:block, blocking_user: author, blocked_user: notified, hide_me: :posts)
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+
+        it "does not send to users a coauthor has blocked" do
+          create(:block, blocking_user: coauthor, blocked_user: notified, hide_me: :posts)
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+
+        it "does not send to users who are blocking the poster" do
+          create(:block, blocked_user: author, blocking_user: notified, hide_them: :posts)
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+
+        it "does not send to users who are blocking a coauthor" do
+          create(:block, blocked_user: coauthor, blocking_user: notified, hide_them: :posts)
+          expect { perform_enqueued_jobs { update_post } }.not_to change { Message.count }
+        end
+      end
+    end
+
+    context "with abandoned posts" do
+      let(:post) { create(:post, user: author, board: board, authors: [coauthor, unjoined]) }
+
+      before(:each) do
+        create(:reply, user: coauthor, post: post)
+        post.update!(status: :abandoned)
+      end
+
+      def update_post
+        post.update!(status: :active)
+      end
+
+      include_examples "reactivation"
+    end
+
+    context "with manually hiatused posts" do
+      let(:post) { create(:post, user: author, board: board, authors: [coauthor, unjoined]) }
+
+      before(:each) do
+        create(:reply, user: coauthor, post: post)
+        post.update!(status: :hiatus)
+      end
+
+      def update_post
+        create(:reply, user: author, post: post)
+      end
+
+      include_examples "reactivation"
+    end
+
+    context "with auto-hiatused posts" do
+      let(:now) { Time.zone.now }
+      let!(:post) do
+        Timecop.freeze(now - 2.months) do
+          create(:post, user: author, board: board, authors: [coauthor, unjoined])
+        end
+      end
+
+      before(:each) do
+        Timecop.freeze(now - 2.months + 1.day) do
+          create(:reply, user: coauthor, post: post)
+        end
+      end
+
+      def update_post
+        Timecop.freeze(now) do
+          create(:reply, user: author, post: post)
+        end
+      end
+
+      include_examples "reactivation"
+    end
+  end
 end

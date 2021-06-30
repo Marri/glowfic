@@ -16,6 +16,7 @@ class Reply < ApplicationRecord
   after_update :update_post
   after_destroy :set_previous_reply_to_last, :remove_post_author
   after_save :update_flat_post
+  after_create_commit :notify_followers_if_hiatused
 
   attr_accessor :skip_notify, :skip_post_update, :is_import, :skip_regenerate
 
@@ -137,6 +138,12 @@ class Reply < ApplicationRecord
     else
       post_author.destroy
     end
+  end
+
+  def notify_followers_if_hiatused
+    last_tagged = post.replies.ordered.second_to_last.present? ? post.replies.ordered.second_to_last.updated_at : post.edited_at
+    return unless (post.saved_change_to_status? && post.status_before_last_save == 'hiatus') || last_tagged < 1.month.ago
+    NotifyFollowersOfNewPostJob.perform_later(post.id, [], 'active')
   end
 
   def ordered_attributes
