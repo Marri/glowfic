@@ -5,6 +5,7 @@ class CreateNotifications < ActiveRecord::Migration[5.2]
       t.integer :post_id, null: true
       t.boolean :unread, null: false, default: true
       t.integer :notification_type, null: false
+      t.text :error_msg, null: true
       t.datetime :read_at
       t.timestamps
     end

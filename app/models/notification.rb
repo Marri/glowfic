@@ -10,9 +10,10 @@ class Notification < ApplicationRecord
     joined_favorite_post: 3,
   }
 
-  def self.notify_user(user, type, post: nil)
+  def self.notify_user(user, type, post: nil, error: nil)
     notif = Notification.new(user: user, notification_type: type)
     notif.post = post if post
+    notif.error_msg = error if error
     notif.save!
   end
 end

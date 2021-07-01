@@ -84,8 +84,11 @@ Message.create!([
   { sender_id: 1, recipient_id: 3, parent_id: 3, thread_id: 1, message: "Sample reply 2", created_at: "2019-08-19 04:20:00" },
 ])
 
-puts "Creating notification..."
-Notification.create!(user_id: 3, post_id: 32, notification_type: :import_success)
+puts "Creating notifications..."
+Notification.create!([
+  { user_id: 3, post_id: 32, notification_type: :import_success },
+  { user_id: 3, post_id: nil, notification_type: :import_fail, error_msg: 'Unrecognized username: wild_pegasus_appeared' },
+])
 
 puts "Creating favorites..."
 Favorite.create!([

@@ -272,6 +272,7 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.integer "post_id"
     t.boolean "unread", default: true, null: false
     t.integer "notification_type", null: false
+    t.text "error_msg"
     t.datetime "read_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

@@ -38,7 +38,9 @@ RSpec.describe ScrapePostJob do
       ScrapePostJob.perform_now(url, board.id, nil, Post.statuses[:complete], false, board.creator_id)
     rescue UnrecognizedUsernameError
       expect(Notification.count).to eq(1)
-      expect(Notification.first.notification_type).to eq('import_fail')
+      notification = Notification.first
+      expect(notification.notification_type).to eq('import_fail')
+      expect(notification.error_msg).to eq('Unrecognized username: wild_pegasus_appeared')
       expect(Post.count).to eq(0)
     else
       raise "Error should be handled"
@@ -52,6 +54,8 @@ RSpec.describe ScrapePostJob do
     create(:character, screenname: 'wild_pegasus_appeared', user: board.creator)
     scraper = PostScraper.new(url, board.id)
     scraper.scrape!
+    post = Post.last
+    expect(post.subject).to eq('linear b')
 
     expect(ScrapePostJob).to receive(:notify_exception).with(
       an_instance_of(AlreadyImportedError),
@@ -62,7 +66,9 @@ RSpec.describe ScrapePostJob do
       ScrapePostJob.perform_now(url, board.id, nil, Post.statuses[:complete], false, board.creator_id)
     rescue AlreadyImportedError
       expect(Notification.count).to eq(1)
-      expect(Notification.first.notification_type).to eq('import_fail')
+      notification = Notification.first
+      expect(notification.notification_type).to eq('import_fail')
+      expect(notification.post).to eq(post)
       expect(Post.count).to eq(1)
     else
       raise "Error should be handled"
