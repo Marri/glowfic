@@ -7,3 +7,8 @@
   %td{class: row_klass, style: 'width: 300px;'}= pretty_time(notification.created_at)
 - if notification.post
   = render 'posts/list_item', klass: klass, post: notification.post
+- elsif notification.error_msg
+  %tr
+    %td.padding-left-5{class: row_klass}
+    %td{class: klass, colspan: 5}
+      = notification.error_msg
