@@ -1,9 +1,15 @@
 .content-header Notifications
-%table
-  %thead
-    %tr
-      %th.sub
-      %th.sub{colspan: 4} Notification
-      %th.sub Received
-  %tbody
-    = render partial: "notification", collection: @notifications
+= form_tag mark_notifications_path, method: :post do
+  %table
+    %thead
+      %tr
+        %th.sub
+        %th.sub{colspan: 4} Notification
+        %th.sub Received
+    %tbody
+      = render partial: "notification", collection: @notifications
+      %tr
+        %td.right-align.padding-5{colspan: 7, class: cycle('even', 'odd')}
+          = submit_tag "Mark Read", class: 'button'
+          = submit_tag "Mark Unread", class: 'button'
+          = submit_tag "Delete", class: 'button', data: { confirm: "Are you sure you want to delete these messages?" }

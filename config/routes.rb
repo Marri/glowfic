@@ -30,7 +30,9 @@ Rails.application.routes.draw do
   resources :messages, except: [:edit, :update, :destroy] do
     collection { post :mark }
   end
-  resources :notifications, only: [:index]
+  resources :notifications, only: [:index] do
+    collection { post :mark }
+  end
 
   # Characters
   resources :templates, except: :index do

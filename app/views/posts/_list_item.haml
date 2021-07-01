@@ -56,6 +56,8 @@
     = user_mem_link(post.last_user_id, post.last_user_name, post.last_user_deleted?)
   - if local_assigns[:check_box_name]
     %td.post-check-box{class: klass}= check_box_tag check_box_name, post.id, false, class: 'checkbox', id: nil
+  - if local_assigns[:check_box_padding]
+    %td{class: klass}
   - if local_assigns[:index].present?
     %td.vtop.width-70.right-align{class: klass}
       - if index.editable_by?(current_user)
