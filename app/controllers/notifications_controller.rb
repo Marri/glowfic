@@ -8,15 +8,16 @@ class NotificationsController < ApplicationController
   def mark
     notifications = Notification.where(id: params[:marked_ids], user: current_user)
 
-    if params[:commit] == "Mark Read"
-      notifications.each { |notif| notif.update(unread: false, read_at: notif.read_at || Time.zone.now) }
-    elsif params[:commit] == "Mark Unread"
-      notifications.each { |notif| notif.update(unread: true) }
-    elsif params[:commit] == "Delete"
-      notifications.destroy_all
-    else
-      flash[:error] = "Could not perform unknown action."
-      redirect_to notification_path and return
+    case params[:commit]
+      when "Mark Read"
+        notifications.each { |notif| notif.update(unread: false, read_at: notif.read_at || Time.zone.now) }
+      when "Mark Unread"
+        notifications.each { |notif| notif.update(unread: true) }
+      when "Delete"
+        notifications.destroy_all
+      else
+        flash[:error] = "Could not perform unknown action."
+        redirect_to notification_path and return
     end
 
     flash[:success] = "Messages updated"
