@@ -192,7 +192,6 @@ RSpec.describe NotifyFollowersOfNewPostJob do
         post = Timecop.freeze(now - 30.seconds) do
           create(:post, user: author, unjoined_authors: [replier])
         end
-        host = ENV['DOMAIN_NAME'] || 'localhost:3000'
         msg_text = "#{author.username} has just posted a new post entitled #{post.subject} in the #{post.board.name} continuity"
         msg_text += " with #{replier.username}. #{ScrapePostJob.view_post(post.id)}"
         create(:message, subject: "New post by #{author.username}", message: msg_text, recipient: notified, sender_id: 0)
