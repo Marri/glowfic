@@ -21,26 +21,16 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
     return if users.empty?
 
-    message = "#{post_user.username} has just posted a new post entitled #{post.subject} in the #{post.board.name} continuity"
-    other_authors = post.authors.where.not(id: post_user.id)
-    message += " with #{other_authors.pluck(:username).join(', ')}" if other_authors.exists?
-    message += ". #{ScrapePostJob.view_post(post.id)}"
-
-    users.each { |user| Message.send_site_message(user.id, "New post by #{post_user.username}", message) }
+    users.each { |user| Notification.notify_user(user, :new_favorite_post, post: post) }
   end
 
   def notify_of_post_joining(post, new_user)
     users = filter_users(post, Favorite.where(favorite: new_user).pluck(:user_id))
     return if users.empty?
 
-    subject = "#{new_user.username} has joined a new thread"
-    message = "#{new_user.username} has just joined the post entitled #{post.subject} with "
-    message += post.joined_authors.where.not(id: new_user.id).pluck(:username).join(', ')
-    message += ". #{ScrapePostJob.view_post(post.id)}"
-
     users.each do |user|
       next if already_notified_about?(post, user)
-      Message.send_site_message(user.id, subject, message)
+      Notification.notify_user(user, :joined_favorite_post, post: post)
     end
   end
 
@@ -57,6 +47,8 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
   end
 
   def self.notification_about(post, user, unread_only: false)
+    notif = Notification.find_by(post: post, notification_type: [:new_favorite_post, :joined_favorite_post])
+    return notif if notif
     messages = Message.where(recipient: user, sender_id: 0).where('created_at >= ?', post.created_at)
     messages = messages.unread if unread_only
     messages.find_each do |notification|

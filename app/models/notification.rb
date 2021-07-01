@@ -13,6 +13,6 @@ class Notification < ApplicationRecord
   def self.notify_user(user, type, post: nil)
     notif = Notification.new(user: user, notification_type: type)
     notif.post = post if post
-    notif.save
+    notif.save!
   end
 end
