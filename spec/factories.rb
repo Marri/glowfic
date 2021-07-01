@@ -249,4 +249,10 @@ FactoryBot.define do
       "content for news post #{n}"
     end
   end
+
+  factory :notification do
+    user
+    post
+    notification_type { :new_favorite_post }
+  end
 end
