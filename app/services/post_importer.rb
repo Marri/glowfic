@@ -66,7 +66,6 @@ class PostImporter < Object
   end
 end
 
-class PostImportError < ApiError; end
 class MissingUsernames < PostImportError; end
-class AlreadyImported < PostImportError; end
+
 class InvalidDreamwidthURL < PostImportError; end

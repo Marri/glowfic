@@ -58,7 +58,7 @@ RSpec.describe ScrapePostJob do
     expect(post.subject).to eq('linear b')
 
     expect(ScrapePostJob).to receive(:notify_exception).with(
-      an_instance_of(AlreadyImportedError),
+      (an_instance_of(AlreadyImportedError).and having_attributes(post_id: post.id)),
       url, board.id, nil, Post.statuses[:complete], false, board.creator_id
     ).and_call_original
 

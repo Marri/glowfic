@@ -62,7 +62,7 @@ RSpec.describe PostImporter do
         importer = PostImporter.new(url)
         expect { importer.import(post.board_id, nil) }.to raise_error do |error|
           expect(error).to be_a(AlreadyImported)
-          expect(error.message.to_i).to eq(post.id)
+          expect(error.post_id).to eq(post.id)
         end
         expect(ScrapePostJob).not_to have_been_enqueued
       end

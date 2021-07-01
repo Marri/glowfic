@@ -9,14 +9,11 @@ class ScrapePostJob < ApplicationJob
   end
 
   def self.notify_exception(exception, url, board_id, section_id, status, threaded, importer_id)
-    message = exception.is_a?(AlreadyImportedError) ? "Already imported as #{exception.message}" : exception.message
-    Resque.logger.warn "Failed to import #{url}: #{message}"
-    importer = User.find_by_id(importer_id)
-    super unless importer
-    if exception.is_a?(AlreadyImportedError)
-      Notification.notify_user(importer, :import_fail, post: Post.find_by(id: exception.message))
-    else
-      Notification.notify_user(importer, :import_fail, error: exception.message)
+    Resque.logger.warn "Failed to import #{url}: #{exception.message}"
+    importer = User.find_by(id: importer_id)
+    if importer
+      post = exception.is_a?(AlreadyImportedError) ? Post.find_by(id: exception.post_id) : nil
+      Notification.notify_user(importer, :import_fail, error: exception.message, post: post)
     end
     super
   end
