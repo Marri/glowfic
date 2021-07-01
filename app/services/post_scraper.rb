@@ -313,4 +313,4 @@ class PostScraper < Object
   end
 end
 
-class MissingUsernames < PostImportError; end
+class UnrecognizedUsernameError < PostImportError; end
