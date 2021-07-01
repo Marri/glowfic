@@ -2,6 +2,7 @@ class NotificationsController < ApplicationController
   before_action :login_required
 
   def index
+    @page_title = "Notifications"
     @notifications = current_user.notifications
   end
 
