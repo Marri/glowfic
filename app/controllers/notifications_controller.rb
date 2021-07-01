@@ -17,7 +17,7 @@ class NotificationsController < ApplicationController
         notifications.destroy_all
       else
         flash[:error] = "Could not perform unknown action."
-        redirect_to notification_path and return
+        redirect_to notifications_path and return
     end
 
     flash[:success] = "Messages updated"
