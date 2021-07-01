@@ -34,7 +34,7 @@ class PostImporter < Object
     subject = dreamwidth_doc.at_css('.entry .entry-title').text.strip
     subj_post = Post.where(subject: subject, board_id: board_id).first
     return unless subj_post
-    raise AlreadyImported.new("This thread has already been imported! " + ScrapePostJob.view_post(subj_post.id))
+    raise AlreadyImported.new(subj_post.id)
   end
 
   def validate_usernames!
