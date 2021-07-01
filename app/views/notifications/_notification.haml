@@ -4,7 +4,7 @@
   - row_klass += ' bold' if notification.unread?
   %td.padding-left-5{class: row_klass}= # just padding
   %td{class: row_klass, colspan: 4}= subject_for_type(notification.notification_type)
-  %td{class: row_klass, style: 'width: 300px;'}= pretty_time(notification.created_at)
+  %td{class: row_klass}= pretty_time(notification.created_at)
 - if notification.post
   = render 'posts/list_item', klass: klass, post: notification.post
 - elsif notification.error_msg
