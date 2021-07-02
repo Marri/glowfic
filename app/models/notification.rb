@@ -1,6 +1,7 @@
 class Notification < ApplicationRecord
   belongs_to :user, inverse_of: :notifications, optional: false
-  belongs_to :post, optional: true
+  belongs_to :post, inverse_of: :notifications, optional: true
+
   scope :unread, -> { where(unread: true) }
 
   enum notification_type: {
