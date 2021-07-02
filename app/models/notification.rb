@@ -13,9 +13,6 @@ class Notification < ApplicationRecord
   }
 
   def self.notify_user(user, type, post: nil, error: nil)
-    notif = Notification.new(user: user, notification_type: type)
-    notif.post = post if post
-    notif.error_msg = error if error
-    notif.save!
+    Notification.create!(user: user, notification_type: type, post: post, error_msg: error)
   end
 end
