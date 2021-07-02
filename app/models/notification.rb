@@ -3,6 +3,7 @@ class Notification < ApplicationRecord
   belongs_to :post, inverse_of: :notifications, optional: true
 
   scope :unread, -> { where(unread: true) }
+  scope :ordered, -> { order(created_at: :desc) }
 
   enum notification_type: {
     import_success: 0,
