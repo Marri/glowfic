@@ -48,11 +48,14 @@ class NotifyFollowersOfNewPostJob < ApplicationJob
 
   def self.notification_about(post, user, unread_only: false)
     notif = Notification.find_by(post: post, notification_type: [:new_favorite_post, :joined_favorite_post])
-    return notif if notif
-    messages = Message.where(recipient: user, sender_id: 0).where('created_at >= ?', post.created_at)
-    messages = messages.unread if unread_only
-    messages.find_each do |notification|
-      return notification if notification.message.include?(ScrapePostJob.view_post(post.id))
+    if notif
+      return notif if !unread_only || notif.unread
+    else
+      messages = Message.where(recipient: user, sender_id: 0).where('created_at >= ?', post.created_at)
+      messages = messages.unread if unread_only
+      messages.find_each do |notification|
+        return notification if notification.message.include?(ScrapePostJob.view_post(post.id))
+      end
     end
     nil
   end

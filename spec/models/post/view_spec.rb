@@ -75,13 +75,36 @@ RSpec.describe Post::View do
       post
     end
 
+    def make_message(post, user)
+      message = "#{post.user.username} has just posted a new post entitled #{post.subject} in the #{post.board.name} continuity."
+      message += ScrapePostJob.view_post(post.id)
+      create(:message, recipient: user, sender_id: 0, subject: "New post by #{post.user.username}", message: message)
+    end
+
     it "updates message if unread" do
+      post = create(:post)
+      create(:favorite, user: user, favorite: post.user)
+      make_message(post, user)
+      post.mark_read(user)
+      expect(user.messages.first.unread).to eq(false)
+    end
+
+    it "does not update message if read" do
+      post = create(:post)
+      create(:favorite, user: user, favorite: post.user)
+      message = make_message(post, user)
+      message.update!(unread: false)
+      post.mark_read(user)
+      expect(user.messages.first.unread).to eq(false)
+    end
+
+    it "updates notification if unread" do
       post = make_post
       post.mark_read(user)
       expect(user.notifications.first.unread).to eq(false)
     end
 
-    it "does not update message if read" do
+    it "does not update notification if read" do
       post = make_post
       notification = user.notifications.first
       notification.update!(unread: false)
