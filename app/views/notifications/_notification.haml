@@ -6,8 +6,8 @@
   %td{class: row_klass, colspan: 4}= subject_for_type(notification.notification_type)
   %td{class: row_klass}= pretty_time(notification.created_at)
   %td.post-check-box{class: klass}= check_box_tag :'marked_ids[]', notification.id, false, class: 'checkbox', id: nil
-- if notification.post
-  = render 'posts/list_item', klass: klass, post: notification.post, check_box_padding: true
+- if @posts.key?(notification.post_id)
+  = render 'posts/list_item', klass: klass, post: @posts[notification.post_id], check_box_padding: true
 - elsif notification.error_msg
   %tr.notification-error
     %td{class: row_klass}
