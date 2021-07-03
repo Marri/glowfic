@@ -1,5 +1,7 @@
 RSpec.describe NotificationsController do
   describe "GET index" do
+    let(:user) { create(:user) }
+
     it "requires login" do
       get :index
       expect(response).to redirect_to(root_url)
@@ -9,7 +11,6 @@ RSpec.describe NotificationsController do
     context "with views" do
       render_views
       it "works" do
-        user = create(:user)
         notifications = create_list(:notification, 3, user: user, notification_type: :new_favorite_post)
         notifications += create_list(:notification, 2, user: user, notification_type: :joined_favorite_post)
         notifications += create_list(:notification, 2, user: user, notification_type: :import_success)
@@ -21,7 +22,20 @@ RSpec.describe NotificationsController do
         get :index
         expect(assigns(:notifications).map(&:id)).to match_array(notifications.map(&:id))
         expect(assigns(:posts).keys).to match_array(post_ids)
+        expect(flash[:error]).not_to be_present
       end
+    end
+
+    it "paginates" do
+      create_list(:notification, 3, user: user)
+      notifications = create_list(:notification, 22, user: user)
+      notifications += create_list(:error_notification, 3, user: user)
+      post_ids = notifications.map(&:post_id).reject(&:blank?)
+      login_as(user)
+      get :index
+      expect(assigns(:notifications).map(&:id)).to match_array(notifications.map(&:id))
+      expect(assigns(:posts).keys).to match_array(post_ids)
+      expect(flash[:error]).not_to be_present
     end
   end
 
