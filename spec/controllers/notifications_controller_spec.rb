@@ -15,8 +15,7 @@ RSpec.describe NotificationsController do
         notifications += create_list(:notification, 2, user: user, notification_type: :import_success)
         notifications << create(:notification, user: user, notification_type: :import_fail)
         post_ids = notifications.map(&:post_id)
-        error = 'Unrecognized username: wild_pegasus_appeared'
-        notifications << create(:notification, user: user, notification_type: :import_fail, post: nil, error_msg: error)
+        notifications << create(:error_notification, user: user)
         create_list(:notification, 3)
         login_as(user)
         get :index
