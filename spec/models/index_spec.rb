@@ -42,4 +42,30 @@ RSpec.describe Index do
         .and not_change{ [Index.count, IndexSection.count] }
     end
   end
+
+  describe "#editable_by?" do
+    let(:index) { create(:index, authors_locked: true) }
+    let(:user) { create(:user) }
+
+    it "requires a user" do
+      expect(index.editable_by?(nil)).to eq(false)
+    end
+
+    it "returns true if index is open" do
+      index.update!(authors_locked: false)
+      expect(index.editable_by?(user)).to eq(true)
+    end
+
+    it "returns true for creator" do
+      expect(index.editable_by?(index.user)).to eq(true)
+    end
+
+    it "returns true for admins" do
+      expect(index.editable_by?(create(:admin_user))).to eq(true)
+    end
+
+    it "returns false for others" do
+      expect(index.editable_by?(user)).to eq(false)
+    end
+  end
 end
