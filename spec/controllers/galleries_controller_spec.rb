@@ -312,6 +312,11 @@ RSpec.describe GalleriesController do
   end
 
   describe "PUT update" do
+    let(:user) { create(:user) }
+    let(:gallery) { create(:gallery, user: user) }
+    let(:group) { create(:gallery_group) }
+    let(:icon) { create(:icon, user: user) }
+
     it "requires login" do
       put :update, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -335,8 +340,6 @@ RSpec.describe GalleriesController do
     end
 
     it "requires valid params" do
-      user = create(:user)
-      gallery = create(:gallery, user: user)
       login_as(user)
       put :update, params: { id: gallery.id, gallery: {name: ''} }
       expect(response).to render_template('edit')
@@ -344,23 +347,19 @@ RSpec.describe GalleriesController do
     end
 
     it "sets right variables on failed save" do
-      gallery = create(:gallery, name: 'Example Gallery')
-      login_as(gallery.user)
+      login_as(user)
       post :update, params: { id: gallery.id, gallery: {name: ''} }
       expect(response.status).to eq(200)
       expect(response).to render_template(:edit)
-      expect(assigns(:page_title)).to eq('Edit Gallery: Example Gallery')
+      expect(assigns(:page_title)).to eq("Edit Gallery: #{gallery.name}")
       expect(flash[:error][:message]).to eq('Gallery could not be saved.')
     end
 
     context "with views" do
       render_views
       it "keeps variables on failed save" do
-        user = create(:user)
-        gallery = create(:gallery, user: user)
-        create(:icon, user: gallery.user) # icon
-        group = create(:gallery_group)
-        login_as(gallery.user)
+        create(:icon, user: user)
+        login_as(user)
         post :update, params: { id: gallery.id, gallery: {name: '', gallery_group_ids: [group.id]} }
         expect(response.status).to eq(200)
         expect(response).to render_template(:edit)
@@ -369,9 +368,6 @@ RSpec.describe GalleriesController do
     end
 
     it "successfully updates" do
-      user = create(:user)
-      gallery = create(:gallery, user: user)
-      group = create(:gallery_group)
       login_as(user)
       put :update, params: { id: gallery.id, gallery: {name: 'NewGalleryName', gallery_group_ids: [group.id]} }
       expect(response).to redirect_to(edit_gallery_url(gallery))
@@ -382,9 +378,6 @@ RSpec.describe GalleriesController do
     end
 
     it "can update a gallery icon" do
-      user = create(:user)
-      gallery = create(:gallery, user: user)
-      icon = create(:icon, user: user)
       newkey = icon.keyword + 'new'
       gallery.icons << icon
       login_as(user)
@@ -405,9 +398,6 @@ RSpec.describe GalleriesController do
     end
 
     it "can remove a gallery icon from the gallery" do
-      user = create(:user)
-      gallery = create(:gallery, user: user)
-      icon = create(:icon, user: user)
       gallery.icons << icon
       expect(icon.reload.has_gallery).to eq(true)
       login_as(user)
@@ -427,6 +417,30 @@ RSpec.describe GalleriesController do
       expect(gallery.reload.icons).to be_empty
       expect(icon.reload).not_to be_nil
       expect(icon.has_gallery).not_to eq(true)
+    end
+
+    it "can remove a gallery icon that has other galleries" do
+      gallery.icons << icon
+      gallery2 = create(:gallery, user: user, icons: [icon])
+      expect(icon.reload.has_gallery).to eq(true)
+      login_as(user)
+
+      icon_attributes = {id: icon.id}
+      gid = gallery.galleries_icons.first.id
+      gallery_icon_attributes = {id: gid, _destroy: '1', icon_attributes: icon_attributes}
+
+      put :update, params: {
+        id: gallery.id,
+        gallery: {
+          galleries_icons_attributes: {gid.to_s => gallery_icon_attributes}
+        }
+      }
+      expect(response).to redirect_to(edit_gallery_url(gallery))
+      expect(flash[:success]).to eq('Gallery saved.')
+      expect(gallery.reload.icons).to be_empty
+      expect(gallery2.reload.icons).to eq([icon])
+      expect(icon.reload).not_to be_nil
+      expect(icon.has_gallery).to eq(true)
     end
 
     it "can delete a gallery icon" do
