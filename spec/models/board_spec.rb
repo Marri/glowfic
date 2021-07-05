@@ -84,22 +84,32 @@ RSpec.describe Board do
     end
   end
 
-  it "should be fixable via admin method" do
-    board = create(:board)
-    post = create(:post, board: board)
-    create(:post, board: board) # post2
-    create(:post, board: board) # post3
-    create(:post, board: board) # post4
-    post.update_columns(section_order: 2) # rubocop:disable Rails/SkipsModelValidations
-    section = create(:board_section, board: board)
-    create(:board_section, board: board) # section2
-    create(:board_section, board: board) # section3
-    section.update_columns(section_order: 6) # rubocop:disable Rails/SkipsModelValidations
-    expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([1, 2, 2, 3])
-    expect(board.board_sections.ordered.pluck(:section_order)).to eq([1, 2, 6])
-    board.send(:fix_ordering)
-    expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([0, 1, 2, 3])
-    expect(board.board_sections.ordered.pluck(:section_order)).to eq([0, 1, 2])
+  describe "#fix_ordering" do
+    let(:board) { create(:board) }
+
+    it "should work" do
+      post = create(:post, board: board)
+      create_list(:post, 3, board: board)
+      post.update_columns(section_order: 2) # rubocop:disable Rails/SkipsModelValidations
+      section = create(:board_section, board: board)
+      create_list(:board_section, 2, board: board)
+      section.update_columns(section_order: 6) # rubocop:disable Rails/SkipsModelValidations
+      expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([1, 2, 2, 3])
+      expect(board.board_sections.ordered.pluck(:section_order)).to eq([1, 2, 6])
+      board.send(:fix_ordering)
+      expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([0, 1, 2, 3])
+      expect(board.board_sections.ordered.pluck(:section_order)).to eq([0, 1, 2])
+    end
+
+    it "should do nothing if board is ordered" do
+      posts = create_list(:post, 4, board: board)
+      posts = Post.where(id: posts.map(&:id)).ordered_in_section
+      sections = create_list(:board_section, 3, board: board)
+      sections = BoardSection.where(id: sections.map(&:id)).ordered
+      expect {
+        board.send(:fix_ordering)
+      }.to not_change{posts.pluck(:section_order)}.and not_change { sections.pluck(:section_order) }
+    end
   end
 
   describe "#ordered?" do
@@ -133,5 +143,64 @@ RSpec.describe Board do
     expect(post.board_id).to eq(3)
     expect(post.section).to be_nil
     expect(BoardSection.find_by_id(section.id)).to be_nil
+  end
+
+  describe "#open_to?" do
+    let(:board) { create(:board, authors_locked: true) }
+    let(:user) { create(:user) }
+
+    it "requires a user" do
+      expect(board.open_to?(nil)).to eq(false)
+    end
+
+    it "returns true for open boards" do
+      board.update!(authors_locked: false)
+      expect(board.open_to?(user)).to eq(true)
+    end
+
+    it "returns true for creator" do
+      expect(board.open_to?(board.creator)).to eq(true)
+    end
+
+    it "returns true for board authors" do
+      board.writers << user
+      expect(board.open_to?(user)).to eq(true)
+    end
+
+    it "returns false for others" do
+      expect(board.open_to?(user)).to eq(false)
+    end
+  end
+
+  describe "#editable_by?" do
+    let(:board) { create(:board, authors_locked: false) }
+    let(:user) { create(:user) }
+
+    it "requires a user" do
+      expect(board.editable_by?(nil)).to eq(false)
+    end
+
+    it "returns true for creator" do
+      expect(board.editable_by?(board.creator)).to eq(true)
+    end
+
+    it "returns true for admins" do
+      expect(board.editable_by?(create(:admin_user))).to eq(true)
+    end
+
+    it "returns false if creator is deleted" do
+      board.creator.update!(deleted: true)
+      board.writers << user
+      expect(board.editable_by?(user)).to eq(false)
+    end
+
+    it "returns true for board coauthors" do
+      board.writers << user
+      expect(board.editable_by?(user)).to eq(true)
+    end
+
+    it "returns false for others" do
+      expect(board.editable_by?(user)).to eq(false)
+    end
   end
 end
