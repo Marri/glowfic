@@ -51,6 +51,7 @@
 .gallery-icon-editor {
   @extend %shared-editor;
   margin: 18px 18px 0 0;
+  border-style: solid;
   border-width: 15px 1.5px 5px 1.5px;
   padding: 5px 5px 5px 0;
   input[type='text'], input[type='file'] { width: 225px; }
