@@ -331,6 +331,9 @@ Rails/MailerName:
 
 Rails/MatchRoute:
   Enabled: true
+  Exclude:
+    - app/services/**/*
+    - spec/services/**/*
 
 Rails/NegateInclude:
   Enabled: true
