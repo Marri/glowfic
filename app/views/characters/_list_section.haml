@@ -10,20 +10,20 @@
         %b= name
         - if local_assigns[:show_new_character_button]
           = link_to new_character_path do
-            .link-box.action-new{style: 'font-size: 14px'} + New Character
+            .link-box.action-new + New Character
       - else
         %b
           Template:
           = link_to name.name, template_path(name)
         - if current_user.try(:id) == name.user_id
           = link_to new_character_path(template_id: name.id) do
-            .link-box.action-new{style: 'font-size: 14px'} + New Instance
+            .link-box.action-new + New Instance
           = link_to edit_template_path(name) do
-            .link-box.action-edit{style: 'font-size: 14px'}
+            .link-box.action-edit
               = image_tag "icons/pencil.png", class: 'vmid', alt: ''
               Edit
           = link_to template_path(name), method: :delete, data: { confirm: 'Are you sure you want to delete this template?' } do
-            .link-box.action-delete{style: 'font-size: 14px'} x Delete
+            .link-box.action-delete x Delete
 - if @template && @template.description.present?
   %tr
     %td.single-description.written-content{colspan: col_count}= sanitize_written_content(@template.description)
@@ -32,29 +32,29 @@
     %td.single-description.written-content{colspan: col_count}= sanitize_written_content(name.description)
 - if characters.empty?
   %tr
-    %td.centered.padding-5{class: cycle('even', 'odd'), colspan: col_count} — No characters yet —
+    %td.character-list-none{class: cycle('even', 'odd'), colspan: col_count} — No characters yet —
 - else
   %tr
     - klass = cycle('even', 'odd')
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Name
     - if local_assigns[:show_template]
-      %td.padding-5{class: klass}
+      %td.character-list-heading{class: klass}
         %b Template
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Cluster
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Nickname
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Screenname
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       %b Facecast
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
       - if local_assigns[:show_user]
         %b User
       - else
         %b Setting
-    %td.padding-5{class: klass}
+    %td.character-list-heading{class: klass}
   - pluck = characters_list(characters.ordered, local_assigns[:show_template])
   - params = { show_template: local_assigns[:show_template], show_user: local_assigns[:show_user], hide_buttons: local_assigns[:hide_buttons] }
   - params[:settings] = settings_info(characters) unless local_assigns[:show_user]

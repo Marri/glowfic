@@ -18,14 +18,14 @@
       = link_to gallery_path(gallery), title: "Delete Gallery", method: :delete, data: { confirm: "Are you sure you want to delete #{gallery.name}?" }, class: 'gallery-delete' do
         = image_tag "icons/cross.png", alt: 'Delete'
   %td.centered.width-70{class: klass}
-    .gallery-box.vmid{id: "minmax-#{gallery.id}", style: 'display: inline-block;', data: {id: gallery.id}}
-      .view-button{style: 'padding: 5px 7px;'}
+    .gallery-box.vmid{id: "minmax-#{gallery.id}", data: {id: gallery.id}}
+      .view-button
         = image_tag "icons/bullet_arrow_down.png", class: 'vmid down-arrow', alt: 'Show'
         = image_tag "icons/bullet_arrow_up.png", class: 'vmid hidden up-arrow', alt: 'Hide'
 %tr
   %td.padding-5.hidden{class: klass, id: "icons-#{gallery.id}", colspan: 4}
     = form_tag delete_multiple_icons_path, method: :delete do
-      .gallery{style: 'padding: 0px;'}
+      .gallery.gallery-expandable
       - if gallery.user_id == current_user.try(:id)
         .clear.centered.icons-remove
           = hidden_field_tag :gallery_id, gallery.id, id: nil

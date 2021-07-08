@@ -78,15 +78,21 @@ button, .button {
 .spacer {
   padding: 0px !important;
   height: 2px;
-
-  .gallery-icon-editor & {
-    height: 12px;
-  }
 }
 
 .spacer-alt {
   @extend .spacer;
   background-color: $bg_color_spacer_alt;
+}
+
+.spacer-wideish {
+  @extend .spacer;
+  height: 6px;
+}
+
+.spacer-wide {
+  @extend .spacer;
+  height: 20px;
 }
 
 .centered { text-align: center !important; }
@@ -158,6 +164,9 @@ a.disabled-arrow {
   list-style-type: none;
   margin-right: 4px;
 }
+
+/* Italics on the next button of the daily report if the next day is today */
+.report-next-today { font-style: italic; }
 
 /* Bootstrap tweaks */
 .view-button img, #swap-alias, #swap-character, #header img { vertical-align: baseline; }

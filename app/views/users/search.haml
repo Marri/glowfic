@@ -16,7 +16,7 @@
         = form_tag search_users_path, method: :get do
           %table.search-form
             %tr
-              %td.width-70= label_tag :search_username, 'Username'
+              %td= label_tag :search_username, 'Username'
               %td= text_field_tag :username, params[:username], style: 'width: 100%; margin: 5px 0px;', id: :search_username
             %tr
               %td.centered{colspan: 2}= submit_tag "Search", class: 'button'

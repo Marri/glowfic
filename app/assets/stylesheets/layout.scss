@@ -244,7 +244,7 @@ td, .table-list li { font-size: $font_size_small; }
   font-size: $font_size_smallish;
   font-weight: bold;
   input { margin: 0; }
-  .link-box { font-size: $font_size_smallish; }
+  .link-box { font-size: $font_size_small; }
 }
 
 /* Form Tables */
@@ -463,6 +463,10 @@ tr.gallery-tags .tag-item { color: $font_color_tag_item_gallery; }
 
 .user-moiety { font-size: 80%; }
 
+.index-post-description {
+  padding-top: 0px;
+}
+
 #footer {
   font-size: $font_size_small;
   background-color: $bg_color_header_middle;
@@ -530,3 +534,10 @@ The copy box can't be invisible/hidden or copy fails but opacity works
 .no-close .ui-dialog-titlebar-close {
   display: none;
 }
+
+#tos-content, #dmca-content, #privacy-content, #contact-content {
+  background-color: $bg_color_odd;
+  padding: 15px;
+}
+
+.alphabetical-list { list-style-type: lower-alpha; }

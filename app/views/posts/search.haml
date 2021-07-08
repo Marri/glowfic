@@ -16,7 +16,7 @@
         = form_tag search_posts_path, :method => :get do
           %table.search-form
             %tr
-              %td.width-70= label_tag :board_id, 'Continuity'
+              %td= label_tag :board_id, 'Continuity'
               %td= select_tag :board_id, options_from_collection_for_select(@board || [], :id, :name, params[:board_id]), {class: 'chosen-select', prompt: '— Choose Continuity —'}
             %tr
               %td= label_tag :author_id, 'Author'

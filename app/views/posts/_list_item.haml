@@ -67,6 +67,6 @@
 - if post.respond_to?(:index_description)
   %tr
     %td{class: klass}
-    %td{class: klass, colspan: 5, style: 'padding-top: 0px;'}
+    %td.index-post-description{class: klass, colspan: 5}
       %span.details= sanitize_simple_link_text(post.index_description)
     %td{class: klass}

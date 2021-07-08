@@ -10,7 +10,7 @@
       - cur = audited.revision(audit.version)
       - cur.id = nil # hides the permalink buttons
       - reset_cycle
-      %tr.bg.spacer{style: 'height:20px;'}
+      %tr.spacer-wide
       %tr
         %th.table-title{colspan: 2} Version: #{audit.version}
       - if audit.comment.present?

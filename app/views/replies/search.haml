@@ -16,7 +16,7 @@
         = form_tag search_replies_path, :method => :get do
           %table.search-form
             %tr
-              %td{style: 'width: 80px;'}= label_tag :board_id, 'Continuity'
+              %td= label_tag :board_id, 'Continuity'
               %td
                 - if @post
                   %b= @post.board.name

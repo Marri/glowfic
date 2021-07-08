@@ -50,3 +50,32 @@
 
 // character list view
 .character-list-template { padding: 10px; }
+
+%character-list-cell { padding: 5px; }
+
+.character-list-none {
+  @extend %character-list-cell;
+  text-align: center;
+}
+
+.character-list-heading, .character-list-name, .character-list-template, .character-list-cluster { @extend %character-list-cell; }
+
+.character-list-nickname, .character-list-screenname, .character-list-author {
+  @extend %character-list-cell;
+  width: 15%;
+}
+
+.character-list-facecast {
+  @extend %character-list-cell;
+  width: 20%;
+}
+
+.character-list-buttons {
+  width: 70px;
+  text-align: right;
+}
+
+.character-search-facecast {
+  @extend %character-list-cell;
+  width: 25%;
+}

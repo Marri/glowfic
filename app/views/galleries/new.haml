@@ -1,6 +1,6 @@
 = form_for @gallery, url: galleries_path, method: :post do |f|
   - icons_present = current_user.galleryless_icons.present?
-  %table.form-table{style: (icons_present ? 'width: 100%;' : nil)}
+  %table.form-table{class: ('gallery-new-with-icons' if icons_present)}
     %thead
       %tr
         %th.editor-title{colspan: 2}New Gallery

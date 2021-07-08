@@ -13,7 +13,7 @@
               Edit Post
     - if @post.description.present?
       %tr
-        %td.post-subheader{colspan: 2, style: 'width: unset;'}= sanitize_simple_link_text(@post.description)
+        %td.post-subheader{colspan: 2}= sanitize_simple_link_text(@post.description)
   %tbody
     %tr
       %th.sub.width-150 Status
