@@ -102,6 +102,7 @@ FactoryBot.define do
     sequence :content do |n|
       "test content #{n}"
     end
+    editor_mode { 'rtf' }
     before(:create) do |reply, evaluator|
       reply.character = create(:character, user: reply.user) if evaluator.with_character
       reply.icon = create(:icon, user: reply.user) if evaluator.with_icon

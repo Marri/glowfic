@@ -363,6 +363,7 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.datetime "updated_at"
     t.integer "character_alias_id"
     t.integer "reply_order"
+    t.string "editor_mode"
     t.index "to_tsvector('english'::regconfig, COALESCE(content, ''::text))", name: "idx_fts_reply_content", using: :gin
     t.index ["character_id"], name: "index_replies_on_character_id"
     t.index ["created_at"], name: "index_replies_on_created_at"
@@ -383,6 +384,7 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer "character_alias_id"
+    t.string "editor_mode"
     t.index ["post_id", "user_id"], name: "index_reply_drafts_on_post_id_and_user_id"
   end
 

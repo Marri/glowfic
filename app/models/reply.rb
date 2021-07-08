@@ -9,6 +9,7 @@ class Reply < ApplicationRecord
   include Orderable
 
   belongs_to :post, inverse_of: :replies, optional: false
+  validates :editor_mode, inclusion: { in: ['html', 'rtf'] }
   validate :author_can_write_in_post, on: :create
   audited associated_with: :post, except: :reply_order, update_with_comment_only: false
 

@@ -30,7 +30,8 @@ RSpec.describe RepliesController do
             character_id: char1.id,
             icon_id: icon.id,
             character_alias_id: calias.id,
-            post_id: reply_post.id
+            post_id: reply_post.id,
+            editor_mode: 'html',
           }
         }
         expect(response).to render_template(:preview)
@@ -92,7 +93,10 @@ RSpec.describe RepliesController do
       it "displays errors if relevant" do
         draft = create(:reply_draft)
         login_as(draft.user)
-        post :create, params: { button_draft: true, reply: {post_id: ''} }
+        post :create, params: {
+          button_draft: true,
+          reply: {post_id: ''}
+        }
         expect(flash[:error][:message]).to eq("Your draft could not be saved because of the following problems:")
         expect(draft.reload.post_id).not_to be_nil
         expect(response).to redirect_to(posts_url)
@@ -114,7 +118,8 @@ RSpec.describe RepliesController do
             character_id: char.id,
             icon_id: icon.id,
             content: 'testcontent',
-            character_alias_id: calias.id
+            character_alias_id: calias.id,
+            editor_mode: 'html'
           }
         }
         expect(response).to redirect_to(post_url(reply_post, page: :unread, anchor: :unread))
@@ -133,7 +138,14 @@ RSpec.describe RepliesController do
       it "updates the existing draft if one exists" do
         draft = create(:reply_draft)
         login_as(draft.user)
-        post :create, params: { button_draft: true, reply: {post_id: draft.post.id, content: 'new draft'} }
+        post :create, params: {
+          button_draft: true,
+          reply: {
+            post_id: draft.post.id,
+            content: 'new draft',
+            editor_mode: 'html'
+          }
+        }
         expect(flash[:success]).to eq("Draft saved!")
         expect(draft.reload.content).to eq('new draft')
         expect(ReplyDraft.count).to eq(1)
@@ -153,7 +165,13 @@ RSpec.describe RepliesController do
       reply_post.mark_read(reply_post.user)
       create(:reply, post: reply_post)
 
-      post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          user_id: reply_post.user_id,
+          editor_mode: 'html'
+        }
+      }
       expect(response.status).to eq(200)
       expect(flash[:error]).to eq("There has been 1 new reply since you last viewed this post.")
     end
@@ -164,7 +182,13 @@ RSpec.describe RepliesController do
       reply_post.mark_read(reply_post.user)
       create(:reply, post: reply_post) # last_seen
 
-      post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          user_id: reply_post.user_id,
+          editor_mode: 'html'
+        }
+      }
       expect(response.status).to eq(200)
       expect(flash[:error]).to eq("There has been 1 new reply since you last viewed this post.")
 
@@ -182,11 +206,27 @@ RSpec.describe RepliesController do
       dupe_reply = create(:reply, user: reply_post.user, post: reply_post)
       reply_post.mark_read(reply_post.user, at_time: dupe_reply.created_at + 1.second, force: true)
 
-      post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id, content: dupe_reply.content} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          user_id: reply_post.user_id,
+          content: dupe_reply.content,
+          editor_mode: 'html'
+        }
+      }
       expect(response).to have_http_status(200)
       expect(flash[:error]).to eq("This looks like a duplicate. Did you attempt to post this twice? Please resubmit if this was intentional.")
 
-      post :create, params: { reply: {post_id: reply_post.id, user_id: reply_post.user_id, content: dupe_reply.content}, allow_dupe: true }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          user_id: reply_post.user_id,
+          content: dupe_reply.content,
+          editor_mode: 'html'
+        },
+        allow_dupe: true
+      }
+
       expect(response).to have_http_status(302)
       expect(flash[:success]).to eq("Posted!")
     end
@@ -199,7 +239,13 @@ RSpec.describe RepliesController do
       reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
 
       expect(character.user_id).not_to eq(user.id)
-      post :create, params: { reply: {character_id: character.id, post_id: reply_post.id} }
+      post :create, params: {
+        reply: {
+          character_id: character.id,
+          post_id: reply_post.id,
+          editor_mode: 'html'
+        }
+      }
       expect(response).to redirect_to(post_url(reply_post))
       expect(flash[:error][:message]).to eq("Your reply could not be saved because of the following problems:")
     end
@@ -220,7 +266,8 @@ RSpec.describe RepliesController do
             content: 'test!',
             character_id: char.id,
             icon_id: icon.id,
-            character_alias_id: calias.id
+            character_alias_id: calias.id,
+            editor_mode: 'html'
           }
         }
       }.to change{Reply.count}.by(1)
@@ -244,7 +291,13 @@ RSpec.describe RepliesController do
       reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
 
       expect {
-        post :create, params: { reply: {post_id: reply_post.id, content: 'test content!'} }
+        post :create, params: {
+          reply: {
+            post_id: reply_post.id,
+            content: 'test content!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
 
       reply = Reply.order(:id).last
@@ -262,7 +315,13 @@ RSpec.describe RepliesController do
       reply_post.mark_read(user, at_time: reply_post.created_at + 1.second, force: true)
 
       expect {
-        post :create, params: { reply: {post_id: reply_post.id, content: 'test content again!'} }
+        post :create, params: {
+          reply: {
+            post_id: reply_post.id,
+            content: 'test content again!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
 
       reply = Reply.order(:id).last
@@ -281,7 +340,13 @@ RSpec.describe RepliesController do
       reply_post.mark_read(user, at_time: reply_old.created_at + 1.second, force: true)
 
       expect {
-        post :create, params: { reply: {post_id: reply_post.id, content: 'test content the third!'} }
+        post :create, params: {
+          reply: {
+            post_id: reply_post.id,
+            content: 'test content the third!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
 
       reply = Reply.ordered.last
@@ -301,7 +366,13 @@ RSpec.describe RepliesController do
       reply_post.update!(authors_locked: true)
 
       expect {
-        post :create, params: { reply: {post_id: reply_post.id, content: 'test content the third!'} }
+        post :create, params: {
+          reply: {
+            post_id: reply_post.id,
+            content: 'test content the third!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
 
       reply = Reply.order(id: :desc).first
@@ -319,7 +390,13 @@ RSpec.describe RepliesController do
       reply_post = create(:post, user: other_user, tagging_authors: [user, other_user], authors_locked: true)
       reply_post.mark_read(user)
       expect {
-        post :create, params: { reply: {post_id: reply_post.id, content: 'test content!'} }
+        post :create, params: {
+          reply: {
+            post_id: reply_post.id,
+            content: 'test content!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
     end
 
@@ -330,7 +407,13 @@ RSpec.describe RepliesController do
       other_post = create(:post, user: user, tagging_authors: [user, other_user], authors_locked: true)
       other_post.mark_read(user)
       expect {
-        post :create, params: { reply: {post_id: other_post.id, content: 'more test content!'} }
+        post :create, params: {
+          reply: {
+            post_id: other_post.id,
+            content: 'more test content!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
     end
 
@@ -342,7 +425,13 @@ RSpec.describe RepliesController do
 
       expect {
         Timecop.freeze(Time.zone.now) do
-          post :create, params: { reply: {post_id: reply_post.id, content: 'test content!'} }
+          post :create, params: {
+            reply: {
+              post_id: reply_post.id,
+              content: 'test content!',
+              editor_mode: 'html'
+            }
+          }
         end
       }.to change{Reply.count}.by(1)
 
@@ -367,7 +456,13 @@ RSpec.describe RepliesController do
       expect(reply_post.joined_authors.count).to eq(2)
       reply_post.mark_read(user, at_time: old_reply.created_at + 1.second, force: true)
       expect {
-        post :create, params: { reply: {post_id: reply_post.id, content: 'test content!'} }
+        post :create, params: {
+          reply: {
+            post_id: reply_post.id,
+            content: 'test content!',
+            editor_mode: 'html'
+          }
+        }
       }.to change{Reply.count}.by(1)
       expect(reply_post.tagging_authors).to match_array([user, reply_post.user])
     end
@@ -377,7 +472,13 @@ RSpec.describe RepliesController do
       login_as(user)
       reply_post = create(:post, authors_locked: true)
       reply_post.mark_read(user)
-      post :create, params: { reply: {post_id: reply_post.id, content: 'test'} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          content: 'test',
+          editor_mode: 'html'
+        }
+      }
       expect(flash[:error][:message]).to eq("Your reply could not be saved because of the following problems:")
       expect(flash[:error][:array]).to eq(["User #{user.username} cannot write in this post"])
     end
@@ -387,7 +488,13 @@ RSpec.describe RepliesController do
       login_as(reply_post.user)
       reply_post.mark_read(reply_post.user)
       searchable = 'searchable content'
-      post :create, params: { reply: {post_id: reply_post.id, content: searchable} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          content: searchable,
+          editor_mode: 'html'
+        }
+      }
       reply = reply_post.replies.ordered.last
       expect(reply.content).to eq(searchable)
       expect(reply.reply_order).to eq(0)
@@ -399,7 +506,13 @@ RSpec.describe RepliesController do
       create(:reply, post: reply_post)
       reply_post.mark_read(reply_post.user)
       searchable = 'searchable content'
-      post :create, params: { reply: {post_id: reply_post.id, content: searchable} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          content: searchable,
+          editor_mode: 'html'
+        }
+      }
       reply = reply_post.replies.ordered.last
       expect(reply.content).to eq(searchable)
       expect(reply.reply_order).to eq(1)
@@ -412,7 +525,13 @@ RSpec.describe RepliesController do
       create(:reply, post: reply_post)
       reply_post.mark_read(reply_post.user)
       searchable = 'searchable content'
-      post :create, params: { reply: {post_id: reply_post.id, content: searchable} }
+      post :create, params: {
+        reply: {
+          post_id: reply_post.id,
+          content: searchable,
+          editor_mode: 'html'
+        }
+      }
       reply = reply_post.replies.ordered.last
       expect(reply.content).to eq(searchable)
       expect(reply.reply_order).to eq(2)

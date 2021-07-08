@@ -201,6 +201,7 @@ class PostScraper < Object
       set_from_username(@reply, username)
       set_from_icon(@reply, img_url, img_keyword)
 
+      @reply.editor_mode = 'html'
       @reply.skip_notify = true
       @reply.skip_post_update = true
       @reply.skip_regenerate = true

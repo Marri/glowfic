@@ -177,6 +177,7 @@ class WritableController < ApplicationController
       :icon_id,
       :audit_comment,
       :character_alias_id,
+      :editor_mode,
     )
   end
 end

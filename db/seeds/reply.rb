@@ -6,6 +6,7 @@ Reply.create!([
     icon_id: 4,
     created_at: "2018-11-27 04:53:37",
     updated_at: "2018-11-27 04:53:37",
+    editor_mode: "rtf",
   },
   {
     post_id: 1,
@@ -14,6 +15,7 @@ Reply.create!([
     icon_id: 4,
     created_at: "2018-11-27 04:53:50",
     updated_at: "2018-11-27 04:53:50",
+    editor_mode: "rtf",
   },
   {
     post_id: 1,
@@ -23,6 +25,7 @@ Reply.create!([
     created_at: "2018-12-06 00:04:35",
     updated_at: "2018-12-06 00:05:13",
     icon_id: 11,
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -30,6 +33,7 @@ Reply.create!([
     content: "test content 1",
     created_at: "2019-06-22 03:36:49",
     updated_at: "2019-06-22 03:36:49",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -37,6 +41,7 @@ Reply.create!([
     content: "test content 2",
     created_at: "2019-06-22 03:36:49",
     updated_at: "2019-06-22 03:36:49",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -44,6 +49,7 @@ Reply.create!([
     content: "test content 3",
     created_at: "2019-06-22 03:36:49",
     updated_at: "2019-06-22 03:36:49",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -51,6 +57,7 @@ Reply.create!([
     content: "test content 4",
     created_at: "2019-06-22 03:36:49",
     updated_at: "2019-06-22 03:36:49",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -58,6 +65,7 @@ Reply.create!([
     content: "test content 5",
     created_at: "2019-06-22 03:36:49",
     updated_at: "2019-06-22 03:36:49",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -66,6 +74,7 @@ Reply.create!([
     icon_id: 5,
     created_at: "2019-06-22 03:39:37",
     updated_at: "2019-06-22 03:39:37",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -73,6 +82,7 @@ Reply.create!([
     content: "<table><tr><th>A</th><th>B</th><th>C</th></tr><tr><th>1</th><td>foo</td><td></td></tr><tr><th>2</th><td>bar</td><td>foobar</td></tr></table>\r\n<hr/>\r\n<ol><li>list item a</li><li>list item b</li><li>list item c</li></ol>",
     created_at: "2019-06-22 03:39:49",
     updated_at: "2019-06-22 03:42:15",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -81,6 +91,7 @@ Reply.create!([
     icon_id: 5,
     created_at: "2019-06-22 03:39:59",
     updated_at: "2019-06-22 03:39:59",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -88,6 +99,7 @@ Reply.create!([
     content: "<blockquote>odd blockquote</blockquote>\r\n<hr/>\r\n<dl><dt>test</dd><dd>noun. a procedure intended to establish the quality, performance, or reliability of something, especially before it is taken into widespread use.</dt> <dt>code</dd><dd>noun. program instructions</dt></dl>\r\n",
     created_at: "2019-06-22 03:40:12",
     updated_at: "2019-06-22 15:52:29",
+    editor_mode: "html",
   },
   {
     post_id: 2,
@@ -95,6 +107,7 @@ Reply.create!([
     content: "<blockquote cite=https://glowfic.com>even blockquote with citation</blockquote>\r\n<hr/>\r\n<code>Timecop.freeze(desired_time) do\r\n    visit post_path(post, page: 2)\r\n    sleep(0.5)\r\n  end</code>",
     created_at: "2019-06-22 03:40:22",
     updated_at: "2019-06-22 15:52:39",
+    editor_mode: "html",
   },
   {
     post_id: 3,
@@ -103,6 +116,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 01:14:00",
     updated_at: "2012-09-13 01:14:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -111,6 +125,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 01:22:00",
     updated_at: "2012-09-13 01:22:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -120,6 +135,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 01:24:00",
     updated_at: "2012-09-13 01:24:00",
+    editor_mode: "html",
   },
   {
     post_id: 3,
@@ -128,6 +144,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 01:27:00",
     updated_at: "2012-09-13 01:27:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -137,6 +154,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 01:32:00",
     updated_at: "2012-09-13 01:32:00",
+    editor_mode: "html",
   },
   {
     post_id: 3,
@@ -146,6 +164,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 01:37:00",
     updated_at: "2012-09-13 01:37:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -154,6 +173,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 01:38:00",
     updated_at: "2012-09-13 01:38:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -162,6 +182,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 01:41:00",
     updated_at: "2012-09-13 01:41:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -170,6 +191,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 01:43:00",
     updated_at: "2012-09-13 01:43:00",
+    editor_mode: "html",
   },
   {
     post_id: 3,
@@ -178,6 +200,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 01:50:00",
     updated_at: "2012-09-13 01:50:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -187,6 +210,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 01:53:00",
     updated_at: "2012-09-13 01:53:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -196,6 +220,7 @@ Reply.create!([
     icon_id: 65,
     created_at: "2012-09-13 01:58:00",
     updated_at: "2012-09-13 01:58:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 3,
@@ -205,6 +230,7 @@ Reply.create!([
     icon_id: 43,
     created_at: "2012-09-13 02:00:00",
     updated_at: "2012-09-13 02:00:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -213,6 +239,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 18:13:00",
     updated_at: "2012-09-13 18:13:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -222,6 +249,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 18:18:00",
     updated_at: "2012-09-13 18:18:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -230,6 +258,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 18:23:00",
     updated_at: "2012-09-13 18:23:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -238,6 +267,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 18:26:00",
     updated_at: "2012-09-13 18:26:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -246,6 +276,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 18:33:00",
     updated_at: "2012-09-13 18:33:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -255,6 +286,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 18:37:00",
     updated_at: "2012-09-13 18:37:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -263,6 +295,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 18:42:00",
     updated_at: "2012-09-13 18:42:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -271,6 +304,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 18:44:00",
     updated_at: "2012-09-13 18:44:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -279,6 +313,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 18:47:00",
     updated_at: "2012-09-13 18:47:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -288,6 +323,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 18:49:00",
     updated_at: "2012-09-13 18:49:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -297,6 +333,7 @@ Reply.create!([
     icon_id: 65,
     created_at: "2012-09-13 18:53:00",
     updated_at: "2012-09-13 18:53:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -305,6 +342,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 18:55:00",
     updated_at: "2012-09-13 18:55:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -313,6 +351,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 18:56:00",
     updated_at: "2012-09-13 18:56:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -321,6 +360,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 18:58:00",
     updated_at: "2012-09-13 18:58:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -329,6 +369,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 19:01:00",
     updated_at: "2012-09-13 19:01:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -338,6 +379,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 19:08:00",
     updated_at: "2012-09-13 19:08:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -346,6 +388,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 19:12:00",
     updated_at: "2012-09-13 19:12:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -355,6 +398,7 @@ Reply.create!([
     icon_id: 43,
     created_at: "2012-09-13 19:19:00",
     updated_at: "2012-09-13 19:19:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -363,6 +407,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 19:22:00",
     updated_at: "2012-09-13 19:22:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -372,6 +417,7 @@ Reply.create!([
     icon_id: 43,
     created_at: "2012-09-13 19:25:00",
     updated_at: "2012-09-13 19:25:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -380,6 +426,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 19:29:00",
     updated_at: "2012-09-13 19:29:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -388,6 +435,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 19:32:00",
     updated_at: "2012-09-13 19:32:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -397,6 +445,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 19:34:00",
     updated_at: "2012-09-13 19:34:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -406,6 +455,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 19:36:00",
     updated_at: "2012-09-13 19:36:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -414,6 +464,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 19:41:00",
     updated_at: "2012-09-13 19:41:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -422,6 +473,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 19:43:00",
     updated_at: "2012-09-13 19:43:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -430,6 +482,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 19:53:00",
     updated_at: "2012-09-13 19:53:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -439,6 +492,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 20:03:00",
     updated_at: "2012-09-13 20:03:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -448,6 +502,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 20:09:00",
     updated_at: "2012-09-13 20:09:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -457,6 +512,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 20:10:00",
     updated_at: "2012-09-13 20:10:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -466,6 +522,7 @@ Reply.create!([
     icon_id: 65,
     created_at: "2012-09-13 20:21:00",
     updated_at: "2012-09-13 20:21:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -475,6 +532,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 20:24:00",
     updated_at: "2012-09-13 20:24:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -484,6 +542,7 @@ Reply.create!([
     icon_id: 65,
     created_at: "2012-09-13 20:27:00",
     updated_at: "2012-09-13 20:27:00",
+    editor_mode: "html",
   },
   {
     post_id: 4,
@@ -492,6 +551,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 20:28:00",
     updated_at: "2012-09-13 20:28:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 4,
@@ -501,6 +561,7 @@ Reply.create!([
     icon_id: 65,
     created_at: "2012-09-13 20:32:00",
     updated_at: "2012-09-13 20:32:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -509,6 +570,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 20:58:00",
     updated_at: "2012-09-13 20:58:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -518,6 +580,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 20:59:00",
     updated_at: "2012-09-13 20:59:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -526,6 +589,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:01:00",
     updated_at: "2012-09-13 21:01:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -535,6 +599,7 @@ Reply.create!([
     icon_id: 43,
     created_at: "2012-09-13 21:02:00",
     updated_at: "2012-09-13 21:02:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -543,6 +608,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:05:00",
     updated_at: "2012-09-13 21:05:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -551,6 +617,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:07:00",
     updated_at: "2012-09-13 21:07:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -560,6 +627,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 21:15:00",
     updated_at: "2012-09-13 21:15:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -568,6 +636,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:16:00",
     updated_at: "2012-09-13 21:16:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -576,6 +645,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:25:00",
     updated_at: "2012-09-13 21:25:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -584,6 +654,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:26:00",
     updated_at: "2012-09-13 21:26:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -592,6 +663,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:27:00",
     updated_at: "2012-09-13 21:27:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -600,6 +672,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:40:00",
     updated_at: "2012-09-13 21:40:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 5,
@@ -608,6 +681,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:42:00",
     updated_at: "2012-09-13 21:42:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -616,6 +690,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:42:00",
     updated_at: "2012-09-13 21:42:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -625,6 +700,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 21:45:00",
     updated_at: "2012-09-13 21:45:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -634,6 +710,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 21:47:00",
     updated_at: "2012-09-13 21:47:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -642,6 +719,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:51:00",
     updated_at: "2012-09-13 21:51:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -650,6 +728,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:53:00",
     updated_at: "2012-09-13 21:53:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -658,6 +737,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:55:00",
     updated_at: "2012-09-13 21:55:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -667,6 +747,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 21:56:00",
     updated_at: "2012-09-13 21:56:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -675,6 +756,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 21:58:00",
     updated_at: "2012-09-13 21:58:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -683,6 +765,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 21:59:00",
     updated_at: "2012-09-13 21:59:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -691,6 +774,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 22:00:00",
     updated_at: "2012-09-13 22:00:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -700,6 +784,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 22:02:00",
     updated_at: "2012-09-13 22:02:00",
+    editor_mode: "html",
   },
   {
     post_id: 5,
@@ -708,6 +793,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 22:06:00",
     updated_at: "2012-09-13 22:06:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -717,6 +803,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 22:27:00",
     updated_at: "2012-09-13 22:27:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -725,6 +812,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 22:35:00",
     updated_at: "2012-09-13 22:35:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 6,
@@ -733,6 +821,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 22:37:00",
     updated_at: "2012-09-13 22:37:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -741,6 +830,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 22:38:00",
     updated_at: "2012-09-13 22:38:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 6,
@@ -749,6 +839,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 22:40:00",
     updated_at: "2012-09-13 22:40:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 6,
@@ -757,6 +848,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 22:43:00",
     updated_at: "2012-09-13 22:43:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -765,6 +857,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 22:45:00",
     updated_at: "2012-09-13 22:45:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -774,6 +867,7 @@ Reply.create!([
     icon_id: 65,
     created_at: "2012-09-13 22:49:00",
     updated_at: "2012-09-13 22:49:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -782,6 +876,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 22:51:00",
     updated_at: "2012-09-13 22:51:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -790,6 +885,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 22:53:00",
     updated_at: "2012-09-13 22:53:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -798,6 +894,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 22:56:00",
     updated_at: "2012-09-13 22:56:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -807,6 +904,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 23:00:00",
     updated_at: "2012-09-13 23:00:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 6,
@@ -815,6 +913,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 23:02:00",
     updated_at: "2012-09-13 23:02:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -823,6 +922,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:06:00",
     updated_at: "2012-09-13 23:06:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 6,
@@ -831,6 +931,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 23:08:00",
     updated_at: "2012-09-13 23:08:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -839,6 +940,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:12:00",
     updated_at: "2012-09-13 23:12:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 6,
@@ -848,6 +950,7 @@ Reply.create!([
     icon_id: 43,
     created_at: "2012-09-13 23:14:00",
     updated_at: "2012-09-13 23:14:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -856,6 +959,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:17:00",
     updated_at: "2012-09-13 23:17:00",
+    editor_mode: "html",
   },
   {
     post_id: 6,
@@ -865,6 +969,7 @@ Reply.create!([
     icon_id: 43,
     created_at: "2012-09-13 23:20:00",
     updated_at: "2012-09-13 23:20:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 7,
@@ -873,6 +978,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:30:00",
     updated_at: "2012-09-13 23:30:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -882,6 +988,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:31:00",
     updated_at: "2012-09-13 23:31:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 7,
@@ -890,6 +997,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:32:00",
     updated_at: "2012-09-13 23:32:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -899,6 +1007,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:33:00",
     updated_at: "2012-09-13 23:33:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -907,6 +1016,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:34:00",
     updated_at: "2012-09-13 23:34:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -916,6 +1026,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:36:00",
     updated_at: "2012-09-13 23:36:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -924,6 +1035,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:38:00",
     updated_at: "2012-09-13 23:38:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -933,6 +1045,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:43:00",
     updated_at: "2012-09-13 23:43:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -941,6 +1054,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:44:00",
     updated_at: "2012-09-13 23:44:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 7,
@@ -950,6 +1064,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:45:00",
     updated_at: "2012-09-13 23:45:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -958,6 +1073,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:48:00",
     updated_at: "2012-09-13 23:48:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -966,6 +1082,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 23:49:00",
     updated_at: "2012-09-13 23:49:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -975,6 +1092,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 23:50:00",
     updated_at: "2012-09-13 23:50:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -983,6 +1101,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 23:51:00",
     updated_at: "2012-09-13 23:51:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -991,6 +1110,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:51:00",
     updated_at: "2012-09-13 23:51:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1000,6 +1120,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:53:00",
     updated_at: "2012-09-13 23:53:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1008,6 +1129,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:54:00",
     updated_at: "2012-09-13 23:54:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 7,
@@ -1017,6 +1139,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-13 23:55:00",
     updated_at: "2012-09-13 23:55:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1025,6 +1148,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-13 23:56:00",
     updated_at: "2012-09-13 23:56:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1033,6 +1157,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-13 23:57:00",
     updated_at: "2012-09-13 23:57:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1042,6 +1167,7 @@ Reply.create!([
     icon_id: 66,
     created_at: "2012-09-13 23:59:00",
     updated_at: "2012-09-13 23:59:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 7,
@@ -1050,6 +1176,7 @@ Reply.create!([
     character_id: 31,
     created_at: "2012-09-14 00:01:00",
     updated_at: "2012-09-14 00:01:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1058,6 +1185,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-14 00:03:00",
     updated_at: "2012-09-14 00:03:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1067,6 +1195,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-14 00:06:00",
     updated_at: "2012-09-14 00:06:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1075,6 +1204,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-14 00:07:00",
     updated_at: "2012-09-14 00:07:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1084,6 +1214,7 @@ Reply.create!([
     icon_id: 42,
     created_at: "2012-09-14 00:08:00",
     updated_at: "2012-09-14 00:08:00",
+    editor_mode: "html",
   },
   {
     post_id: 7,
@@ -1092,6 +1223,7 @@ Reply.create!([
     character_id: 19,
     created_at: "2012-09-14 00:10:00",
     updated_at: "2012-09-14 00:10:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1100,6 +1232,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 21:42:00",
     updated_at: "2019-06-22 18:53:21",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1107,6 +1240,7 @@ Reply.create!([
     content: "\"I did, yes.  It was... it was nice.  We talked, we hadn't really had a chance before.\"",
     created_at: "2015-07-22 21:43:00",
     updated_at: "2015-07-22 21:43:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1116,6 +1250,7 @@ Reply.create!([
     icon_id: 89,
     created_at: "2015-07-22 21:46:00",
     updated_at: "2015-07-22 21:46:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1123,6 +1258,7 @@ Reply.create!([
     content: "And in comes Elli, complete with files.  Her possessions not having been mysteriously spirited away, she is in full undress kit.  Files, meet Miles.  She sits.  Miles gets many expectant looks.",
     created_at: "2015-07-22 21:47:00",
     updated_at: "2015-07-22 21:47:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1131,6 +1267,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 21:48:00",
     updated_at: "2015-07-22 21:48:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1138,6 +1275,7 @@ Reply.create!([
     content: "The various officers look at each other.  Eventually the eye contact adds up to Elena speaking:<br><br>\"...Was Bel supposed to be back first, Miles?\"",
     created_at: "2015-07-22 21:49:00",
     updated_at: "2015-07-22 21:49:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1146,6 +1284,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 21:53:00",
     updated_at: "2015-07-22 21:53:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1153,6 +1292,7 @@ Reply.create!([
     content: "\"...Bel left with you, three days ago, in the Ariel -\"",
     created_at: "2015-07-22 21:55:00",
     updated_at: "2015-07-22 21:55:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1160,6 +1300,7 @@ Reply.create!([
     content: "\"The hell it did,\" hisses Elli.",
     created_at: "2015-07-22 21:55:00",
     updated_at: "2015-07-22 21:55:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1168,6 +1309,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 22:00:00",
     updated_at: "2015-07-22 22:00:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1175,6 +1317,7 @@ Reply.create!([
     content: "\"Jackson's Whole,\" Elena answers, peering at him minutely.  \"Assuming <em>that</em> was your clone and this is you.\"",
     created_at: "2015-07-22 22:03:00",
     updated_at: "2015-07-22 22:03:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1183,6 +1326,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 22:10:00",
     updated_at: "2015-07-22 22:10:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1190,6 +1334,7 @@ Reply.create!([
     content: "\"<em>I'm</em> sure enough this is the real thing, but yes, just for common knowledge,\" says Elli, rolling her eyes.  She nips out, is back a minute later with a scanner, scans him, and passes the device around for all to see.",
     created_at: "2015-07-22 22:12:00",
     updated_at: "2015-07-22 22:12:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1198,6 +1343,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 22:24:00",
     updated_at: "2015-07-22 22:24:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1205,6 +1351,7 @@ Reply.create!([
     content: "There is some more eye contact, and then some dispersal.",
     created_at: "2015-07-22 22:26:00",
     updated_at: "2015-07-22 22:26:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1213,6 +1360,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 22:28:00",
     updated_at: "2015-07-22 22:28:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1220,6 +1368,7 @@ Reply.create!([
     content: "Soon even those people are leaving him to it.",
     created_at: "2015-07-22 22:30:00",
     updated_at: "2015-07-22 22:30:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1228,6 +1377,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 22:53:00",
     updated_at: "2015-07-22 22:53:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1235,6 +1385,7 @@ Reply.create!([
     content: "They come when called, of course.<br><br>\"What's the plan?\" Elli inquires.",
     created_at: "2015-07-22 23:44:00",
     updated_at: "2015-07-22 23:44:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1243,6 +1394,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-22 23:52:00",
     updated_at: "2015-07-22 23:52:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1250,6 +1402,7 @@ Reply.create!([
     content: "\"Is this instead of the other contract, or instead of you personally accompanying it, or...?\"",
     created_at: "2015-07-22 23:55:00",
     updated_at: "2015-07-22 23:55:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1258,6 +1411,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-23 00:19:00",
     updated_at: "2015-07-23 00:19:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1265,6 +1419,7 @@ Reply.create!([
     content: "Baz peers at the information about the would-be replacement.  \"Oh, wait'll he sees - yes I can.  You could too, of course.\"",
     created_at: "2015-07-23 00:22:00",
     updated_at: "2015-07-23 00:22:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1273,6 +1428,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-23 00:36:00",
     updated_at: "2015-07-23 00:36:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1280,6 +1436,7 @@ Reply.create!([
     content: "Confirmatory nods all 'round.<br><br>And then: \"Assuming this is more serious than a prank, extracting your clone - especially if he gets all the way to Jackson's Whole - could get dicey, for a definition of dicey meaning 'expensive'...\"",
     created_at: "2015-07-23 00:38:00",
     updated_at: "2015-07-23 00:38:00",
+    editor_mode: "rtf",
   },
   {
     post_id: 32,
@@ -1288,6 +1445,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-23 00:43:00",
     updated_at: "2015-07-23 00:43:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1295,6 +1453,7 @@ Reply.create!([
     content: "\"Will cover a run after Mark?  What's Mark to them besides a - a leftover from a plot over and done?\"",
     created_at: "2015-07-23 00:45:00",
     updated_at: "2015-07-23 00:45:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1303,6 +1462,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-23 00:51:00",
     updated_at: "2015-07-23 00:51:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1310,6 +1470,7 @@ Reply.create!([
     content: "\"A legitimate potential - the entire imperium would go into convulsions,\" Baz says.  \"They wouldn't have <em>you</em> on suspicion of mutation; someone who looks just like you and is a clone to boot can hardly improve on the situation.\"",
     created_at: "2015-07-23 00:52:00",
     updated_at: "2015-07-23 00:52:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1318,6 +1479,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-23 00:57:00",
     updated_at: "2015-07-23 00:57:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1325,6 +1487,7 @@ Reply.create!([
     content: "Baz nods, satisfied with this explanation.  \"Still, best if Bel turns around,\" he sighs.",
     created_at: "2015-07-23 00:58:00",
     updated_at: "2015-07-23 00:58:00",
+    editor_mode: "html",
   },
   {
     post_id: 32,
@@ -1333,6 +1496,7 @@ Reply.create!([
     character_id: 27,
     created_at: "2015-07-23 00:59:00",
     updated_at: "2015-07-23 00:59:00",
+    editor_mode: "html",
   },
   {
     post_id: 33,
@@ -1340,5 +1504,6 @@ Reply.create!([
     content: "<p>unread reply</p>",
     created_at: "2018-08-18 21:22:43",
     updated_at: "2018-08-18 21:22:43",
+    editor_mode: "rtf",
   },
 ])
