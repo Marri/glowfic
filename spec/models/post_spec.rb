@@ -442,6 +442,52 @@ RSpec.describe Post do
       post = create(:post, content: '')
       expect(post.id).not_to be_nil
     end
+
+    it "should not allow adding a coauthor who's blocked you" do
+      author = create(:user)
+      coauthor = create(:user)
+      create(:block, blocking_user: coauthor, blocked_user: author, block_interactions: true)
+      post = build(:post, user: author, unjoined_authors: [coauthor])
+      expect(post).not_to be_valid
+    end
+
+    it "should not allow adding a coauthor you've blocked" do
+      author = create(:user)
+      coauthor = create(:user)
+      create(:block, blocking_user: author, blocked_user: coauthor, block_interactions: true)
+      post = build(:post, user: author, unjoined_authors: [coauthor])
+      expect(post).not_to be_valid
+    end
+
+    it "should not allow adding two coauthors who have blocked each other" do
+      coauthor1 = create(:user)
+      coauthor2 = create(:user)
+      create(:block, blocking_user: coauthor1, blocked_user: coauthor2, block_interactions: true)
+      post = build(:post, unjoined_authors: [coauthor1, coauthor2])
+      expect(post).not_to be_valid
+    end
+
+    it "should not allow adding someone your coauthor has blocked" do
+      joined = create(:user)
+      add = create(:user)
+      create(:block, blocking_user: joined, blocked_user: add, block_interactions: true)
+      post = create(:post)
+      create(:reply, post: post, user: joined)
+      post.reload
+      post.unjoined_authors = [add]
+      expect(post).not_to be_valid
+    end
+
+    it "should not allow adding someone who has blocked your coauthor" do
+      joined = create(:user)
+      add = create(:user)
+      create(:block, blocking_user: add, blocked_user: joined, block_interactions: true)
+      post = create(:post)
+      create(:reply, post: post, user: joined)
+      post.reload
+      post.unjoined_authors = [add]
+      expect(post).not_to be_valid
+    end
   end
 
   describe "#word_count" do

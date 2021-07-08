@@ -20,6 +20,8 @@ module Owable
     after_create :add_creator_to_authors
     after_save :update_board_cameos
 
+    validate :valid_coauthors
+
     attr_accessor :private_note
 
     def opt_out_of_owed(user)
@@ -57,6 +59,19 @@ module Owable
       new_cameos = all_authors.uniq.map(&:id) - board.board_authors.map(&:user_id)
       return if new_cameos.empty?
       new_cameos.each { |author| board.board_authors.create!(user_id: author, cameo: true) }
+    end
+
+    def valid_coauthors
+      new_author_ids = self.unjoined_post_authors.reject(&:persisted?).map(&:user_id)
+      return if new_author_ids.empty?
+
+      blocked_ids = User.where(id: new_author_ids).map(&:user_ids_uninteractable).flatten
+      return if blocked_ids.empty?
+
+      all_author_ids = new_author_ids + self.author_ids + [self.user_id]
+      self.authors.reset # clear association cache
+      return if (all_author_ids & blocked_ids).empty?
+      errors.add(:post_author, "cannot be added")
     end
   end
 end
