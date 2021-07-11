@@ -2,13 +2,24 @@
 
 set -e
 
-NUM_CONTAINERS=$(docker-compose ps | wc -l)
+NUM_CONTAINERS=$(docker-compose ps --quiet | wc -l)
 
-if [ "$1" == 'test' ] || [ "$1" == 'reference' ] && [ "$2" != 'logged_out' ]; then
-  docker-compose run --rm web bin/rails runner script/before_backstop.rb $2
+if [ "$1" == 'test' ] || [ "$1" == 'reference' ]; then
+  if [ "$2" != 'logged_out' ]; then
+    docker-compose run --rm web bin/rails runner script/before_backstop.rb $2
+  fi
+  if [ $NUM_CONTAINERS == 0 ]; then
+    docker-compose up --detach
+    sleep 10 # wait for server to start
+  else
+    echo "Docker is already running processes; assuming server is started."
+  fi
 fi
-docker-compose -f docker-compose.yml -f docker-compose-backstop.yml run --rm backstop $1 --config $2
 
-if [ $NUM_CONTAINERS == 2 ]; then
+set +e # run down even if tests fail
+
+docker-compose -f docker-compose-backstop.yml run --rm backstop $1 --config $2
+
+if [ $NUM_CONTAINERS == 0 ]; then
 	docker-compose down
 fi

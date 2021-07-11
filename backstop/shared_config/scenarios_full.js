@@ -99,7 +99,7 @@ module.exports = [
   },
   {
     label: "gallery_add_new",
-    path: "galleries/0/add",
+    path: "galleries/0/add?proofer-ignore",
     selectors: ["#content"]
   },
   {
@@ -160,7 +160,8 @@ module.exports = [
   {
     label: "posts_unread",
     path: "posts/unread",
-    selectors: ["#content"]
+    selectors: ["#content"],
+    misMatchThreshold: 0.00
   },
   {
     label: "posts_hidden",
@@ -183,7 +184,8 @@ module.exports = [
     path: "posts/2?page=2&per_page=5&proofer-ignore",
     selectors: ["#content"],
     onReadyScript: 'puppet/paginatorHover.js',
-    delay: 1000
+    delay: 1000,
+    misMatchThreshold: 0
   },
   {
     label: "post_edit",

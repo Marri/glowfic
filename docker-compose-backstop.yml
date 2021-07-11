@@ -6,5 +6,3 @@ services:
     working_dir: /src
     volumes:
       - "./backstop/:/src"
-    depends_on:
-      - web

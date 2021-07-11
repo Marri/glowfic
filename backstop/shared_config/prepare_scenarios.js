@@ -25,5 +25,10 @@ module.exports = function prepareScenarios(scenarioOriginal) {
     scenario.delay = 200;
   }
 
+  // increase default misMatchThreshold
+  if (!('misMatchThreshold' in scenario)) {
+    scenario.misMatchThreshold = 0.01
+  }
+
   return scenario;
 };
