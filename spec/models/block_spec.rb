@@ -69,6 +69,22 @@ RSpec.describe Block, type: :model do
     end
   end
 
+  describe "editable_by?" do
+    let(:block) { create(:block) }
+
+    it "requires user" do
+      expect(block.editable_by?(nil)).to eq(false)
+    end
+
+    it "requires creator" do
+      expect(block.editable_by?(create(:admin_user))).to eq(false)
+    end
+
+    it "works for creator" do
+      expect(block.editable_by?(block.blocking_user)).to eq(true)
+    end
+  end
+
   context "when hiding own content" do
     it "should allow full blocking" do
       block = create(:block, hide_me: :all)
