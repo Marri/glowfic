@@ -45,6 +45,9 @@ RSpec.describe SessionsController do
   end
 
   describe "POST create" do
+    let(:password) { 'password' }
+    let(:user) { create(:user, password: password) }
+
     it "redirects when logged in" do
       login
       post :create
@@ -61,14 +64,13 @@ RSpec.describe SessionsController do
     end
 
     it "requires unsuspended user" do
-      user = create(:user, role: :suspended)
+      user.update!(role: :suspended)
       post :create, params: { username: user.username }
       expect(flash[:error]).to eq("You could not be logged in.")
       expect(controller.send(:logged_in?)).not_to eq(true)
     end
 
     it "disallows logins with old passwords when reset is pending" do
-      user = create(:user)
       create(:password_reset, user: user)
       expect(user.password_resets.active.unused).not_to be_empty
       post :create, params: { username: user.username }
@@ -77,16 +79,12 @@ RSpec.describe SessionsController do
     end
 
     it "requires a valid password" do
-      password = 'password'
-      user = create(:user, password: password)
       post :create, params: { username: user.username, password: password + "-not" }
       expect(flash[:error]).to eq("You have entered an incorrect password.")
       expect(controller.send(:logged_in?)).not_to eq(true)
     end
 
     it "logs in successfully with salt_uuid" do
-      password = 'password'
-      user = create(:user, password: password)
       expect(session[:user_id]).to be_nil
       expect(controller.send(:logged_in?)).not_to eq(true)
 
@@ -99,7 +97,6 @@ RSpec.describe SessionsController do
     end
 
     it "logs in successfully without salt_uuid and sets it" do
-      password = 'password'
       user = create(:user)
       user.update_columns(salt_uuid: nil, crypted: user.send(:old_crypted_password, password)) # rubocop:disable Rails/SkipsModelValidations
       user.reload
@@ -118,8 +115,6 @@ RSpec.describe SessionsController do
     end
 
     it "creates permanent cookies when remember me is provided" do
-      password = 'password'
-      user = create(:user, password: password)
       expect(cookies.signed[:user_id]).to be_nil
       post :create, params: { username: user.username, password: password, remember_me: true }
       expect(controller.send(:logged_in?)).to eq(true)
@@ -127,7 +122,7 @@ RSpec.describe SessionsController do
     end
 
     it "disallows logins from deleted users" do
-      user = create(:user, deleted: true)
+      user.update!(deleted: true)
       post :create, params: { username: user.username }
       expect(flash[:error]).to eq("That username does not exist.")
       expect(controller.send(:logged_in?)).not_to eq(true)
@@ -163,6 +158,30 @@ RSpec.describe SessionsController do
       expect(controller.send(:logged_in?)).not_to eq(true)
       expect(flash[:success]).to eq("You have been logged out.")
       # TODO test session vars and cookies and redirect
+    end
+  end
+
+  describe "#cookie_hash" do
+    let(:user) { create(:user) }
+
+    it "uses the correct host for staging" do
+      without_partial_double_verification do
+        allow(request).to receive(:host).and_return('glowfic-staging.herokuapp.com')
+      end
+      hash = {value: user.id, domain: 'glowfic-staging.herokuapp.com'}
+      expect(controller.send(:cookie_hash, user.id)).to eq(hash)
+    end
+
+    it "uses the correct host for production" do
+      without_partial_double_verification do
+        allow(Rails.env).to receive(:production?).and_return(true)
+      end
+      hash = {value: user.id, domain: '.glowfic.com', tld_length: 2}
+      expect(controller.send(:cookie_hash, user.id)).to eq(hash)
+    end
+
+    it "doesn't set a host otherwise" do
+      expect(controller.send(:cookie_hash, user.id)).to eq({value: user.id})
     end
   end
 end
