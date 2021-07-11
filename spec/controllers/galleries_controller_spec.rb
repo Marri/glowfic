@@ -197,34 +197,44 @@ RSpec.describe GalleriesController do
         expect(response.status).to eq(200)
       end
 
-      it "calculates OpenGraph meta" do
-        user = create(:user, username: 'user')
-        gallery = create(:gallery, name: 'gallery', user: user)
-        create_list(:icon, 16, gallery_ids: [gallery.id])
-        get :show, params: { id: gallery.id }
+      context "calculates OpenGraph meta" do
+        let(:user) { create(:user, username: 'user') }
+        let(:gallery) { create(:gallery, name: 'gallery', user: user) }
 
-        meta_og = assigns(:meta_og)
-        expect(meta_og.keys).to match_array([:url, :title, :description])
-        expect(meta_og[:url]).to eq(gallery_url(gallery))
-        expect(meta_og[:title]).to eq('user » gallery')
-        expect(meta_og[:description]).to eq('16 icons')
-      end
+        before(:each) { create_list(:icon, 16, gallery_ids: [gallery.id]) }
 
-      it "calculates OpenGraph meta for a gallery with gallery groups" do
-        user = create(:user, username: 'user')
-        gallery = create(:gallery,
-          name: 'gallery',
-          user: user,
-          gallery_groups: [create(:gallery_group, name: "Tag 1"), create(:gallery_group, name: "Tag 2")],
-        )
-        create_list(:icon, 16, gallery_ids: [gallery.id])
-        get :show, params: { id: gallery.id }
+        it "for a normal gallery" do
+          get :show, params: { id: gallery.id }
 
-        meta_og = assigns(:meta_og)
-        expect(meta_og.keys).to match_array([:url, :title, :description])
-        expect(meta_og[:url]).to eq(gallery_url(gallery))
-        expect(meta_og[:title]).to eq("user » gallery")
-        expect(meta_og[:description]).to eq("16 icons\nTags: Tag 1, Tag 2")
+          meta_og = assigns(:meta_og)
+          expect(meta_og.keys).to match_array([:url, :title, :description])
+          expect(meta_og[:url]).to eq(gallery_url(gallery))
+          expect(meta_og[:title]).to eq('user » gallery')
+          expect(meta_og[:description]).to eq('16 icons')
+        end
+
+        it "for a gallery with gallery groups" do
+          gallery.update!(gallery_groups: [create(:gallery_group, name: "Tag 1"), create(:gallery_group, name: "Tag 2")])
+
+          get :show, params: { id: gallery.id }
+
+          meta_og = assigns(:meta_og)
+          expect(meta_og.keys).to match_array([:url, :title, :description])
+          expect(meta_og[:url]).to eq(gallery_url(gallery))
+          expect(meta_og[:title]).to eq("user » gallery")
+          expect(meta_og[:description]).to eq("16 icons\nTags: Tag 1, Tag 2")
+        end
+
+        it "with a deleted user" do
+          user.update!(deleted: true)
+
+          get :show, params: { id: gallery.id }
+
+          meta_og = assigns(:meta_og)
+          expect(meta_og[:url]).to eq(gallery_url(gallery))
+          expect(meta_og[:title]).to eq('gallery')
+          expect(meta_og[:description]).to eq('16 icons')
+        end
       end
     end
 

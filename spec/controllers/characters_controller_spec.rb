@@ -267,54 +267,58 @@ RSpec.describe CharactersController do
       expect(assigns(:posts)).to eq([post1, post2, post3, post4])
     end
 
-    it "calculates OpenGraph meta for basic character" do
-      user = create(:user, username: 'John Doe')
-      character = create(:character,
-        user: user,
-        name: "Alice",
-        screenname: "player_one",
-        description: "Alice is a character",
-      )
+    context "calculates OpenGraph meta" do
+      let(:user) { create(:user, username: 'John Doe') }
+      let(:character) { create(:character, user: user, name: "Alice", screenname: "player_one", description: "Alice is a character") }
+      let(:template) { create(:template, user: user, name: "A") }
 
-      get :show, params: { id: character.id }
+      it "for basic character" do
+        get :show, params: { id: character.id }
 
-      meta_og = assigns(:meta_og)
-      expect(meta_og.keys).to match_array([:url, :title, :description])
-      expect(meta_og[:url]).to eq(character_url(character))
-      expect(meta_og[:title]).to eq('John Doe » Alice | player_one')
-      expect(meta_og[:description]).to eq("Alice is a character")
-    end
+        meta_og = assigns(:meta_og)
+        expect(meta_og.keys).to match_array([:url, :title, :description])
+        expect(meta_og[:url]).to eq(character_url(character))
+        expect(meta_og[:title]).to eq('John Doe » Alice | player_one')
+        expect(meta_og[:description]).to eq("Alice is a character")
+      end
 
-    it "calculates OpenGraph meta for expanded character" do
-      user = create(:user, username: 'John Doe')
-      character = create(:character,
-        user: user,
-        template: create(:template, name: "A"),
-        name: "Alice",
-        nickname: "Lis",
-        screenname: "player_one",
-        settings: [
+      it "for expanded character" do
+        character.update!(template: template, nickname: "Lis")
+        character.update!(settings: [
           create(:setting, name: 'Infosec'),
           create(:setting, name: 'Wander'),
-        ],
-        description: "Alice is a character",
-        with_default_icon: true,
-      )
-      create(:alias, character: character, name: "Alicia")
-      create(:post, character: character, user: user)
-      create(:reply, character: character, user: user)
+        ])
+        character.update!(default_icon: create(:icon, user: user))
+        create(:alias, character: character, name: "Alicia")
+        create(:post, character: character, user: user)
+        create(:reply, character: character, user: user)
 
-      get :show, params: { id: character.id }
+        get :show, params: { id: character.id }
 
-      meta_og = assigns(:meta_og)
-      expect(meta_og.keys).to match_array([:url, :title, :description, :image])
-      expect(meta_og[:url]).to eq(character_url(character))
-      expect(meta_og[:title]).to eq('John Doe » A » Alice | player_one')
-      expect(meta_og[:description]).to eq("Nicknames: Lis, Alicia. Settings: Infosec, Wander\nAlice is a character\n2 posts")
-      expect(meta_og[:image].keys).to match_array([:src, :width, :height])
-      expect(meta_og[:image][:src]).to eq(character.default_icon.url)
-      expect(meta_og[:image][:height]).to eq('75')
-      expect(meta_og[:image][:width]).to eq('75')
+        meta_og = assigns(:meta_og)
+        expect(meta_og.keys).to match_array([:url, :title, :description, :image])
+        expect(meta_og[:url]).to eq(character_url(character))
+        expect(meta_og[:title]).to eq('John Doe » A » Alice | player_one')
+        expect(meta_og[:description]).to eq("Nicknames: Lis, Alicia. Settings: Infosec, Wander\nAlice is a character\n2 posts")
+        expect(meta_og[:image].keys).to match_array([:src, :width, :height])
+        expect(meta_og[:image][:src]).to eq(character.default_icon.url)
+        expect(meta_og[:image][:height]).to eq('75')
+        expect(meta_og[:image][:width]).to eq('75')
+      end
+
+      it "for deleted user" do
+        user.update!(deleted: true)
+        character.update!(template: template, screenname: nil, description: nil)
+        create(:reply, character: character, user: user)
+
+        get :show, params: { id: character.id }
+
+        meta_og = assigns(:meta_og)
+        expect(meta_og.keys).to match_array([:url, :title, :description])
+        expect(meta_og[:url]).to eq(character_url(character))
+        expect(meta_og[:title]).to eq("A » Alice")
+        expect(meta_og[:description]).to eq("1 post")
+      end
     end
   end
 
