@@ -6,10 +6,9 @@ RSpec.describe WritableController do
 
     it "works when logged in with default theme" do
       login
-      expect(ENV['DOMAIN_NAME']).not_to be_present
       controller.send(:setup_layout_gon)
       expect(controller.gon.editor_class).to be_nil
-      expect(controller.gon.base_url).not_to be_nil
+      expect(controller.gon.base_url).to eq('/')
     end
 
     context "with dark theme" do
@@ -27,16 +26,9 @@ RSpec.describe WritableController do
 
     it "works with DOMAIN_NAME" do
       login
-      ENV['DOMAIN_NAME'] = 'domaintest.host'
+      allow(ENV).to receive(:[]).with('DOMAIN_NAME').and_return('domaintest.host')
       controller.send(:setup_layout_gon)
       expect(controller.gon.base_url).to eq('https://domaintest.host/')
-    end
-
-    it "works without DOMAIN_NAME" do
-      login
-      ENV['DOMAIN_NAME'] = nil
-      controller.send(:setup_layout_gon)
-      expect(controller.gon.base_url).to eq('/')
     end
   end
 
