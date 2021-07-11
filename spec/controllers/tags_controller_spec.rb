@@ -333,6 +333,8 @@ RSpec.describe TagsController do
   end
 
   describe "DELETE destroy" do
+    let(:tag) { create(:label, owned: true) }
+
     it "requires login" do
       delete :destroy, params: { id: -1 }
       expect(response).to redirect_to(root_url)
@@ -347,7 +349,6 @@ RSpec.describe TagsController do
     end
 
     it "requires permission" do
-      tag = create(:label, owned: true)
       login
       delete :destroy, params: { id: tag.id }
       expect(response).to redirect_to(tag_url(tag))
@@ -355,10 +356,27 @@ RSpec.describe TagsController do
     end
 
     it "allows admin to destroy the tag" do
-      tag = create(:label)
       login_as(create(:admin_user))
       delete :destroy, params: { id: tag.id }
       expect(response).to redirect_to(tags_path)
+      expect(flash[:success]).to eq("Tag deleted.")
+    end
+
+    it "works" do
+      login_as(tag.user)
+      delete :destroy, params: { id: tag.id }
+      expect(response).to redirect_to(tags_path)
+      expect(flash[:success]).to eq("Tag deleted.")
+    end
+
+    it "redirects properly" do
+      login_as(tag.user)
+      delete :destroy, params: {
+        id: tag.id,
+        page: 2,
+        view: 'Label'
+      }
+      expect(response).to redirect_to(tags_path({page: 2, view: 'Label'}))
       expect(flash[:success]).to eq("Tag deleted.")
     end
 
