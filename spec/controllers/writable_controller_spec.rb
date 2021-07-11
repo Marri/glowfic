@@ -6,6 +6,7 @@ RSpec.describe WritableController do
 
     it "works when logged in with default theme" do
       login
+      expect(ENV['DOMAIN_NAME']).not_to be_present
       controller.send(:setup_layout_gon)
       expect(controller.gon.editor_class).to be_nil
       expect(controller.gon.base_url).not_to be_nil
@@ -22,6 +23,20 @@ RSpec.describe WritableController do
           expect(controller.gon.tinymce_css_path).not_to be_nil
         end
       end
+    end
+
+    it "works with DOMAIN_NAME" do
+      login
+      ENV['DOMAIN_NAME'] = 'domaintest.host'
+      controller.send(:setup_layout_gon)
+      expect(controller.gon.base_url).to eq('https://domaintest.host/')
+    end
+
+    it "works without DOMAIN_NAME" do
+      login
+      ENV['DOMAIN_NAME'] = nil
+      controller.send(:setup_layout_gon)
+      expect(controller.gon.base_url).to eq('/')
     end
   end
 
@@ -131,6 +146,11 @@ RSpec.describe WritableController do
   end
 
   describe "#build_template_groups" do
+    it "requires login" do
+      controller.send(:build_template_groups)
+      expect(assigns(:templates)).to be_nil
+    end
+
     it "orders templates correctly" do
       user = create(:user)
       template2 = create(:template, user: user, name: "b")
@@ -234,6 +254,36 @@ RSpec.describe WritableController do
 
     it "has more tests" do
       skip
+    end
+  end
+
+  describe "#display_warnings?" do
+    it "respects session ignore warnings" do
+      session[:ignore_warnings] = true
+      expect(controller.send(:display_warnings?)).to eq(false)
+    end
+
+    it "sets session ignore warnings for logged out user" do
+      without_partial_double_verification do
+        allow(controller).to receive(:params).and_return({ignore_warnings: true})
+      end
+      expect(controller.send(:display_warnings?)).to eq(false)
+      expect(session[:ignore_warnings]).to eq(true)
+    end
+
+    it "shows warnings for logged out users" do
+      expect(controller.send(:display_warnings?)).to eq(true)
+    end
+
+    it "checks show_warnings_for for logged in users" do
+      user = create(:user)
+      without_partial_double_verification do
+        allow(controller).to receive(:current_user).and_return(user)
+      end
+      post = create(:post)
+      expect(post).to receive(:show_warnings_for?).with(user).and_call_original
+      controller.instance_variable_set(:@post, post)
+      expect(controller.send(:display_warnings?)).to eq(true)
     end
   end
 end
