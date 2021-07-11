@@ -2,7 +2,8 @@
 version: "2"
 plugins:
   brakeman:
-    enabled: true
+    enabled: false
+    # until they fix rails 6 handling
   bundler-audit:
     enabled: true
   csslint:
