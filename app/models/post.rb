@@ -31,6 +31,8 @@ class Post < ApplicationRecord
   has_many :indexes, inverse_of: :posts, through: :index_posts, dependent: :destroy
   has_many :index_sections, inverse_of: :posts, through: :index_posts, dependent: :destroy
 
+  has_many :notifications, inverse_of: :post, dependent: :destroy
+
   attr_accessor :is_import
   attr_writer :skip_edited
 

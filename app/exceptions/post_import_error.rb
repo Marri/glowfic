@@ -1,0 +1,1 @@
+class PostImportError < ApiError; end

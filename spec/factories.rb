@@ -249,4 +249,18 @@ FactoryBot.define do
       "content for news post #{n}"
     end
   end
+
+  factory :notification do
+    user
+    post
+    notification_type { :new_favorite_post }
+
+    factory :error_notification do
+      sequence :error_msg do |n|
+        "test error #{n}"
+      end
+      notification_type { :import_fail }
+      post_id { nil }
+    end
+  end
 end

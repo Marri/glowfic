@@ -14,8 +14,8 @@ RSpec.describe ScrapePostJob do
     board = create(:board)
     create(:character, screenname: 'wild_pegasus_appeared')
     ScrapePostJob.perform_now(url, board.id, nil, Post.statuses[:complete], false, board.creator_id)
-    expect(Message.count).to eq(1)
-    expect(Message.first.subject).to eq("Post import succeeded")
+    expect(Notification.count).to eq(1)
+    expect(Notification.first.notification_type).to eq('import_success')
     expect(Post.count).to eq(1)
     expect(Post.first.authors_locked).to eq(true)
     expect(Audited::Audit.count).to eq(2)
@@ -37,9 +37,10 @@ RSpec.describe ScrapePostJob do
     begin
       ScrapePostJob.perform_now(url, board.id, nil, Post.statuses[:complete], false, board.creator_id)
     rescue UnrecognizedUsernameError
-      expect(Message.count).to eq(1)
-      expect(Message.first.subject).to eq("Post import failed")
-      expect(Message.first.message).to include("wild_pegasus_appeared")
+      expect(Notification.count).to eq(1)
+      notification = Notification.first
+      expect(notification.notification_type).to eq('import_fail')
+      expect(notification.error_msg).to eq('Unrecognized username: wild_pegasus_appeared')
       expect(Post.count).to eq(0)
     else
       raise "Error should be handled"
@@ -53,18 +54,21 @@ RSpec.describe ScrapePostJob do
     create(:character, screenname: 'wild_pegasus_appeared', user: board.creator)
     scraper = PostScraper.new(url, board.id)
     scraper.scrape!
+    post = Post.last
+    expect(post.subject).to eq('linear b')
 
     expect(ScrapePostJob).to receive(:notify_exception).with(
-      an_instance_of(AlreadyImportedError),
+      (an_instance_of(AlreadyImportedError).and having_attributes(post_id: post.id)),
       url, board.id, nil, Post.statuses[:complete], false, board.creator_id
     ).and_call_original
 
     begin
       ScrapePostJob.perform_now(url, board.id, nil, Post.statuses[:complete], false, board.creator_id)
     rescue AlreadyImportedError
-      expect(Message.count).to eq(1)
-      expect(Message.first.subject).to eq("Post import failed")
-      expect(Message.first.message).to include("already imported")
+      expect(Notification.count).to eq(1)
+      notification = Notification.first
+      expect(notification.notification_type).to eq('import_fail')
+      expect(notification.post).to eq(post)
       expect(Post.count).to eq(1)
     else
       raise "Error should be handled"

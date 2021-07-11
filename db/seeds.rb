@@ -79,12 +79,15 @@ load Rails.root.join('db', 'seeds', 'audit.rb')
 
 puts "Creating messages..."
 Message.create!([
-  { sender_id: 0, recipient_id: 3, subject: "Post import succeeded",
-    message: "Your post was successfully imported! <a href='https://localhost:3000/posts/32'>View it here</a>.",
-    unread: false, created_at: "2019-08-19 04:15:00" },
   { sender_id: 1, recipient_id: 3, subject: "Test Message", message: "Sample text", created_at: "2019-08-19 04:10:00" },
-  { sender_id: 3, recipient_id: 1, parent_id: 2, thread_id: 2, message: "Sample reply", unread: false, created_at: "2019-08-19 04:15:00"},
-  { sender_id: 1, recipient_id: 3, parent_id: 3, thread_id: 2, message: "Sample reply 2", created_at: "2019-08-19 04:20:00" },
+  { sender_id: 3, recipient_id: 1, parent_id: 2, thread_id: 1, message: "Sample reply", unread: false, created_at: "2019-08-19 04:15:00"},
+  { sender_id: 1, recipient_id: 3, parent_id: 3, thread_id: 1, message: "Sample reply 2", created_at: "2019-08-19 04:20:00" },
+])
+
+puts "Creating notifications..."
+Notification.create!([
+  { user_id: 3, post_id: 32, notification_type: :import_success },
+  { user_id: 3, post_id: nil, notification_type: :import_fail, error_msg: 'Unrecognized username: wild_pegasus_appeared' },
 ])
 
 puts "Creating favorites..."

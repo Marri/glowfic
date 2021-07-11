@@ -82,6 +82,12 @@
                     - unread_count = Message.unread_count_for(current_user)
                     - if unread_count > 0
                       %span.badge.badge-primary= unread_count
+                %li
+                  = link_to notifications_path do
+                    Notifications
+                    - unread_notif_count = current_user.notifications.unread.visible_to(current_user).count
+                    - if unread_notif_count > 0
+                      %span.badge.badge-primary= unread_notif_count
                 %li= link_to "Characters", user_characters_path(current_user)
                 %li= link_to "Galleries", user_galleries_path(current_user)
                 %li= link_to 'Favorites', favorites_path

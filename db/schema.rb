@@ -267,6 +267,18 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.index ["user_id"], name: "index_news_views_on_user_id"
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "post_id"
+    t.boolean "unread", default: true, null: false
+    t.integer "notification_type", null: false
+    t.text "error_msg"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
   create_table "password_resets", id: :serial, force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "auth_token", null: false

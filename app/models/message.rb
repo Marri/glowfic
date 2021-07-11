@@ -55,12 +55,6 @@ class Message < ApplicationRecord
     sender_id.to_i.zero?
   end
 
-  def self.send_site_message(user_id, subject, message)
-    msg = Message.new(recipient_id: user_id, subject: subject, message: message)
-    msg.sender_id = 0
-    msg.save
-  end
-
   def self.unread_count_for(user)
     Rails.cache.fetch(Message.cache_string_for(user.id), expires_in: 1.day) do
       user.messages.unread.count
