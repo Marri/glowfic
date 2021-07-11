@@ -11,19 +11,21 @@ class CharacterTag < ApplicationRecord
 
   def add_galleries_to_character
     return if gallery_group.nil? # skip non-gallery_groups
-    joined_galleries = gallery_group.galleries.where(id: character.characters_galleries.map(&:gallery_id))
-    galleries = gallery_group.galleries.where(user_id: character.user_id).where.not(id: joined_galleries.pluck(:id))
+    joined_galleries = gallery_group.galleries.where(id: character.characters_galleries.map(&:gallery_id)).pluck(:id)
+    galleries = gallery_group.galleries.where(user_id: character.user_id).where.not(id: joined_galleries)
     galleries.each do |gallery|
       character.characters_galleries.create(gallery_id: gallery.id, added_by_group: true)
     end
+    joins = character.characters_galleries.select{|cg| gallery_group.gallery_ids.include?(cg.gallery_id)}
+    joins.select(&:marked_for_destruction?).each(&:unmark_for_destruction)
   end
 
   def remove_galleries_from_character
     return if gallery_group.nil? # skip non-gallery_groups
     galleries = gallery_group.galleries.where(user_id: character.user_id)
-    joined_group_galleries = character.gallery_groups.joins(:galleries).where(galleries: {user_id: character.user_id}).pluck(:gallery_id)
-    galleries = galleries.where.not(id: joined_group_galleries)
-    character.characters_galleries.where(gallery: galleries, added_by_group: true).destroy_all
-    character.characters_galleries.reload
+    joined_group_galleries = (character.gallery_groups - [gallery_group]).collect(&:galleries).flatten
+    joined_group_galleries = joined_group_galleries.select{ |gallery| gallery.user_id = character.user_id }.map(&:id)
+    galleries = galleries.where.not(id: joined_group_galleries).pluck(:id)
+    character.characters_galleries.select{ |cg| galleries.include?(cg.gallery_id) && cg.added_by_group }.each(&:mark_for_destruction)
   end
 end
