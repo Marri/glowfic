@@ -1,11 +1,11 @@
 @import 'variables';
+@import 'colorize';
 
 /* - header */
 #header {
   background-color: transparent;
   background-image: url(image-path('layouts/starry.jpg'));
   background-position: right top;
-  a:hover { color: $font_color_header_link_hover; }
 }
 
 #logo {
@@ -19,93 +19,32 @@
 
 #nav-bottom a { text-shadow: 0 0 3px $shadow_color_nav, 0 0 3px $shadow_color_nav; }
 
-/* - main page */
-body { background-color: $bg_color_page; }
-
-.search-box {
-  background-color: $bg_color_search_box;
-  color: $font_color_search_box;
-}
-
-.spacer-alt { background-color: $bg_color_spacer_alt; }
-
-/* - links */
-a { color: $font_color_link; }
-a:visited { color: $font_color_link_visited; }
-
 /* - flashes */
 // these are the notifications that appear when you submit a form or get a message
 .flash.breadcrumbs {
-  background-color: $bg_color_flash_breadcrumbs;
   &, a, a:visited { color: $font_color_breadcrumbs_link_visited; }
   b { color: $font_color_breadcrumbs_bold; }
 }
-.flash.success { background-color: $bg_color_flash_success;  }
-.flash.error { background-color: $bg_color_flash_error; }
 
 /* - misc */
-.single-description {
-  background-color: $bg_color_descriptions;
-  color: $font_color_page;
-  a { color: $font_color_descriptions_link; }
-  a:visited { color: $font_color_descriptions_link_visited; }
-}
+.single-description { color: $font_color_page; }
 
 /* - content headers */
-@mixin header-links {
+.table-title, .content-header, .info-box-header, .editor-title, .search-params-header, .search-results-header, .gallery-table-title, .sub, .form-table-ender {
   a { color: $font_color_head_link; }
   a:visited { color: $font_color_head_link_visited; }
 }
 
-.table-title, .content-header, .info-box-header, .editor-title, .search-params-header, .search-results-header, .gallery-table-title {
-  @include header-links;
-  background-color: $bg_color_head;
-}
-
-.sub {
-  @include header-links;
-  color: $font_color_sub;
-  background-color: $bg_color_sub;
-}
-
-.form-table-ender {
-  @include header-links;
-  background-color: $bg_color_ender;
-  color: $font_color_ender;
-}
-
 .subber {
-  background-color: $bg_color_subber;
-  color: $font_color_page;
   &, a, a:visited { color: $font_color_subber_link_visited; }
   b { color: $font_color_subber_bold; }
 }
 
-/* - content */
-.even, .post-post, .post-reply:nth-child(even), #post-editor {
-  background-color: $bg_color_even;
-  blockquote { background-color: calculate-transparent-color($bg_color_even, $bg_color_odd, $opacity_blockquote); }
-}
-
-.odd, .post-reply:nth-child(odd), .post-post + #post-editor, .post-post + a + #post-editor {
-  background-color: $bg_color_odd;
-  blockquote { background-color: calculate-transparent-color($bg_color_odd, $bg_color_even, $opacity_blockquote); }
-}
-
-/* - replies.scss */
-.post-subheader {
-  background-color: $bg_color_post_description;
-  color: $font_color_post_description;
-}
-
-.post-navheader { background-color: $bg_color_navheader; }
-
+/* - replies */
 #post-menu-box {
-  background-color: $bg_color_post_menu;
   border-top: 1px solid $border_color_post_menu;
   border-top: 1px solid rgba($border_color_post_menu, 0.5);
   a { color: inherit; }
-  a:hover div { background-color: $bg_color_menu_link_hover; }
 
   div {
     border-bottom: 1px solid $border_color_post_menu;
@@ -113,76 +52,18 @@ a:visited { color: $font_color_link_visited; }
   }
 }
 
-.selector-popup {
-  background-color: $bg_color_selectionpopup;
-  color: $font_color_selectionpopup;
-}
+.selector-popup { color: $font_color_selectionpopup; }
+#reply-icon-selector { color: $font_color_reply_icon_selector; }
 
-.post-expander { background-color: $bg_color_expander; }
-
-.post-icon, #current-icon-dropdown { background-color: $bg_color_post_icon; }
-
-#reply-icon-selector {
-  background-color: $bg_color_icon_selector;
-  color: $font_color_icon_selector;
-}
-
-.post-character {
+.post-character, .post-author {
   font-weight: $font_weight_post_info;
-  background-color: $bg_color_post_character;
-  &, a, a:visited { color: $font_color_post_info; }
+  a, a:visited { color: $font_color_post_info; }
 }
 
 .post-screenname {
   font-weight: $font_weight_post_info;
-  background-color: $bg_color_post_screenname;
-  &, a, a:visited { color: $font_color_post_screenname; }
-}
-
-.post-author {
-  font-weight: $font_weight_post_info;
-  background-color: $bg_color_post_author;
-  &, a, a:visited { color: $font_color_post_info; }
-}
-
-.pagination .current { background-color: $bg_color_paginate_current_page; }
-.pagination a { color: $font_color_paginate_link; }
-.pagination a:visited { color: $font_color_paginate_link_visited; }
-.pagination .disabled { color: $font_color_paginate_link_disabled; }
-
-.paginator {
-  &, .right-align a { color: $font_color_paginate; }
-}
-
-/* - icons */
-.replace-icon, .icons-box { background-color: $bg_color_icon; }
-.icon-credit { background-color: $bg_color_icon_credit; }
-
-.gallery-icon-editor {
-  border-color: $border_color_icon_editor;
-  background-color: $bg_color_icon_editor;
-}
-
-tr.gallery-tags .tag-item {
-  background-color: $bg_color_tag_item;
-  color: $font_color_tag_item_gallery;
+  a, a:visited { color: $font_color_post_screenname; }
 }
 
 /* - link-boxes */
-.link-box.action-new { background-color: $bg_color_linkbox_new; }
-.link-box.action-edit { background-color: $bg_color_linkbox_edit; }
-.link-box.action-favorite { background-color: $bg_color_linkbox_favorite; }
-.link-box.action-delete { background-color: $bg_color_linkbox_delete; }
-.link-box.action-dismiss { background-color: $bg_color_linkbox_dismiss; }
-
 .subber .link-box { background-color: $bg_color_linkbox_subber; }
-
-/* - other buttons */
-.view-button { background-color: $bg_color_viewbutton; }
-.view-button.selected { background-color: $bg_color_viewbutton_selected; }
-.post-navheader .view-button { background-color: $bg_color_navbutton; }
-
-span.badge {
-  background-color: $bg_color_badge;
-  color: $font_color_badge;
-}

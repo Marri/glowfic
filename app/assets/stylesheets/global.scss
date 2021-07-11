@@ -5,8 +5,6 @@ body, html { height: 100%; }
 body {
   margin: 0;
   font-family: Helvetica, Verdana, sans-serif;
-  background-color: $bg_color_page;
-  color: $font_color_page;
 }
 
 html {
@@ -19,26 +17,15 @@ html {
 }
 
 /* Links */
-a {
-  text-decoration: none;
-  color: $font_color_link;
-  &:visited { color: $font_color_link_visited; }
-
-  &:hover {
-    color: $font_color_link_hover;
-    text-decoration: none;
-  }
-}
+a, a:hover { text-decoration: none; }
 
 /* Inputs */
 input, textarea, button {
   font-size: $font_size_smallerish;
   height: 25px;
   border-radius: 5px;
-  background-color: $bg_color_input;
-  color: $font_color_input;
   padding: 0 8px;
-  border: 1px solid $border_color_input;
+  border: 1px solid;
   margin: 5px 0;
 }
 
@@ -47,10 +34,6 @@ textarea { padding: 5px; }
 .form-table td input[type='radio'] { width: unset; }
 
 button, .button {
-  background: $bg_color_button;
-  background: linear-gradient($bg_color_button_20 20%, $bg_color_button_50 50%, $bg_color_button_52 52%, $bg_color_button_100 100%);
-  background-clip: padding-box;
-  border-color: $border_color_button;
   line-height: normal;
   height: 25px;
 }
@@ -75,18 +58,13 @@ button, .button {
   }
 }
 
-.spacer {
+.spacer, .spacer-alt {
   padding: 0px !important;
   height: 2px;
 
   .gallery-icon-editor & {
     height: 12px;
   }
-}
-
-.spacer-alt {
-  @extend .spacer;
-  background-color: $bg_color_spacer_alt;
 }
 
 .centered { text-align: center !important; }
@@ -119,10 +97,6 @@ a.disabled-arrow {
 /* Displaying forum threads */
 .even, .odd, .post-post, .post-reply, #post-editor { padding: 5px; }
 
-.even, .post-post, .post-reply:nth-child(even), #post-editor { background-color: $bg_color_even; }
-
-.odd, .post-reply:nth-child(odd), .post-post + #post-editor, .post-post + a + #post-editor { background-color: $bg_color_odd; }
-
 /* UI Links */
 .link-box {
   display: inline-block;
@@ -132,7 +106,6 @@ a.disabled-arrow {
   margin-left: 5px;
   background-image: none;
   border: 0;
-  color: $font_color_linkbox;
   padding: 4px 12px;
   border-radius: 5px;
   font-weight: normal;
@@ -140,12 +113,6 @@ a.disabled-arrow {
   vertical-align: middle;
   img { vertical-align: baseline; }
 }
-
-.link-box.action-new { background-color: $bg_color_linkbox_new; }
-.link-box.action-delete { background-color: $bg_color_linkbox_delete; }
-.link-box.action-edit { background-color: $bg_color_linkbox_edit;}
-.link-box.action-favorite { background-color: $bg_color_linkbox_favorite; }
-.link-box.action-dismiss { background-color: $bg_color_linkbox_dismiss; }
 
 /* Inline lists */
 .inline-list {
@@ -165,9 +132,6 @@ a.disabled-arrow {
 span.badge {
   position: relative;
   bottom: 1px;
-  background-color: $bg_color_badge;
-  color: $font_color_badge;
-  border: 0.5px solid $border_color_badge;
-  text-shadow: 0 0 2px $shadow_color_badge, 0 0 2px $shadow_color_badge;
+  border: 0.5px solid;
   margin: 2px;
 }

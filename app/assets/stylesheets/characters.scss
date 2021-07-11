@@ -17,12 +17,7 @@
 }
 
 // template descriptions on templates#show
-.single-description {
-  padding: 5px;
-  background-color: $bg_color_descriptions;
-  a { color: $font_color_descriptions_link; }
-  a:visited { color: $font_color_descriptions_link_visited; }
-}
+.single-description { padding: 5px; }
 
 // character icon view
 .character-icon-list { padding: 10px; }
@@ -37,7 +32,7 @@
 
 .character-no-icon {
   display: inline-block;
-  border: 1px $border_color_character_iconless solid;
+  border: 1px solid;
   width: 102px;
   height: 102px;
   text-align: center;

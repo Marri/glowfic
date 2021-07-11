@@ -62,24 +62,13 @@ $bg_color_linkbox_subber: #5C5778;
 
 .flash.success, .flash.error { color: $font_color_flash; }
 
-body, .even, .odd, .post-post, .post-reply, #post-editor { color: $font_color_page; }
-
-// posts
-#post-menu-box { color: $font_color_post_menu; }
+.even, .odd, .post-post, .post-reply, #post-editor { color: $font_color_page; }
 
 .selector-popup { font-weight: normal; }
 
 #current-icon-dropdown { color: $font_color_icon_dropdown; }
 
-// icons
-.selected-icon { border-color: $border_color_icon_selected; }
-
 #character-icon-selector, .time-loaded { color: $font_color_page; }
-
-// tag items
-.even .tag-item { background-color: $bg_color_tag_item_even; }
-.odd .tag-item { background-color: $bg_color_tag_item_odd; }
-.tag-item { color: $font_color_tag_item; }
 
 // Hovering help box on post editor
 $bg_color_popup_header: #0D0B1E;

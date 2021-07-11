@@ -2,8 +2,6 @@
 
 /* Header Menus */
 #header {
-  background-color: $bg_color_header_bottom;
-  color: $font_color_header_link;
   font-size: $font_size_header;
   vertical-align: middle;
   overflow: hidden;
@@ -20,13 +18,9 @@
     padding: 0;
     white-space: nowrap;
   }
-
-  a { color: $font_color_header_link; }
-  a:hover { color: $font_color_header_link_hover; }
 }
 
 #logo {
-  background-color: $bg_color_header_top;
   padding: 0.5em;
   overflow: hidden; /* so it contains the floating image */
 
@@ -39,7 +33,6 @@
 #user-info {
   float: left;
   padding: 0.5em;
-  background-color: $bg_color_header_middle;
   font-weight: bold;
   text-align: center;
   line-height: normal;
@@ -55,12 +48,10 @@
 
 #nav-top {
   padding: 0.5em 1em 0.5em 0.5em;
-  background-color: $bg_color_header_middle;
   font-weight: bold;
 
   button, .button {
     margin-right: 10px;
-    color: $font_color_button;
     font-size: $font_size_smallerish;
     font-weight: bold; /* not redundant: used for login form */
   }
@@ -158,10 +149,6 @@
   margin-top: 5px;
 }
 
-.flash.error { background-color: $bg_color_flash_error; }
-.flash.success { background-color: $bg_color_flash_success; }
-.flash.breadcrumbs { background-color: $bg_color_flash_breadcrumbs; }
-
 /* Top-right timestamp on certain timestamped pages */
 .time-loaded {
   font-size: $font_size_mini;
@@ -187,8 +174,6 @@ table { width: 100%; }
 }
 
 .table-title, .content-header, .search-results-header {
-  background-color: $bg_color_head;
-  color: $font_color_head;
   padding: 15px;
   font-size: $font_size_large;
   font-weight: normal;
@@ -212,16 +197,7 @@ table { width: 100%; }
 .content-header {
   width: 100%;
   overflow: hidden;
-
-  span {
-    line-height: 28px;
-
-    a {
-      color: $font_color_head_link;
-      &:hover { color: $font_color_head_link_hover; }
-    }
-  }
-
+  span { line-height: 28px; }
   & > div { overflow: hidden; }
 }
 
@@ -230,8 +206,6 @@ td, .table-list li { font-size: $font_size_small; }
 /* Subs and subbers */
 .sub {
   padding: 10px;
-  background-color: $bg_color_sub;
-  color: $font_color_sub;
   font-size: $font_size_main;
   font-weight: normal;
   &.width-150 { width: 170px; }
@@ -239,8 +213,6 @@ td, .table-list li { font-size: $font_size_small; }
 
 .subber {
   padding: 10px 25px;
-  background-color: $bg_color_subber;
-  color: $font_color_subber;
   font-size: $font_size_smallish;
   font-weight: bold;
   input { margin: 0; }
@@ -281,8 +253,6 @@ td, .table-list li { font-size: $font_size_small; }
 
 .form-table-ender {
   padding: 10px 25px;
-  background-color: $bg_color_subber;
-  color: $font_color_subber;
   font-size: $font_size_smallish;
   font-weight: bold;
   text-align: center;
@@ -295,11 +265,7 @@ td, .table-list li { font-size: $font_size_small; }
 
 /* Miscellaneous inputs */
 .select2 {
-  &-container {
-    margin: 3px 0;
-    color: $font_color_select2_container;
-  }
-
+  &-container { margin: 3px 0; }
   &, &-dropdown { font-size: $font_size_smallerish; }
 
   input {
@@ -318,16 +284,12 @@ td, .table-list li { font-size: $font_size_small; }
   margin-left: 5px;
   padding: 4px 12px;
   background-image: none;
-  background-color: $bg_color_viewbutton;
-  color: $font_color_viewbutton;
   font-size: $font_size_large;
   line-height: 1.3em;
   border: 0;
   border-radius: 5px;
   cursor: pointer;
   height: 29px;
-  &.selected { background-color: $bg_color_viewbutton_selected; }
-  a { color: $font_color_viewbutton; }
 }
 
 .list-view, .icon-view {
@@ -354,24 +316,14 @@ td, .table-list li { font-size: $font_size_small; }
   margin-left: 5px;
 }
 
-.tag-item-link:hover {
-  color: unset;
-}
-
 .tag-item {
   display: inline-block;
   margin: 2px 0;
   padding: 2px 8px;
-  background-color: $bg_color_tag_item;
-  color: $font_color_tag_item;
   font-size: 90%;
   font-weight: normal;
   border-radius: 5px;
 }
-
-.even .tag-item { background-color: $bg_color_tag_item_even; }
-.odd .tag-item { background-color: $bg_color_tag_item_odd; }
-tr.gallery-tags .tag-item { color: $font_color_tag_item_gallery; }
 
 /* The new object layout with the floating left info box and the right content area */
 .left-info-box {
@@ -414,11 +366,7 @@ tr.gallery-tags .tag-item { color: $font_color_tag_item_gallery; }
   width: 20px;
 }
 
-.section-warning {
-  background-color: $bg_color_section_warning;
-  background-color: rgba($bg_color_section_warning_alpha, 0.4);
-  padding: 5px;
-}
+.section-warning { padding: 5px; }
 
 .section-ordered-handle {
   cursor: move;
@@ -442,8 +390,6 @@ tr.gallery-tags .tag-item { color: $font_color_tag_item_gallery; }
   width: 320px;
   padding: 10px;
   vertical-align: top;
-  background-color: $bg_color_search_box;
-  color: $font_color_search_box;
 }
 
 .search-icon-preview { vertical-align: middle; }
@@ -465,14 +411,10 @@ tr.gallery-tags .tag-item { color: $font_color_tag_item_gallery; }
 
 #footer {
   font-size: $font_size_small;
-  background-color: $bg_color_header_middle;
-  color: $font_color_header_link;
   position: absolute;
   left: 0px;
   bottom: 0px;
   width: 100%;
-  a { color: $font_color_header_link; }
-  a:hover { color: $font_color_header_link_hover; }
 
   div {
     padding: 5px;
