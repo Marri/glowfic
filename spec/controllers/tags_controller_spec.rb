@@ -279,14 +279,6 @@ RSpec.describe TagsController do
       get :edit, params: { id: tag.id }
       expect(response.status).to eq(200)
     end
-
-    it "allows mod to edit the tag" do
-      stub_const("Permissible::MOD_PERMS", [:edit_tags])
-      tag = create(:label)
-      login_as(create(:mod_user))
-      get :edit, params: { id: tag.id }
-      expect(response.status).to eq(200)
-    end
   end
 
   describe "PUT update" do
