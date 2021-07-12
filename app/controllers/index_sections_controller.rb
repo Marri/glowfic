@@ -2,31 +2,17 @@
 class IndexSectionsController < ApplicationController
   before_action :login_required, except: [:show]
   before_action :find_model, except: [:new, :create]
+  before_action :find_index, only: [:new, :create]
+  before_action :require_create_permission, only: [:new, :create]
   before_action :require_permission, except: [:new, :create, :show]
 
   def new
-    unless (index = Index.find_by_id(params[:index_id]))
-      flash[:error] = "Index could not be found."
-      redirect_to indexes_path and return
-    end
-
-    unless index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(index) and return
-    end
-
     @page_title = "New Index Section"
-    @section = IndexSection.new(index: index)
+    @section = IndexSection.new(index: @index)
   end
 
   def create
     @section = IndexSection.new(permitted_params)
-
-    if @section.index && !@section.index.editable_by?(current_user)
-      flash[:error] = "You do not have permission to edit this index."
-      redirect_to index_path(@section.index) and return
-    end
-
     begin
       @section.save!
     rescue ActiveRecord::RecordInvalid
@@ -85,6 +71,21 @@ class IndexSectionsController < ApplicationController
     unless (@section = IndexSection.find_by_id(params[:id]))
       flash[:error] = "Index section could not be found."
       redirect_to indexes_path
+    end
+  end
+
+  def find_index
+    id = params[:index_id] || permitted_params[:index_id]
+    unless (@index = Index.find_by(id: id))
+      flash[:error] = "Index could not be found."
+      redirect_to indexes_path and return
+    end
+  end
+
+  def require_create_permission
+    unless @index.editable_by?(current_user)
+      flash[:error] = "You do not have permission to edit this index."
+      redirect_to index_path(@index) and return
     end
   end
 

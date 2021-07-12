@@ -2,8 +2,8 @@
 class BoardsController < ApplicationController
   before_action :login_required, except: [:index, :show, :search]
   before_action :find_model, only: [:show, :edit, :update, :destroy]
-  before_action :editor_setup, only: [:new, :edit]
   before_action :require_permission, only: [:edit, :update, :destroy]
+  before_action :editor_setup, only: [:new, :edit]
 
   def index
     if params[:user_id].present?
