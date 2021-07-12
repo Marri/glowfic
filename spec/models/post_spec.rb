@@ -930,19 +930,53 @@ RSpec.describe Post do
   end
 
   describe "#opt_out_of_owed" do
+    let(:user) { create(:user) }
+    let(:post) { create(:post) }
+
+    it "requires author" do
+      expect(post.author_for(user)).to be_nil
+      post.opt_out_of_owed(user)
+      expect(post.author_for(user)).to be_nil
+    end
+
     it "removes owedness if user previously could owe" do
-      post = create(:post)
-      expect(post.author_for(post.user).reload.can_owe).to eq(true)
+      author = post.author_for(post.user)
+      expect(author.reload.can_owe).to eq(true)
       post.opt_out_of_owed(post.user)
-      expect(post.author_for(post.user).reload.can_owe).to eq(false)
+      expect(author.reload.can_owe).to eq(false)
     end
 
     it "destroys if not joined" do
-      user = create(:user)
-      post = create(:post, unjoined_authors: [user])
+      post.update!(unjoined_authors: [user])
       expect(post.author_for(user).reload.can_owe).to eq(true)
       post.opt_out_of_owed(user)
       expect(post.author_for(user)).to be_nil
+    end
+  end
+
+  describe "#opt_in_to_owed" do
+    let(:user) { create(:user) }
+    let(:post) { create(:post) }
+
+    it "requires author" do
+      expect(post.author_for(user)).to be_nil
+      post.opt_in_to_owed(user)
+      expect(post.author_for(user)).to be_nil
+    end
+
+    it "requires author not to owe" do
+      author = post.author_for(post.user)
+      expect(author).not_to receive(:update)
+      expect(post.opt_in_to_owed(user)).to eq(nil)
+    end
+
+    it "updates author" do
+      create(:reply, post: post, user: user)
+      author = post.author_for(user)
+      author.update!(can_owe: false)
+      expect(author.reload.can_owe?).to eq(false)
+      post.opt_in_to_owed(user)
+      expect(author.reload.can_owe?).to eq(true)
     end
   end
 
