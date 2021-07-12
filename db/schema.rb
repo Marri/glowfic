@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_04_16_173619) do
+ActiveRecord::Schema.define(version: 2021_07_12_193922) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
@@ -452,7 +452,7 @@ ActiveRecord::Schema.define(version: 2020_04_16_173619) do
     t.boolean "ignore_unread_daily_report", default: false
     t.boolean "favorite_notifications", default: true
     t.string "default_character_split", default: "template"
-    t.integer "role_id"
+    t.integer "role"
     t.integer "tos_version"
     t.boolean "deleted", default: false
     t.index ["email"], name: "index_users_on_email", unique: true

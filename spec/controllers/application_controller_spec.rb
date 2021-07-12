@@ -432,7 +432,7 @@ RSpec.describe ApplicationController do
     end
 
     it "logs out suspended" do
-      user.update!(role_id: :suspended)
+      user.update!(role: :suspended)
       get :index
       expect(response.json['logged_in']).to eq(false)
     end

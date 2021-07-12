@@ -20,7 +20,7 @@ module Permissible
   MOD_PERMS = PERMS[0..4]
 
   included do
-    enum role_id: {
+    enum role: {
       admin: 1,
       mod: 2,
       importer: 3,
@@ -28,7 +28,7 @@ module Permissible
     }
 
     def has_permission?(permission)
-      return false unless role_id
+      return false unless role
       return false unless PERMS.include?(permission)
       return true if admin?
       return true if importer? && permission == :import_posts
