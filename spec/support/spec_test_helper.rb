@@ -17,16 +17,23 @@ module SpecTestHelper
 
     def transform(parameter)
       parameter.transform_keys!(&:to_s)
-      parameter.transform_values! do |v|
-        if v.is_a?(ActiveRecord::Relation)
-          v.to_a
-        elsif v.is_a?(Array)
-          v
-        else
-          v.to_s
-        end
-      end
+      parameter.transform_values!{ |v| transform_element(v) }
       parameter.sort_by{ |k, _v| k }.to_h
+    end
+
+    def transform_element(ele)
+      if ele.is_a?(ActiveRecord::Relation)
+        ele.to_a
+      elsif ele.is_a?(Array)
+        ele = ele.sort unless ele[0].is_a?(Hash)
+        ele.map { |e| transform_element(e) }
+      elsif ele.is_a?(Hash)
+        transform(ele)
+      elsif ele.is_a?(ActiveRecord::Base)
+        ele
+      else
+        ele.to_s
+      end
     end
 
     diffable
