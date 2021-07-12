@@ -203,4 +203,50 @@ RSpec.describe Board do
       expect(board.editable_by?(user)).to eq(false)
     end
   end
+
+  describe "#mark_read" do
+    let(:board) { create(:board) }
+    let(:user) { create(:user) }
+    let(:now) { Time.zone.now }
+
+    context "with new view" do
+      let(:view) { BoardView.find_by(board: board, user: user) }
+
+      it "uses at_time if specified" do
+        time = now + 1.day
+        board.mark_read(user, at_time: time)
+        expect(view.read_at).to be_the_same_time_as(time)
+      end
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { board.mark_read(user) }
+        expect(view.read_at).to be_the_same_time_as(now)
+      end
+    end
+
+    context "with existing view" do
+      let!(:view) { create(:board_view, board: board, user: user, read_at: now - 2.days) }
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { board.mark_read(user) }
+        expect(view.reload.read_at).to be_the_same_time_as(now)
+      end
+
+      it "uses later at_time if given" do
+        time = now + 1.day
+        board.mark_read(user, at_time: time)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+
+      it "does not use earlier at_time unless forced" do
+        expect { board.mark_read(user, at_time: now - 5.days) }.not_to change { view.read_at }
+      end
+
+      it "uses earlier at_time if forced" do
+        time = now - 5.days
+        board.mark_read(user, at_time: time, force: true)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+    end
+  end
 end

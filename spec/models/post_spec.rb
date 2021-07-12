@@ -1075,6 +1075,52 @@ RSpec.describe Post do
     end
   end
 
+  describe "#mark_read" do
+    let(:post) { create(:post) }
+    let(:user) { create(:user) }
+    let(:now) { Time.zone.now }
+
+    context "with new view" do
+      let(:view) { Post::View.find_by(post: post, user: user) }
+
+      it "uses at_time if specified" do
+        time = now + 1.day
+        post.mark_read(user, at_time: time)
+        expect(view.read_at).to be_the_same_time_as(time)
+      end
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { post.mark_read(user) }
+        expect(view.read_at).to be_the_same_time_as(now)
+      end
+    end
+
+    context "with existing view" do
+      let!(:view) { create(:post_view, post: post, user: user, read_at: now - 2.days) }
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { post.mark_read(user) }
+        expect(view.reload.read_at).to be_the_same_time_as(now)
+      end
+
+      it "uses later at_time if given" do
+        time = now + 1.day
+        post.mark_read(user, at_time: time)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+
+      it "does not use earlier at_time unless forced" do
+        expect { post.mark_read(user, at_time: now - 5.days) }.not_to change { view.read_at }
+      end
+
+      it "uses earlier at_time if forced" do
+        time = now - 5.days
+        post.mark_read(user, at_time: time, force: true)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+    end
+  end
+
   describe "adjacent posts" do
     let(:user) { create(:user) }
     let(:board) { create(:board, creator: user) }
