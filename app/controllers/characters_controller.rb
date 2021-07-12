@@ -6,7 +6,8 @@ class CharactersController < ApplicationController
   before_action :login_required, except: [:index, :show, :facecasts, :search]
   before_action :find_model, only: [:show, :edit, :update, :duplicate, :destroy, :replace, :do_replace]
   before_action :find_group, only: :index
-  before_action :require_permission, only: [:edit, :update, :duplicate, :replace, :do_replace]
+  before_action :require_edit_permission, only: [:edit, :update, :duplicate, :replace, :do_replace]
+  before_action :require_delete_permission, only: :destroy
   before_action :editor_setup, only: [:new, :edit]
 
   def index
@@ -128,11 +129,6 @@ class CharactersController < ApplicationController
   end
 
   def destroy
-    unless @character.deletable_by?(current_user)
-      flash[:error] = "You do not have permission to edit that character."
-      redirect_to user_characters_path(current_user) and return
-    end
-
     begin
       @character.destroy!
     rescue ActiveRecord::RecordNotDestroyed
@@ -324,8 +320,15 @@ class CharactersController < ApplicationController
     @group = CharacterGroup.find_by_id(params[:group_id])
   end
 
-  def require_permission
+  def require_edit_permission
     unless @character.editable_by?(current_user)
+      flash[:error] = "You do not have permission to edit that character."
+      redirect_to user_characters_path(current_user) and return
+    end
+  end
+
+  def require_delete_permission
+    unless @character.deletable_by?(current_user)
       flash[:error] = "You do not have permission to edit that character."
       redirect_to user_characters_path(current_user) and return
     end

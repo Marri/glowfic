@@ -2,6 +2,7 @@
 class AliasesController < ApplicationController
   before_action :login_required
   before_action :find_character
+  before_action :require_permission, only: [:new, :create, :destroy]
   before_action :find_model, only: :destroy
 
   def new
@@ -49,7 +50,9 @@ class AliasesController < ApplicationController
       flash[:error] = "Character could not be found."
       redirect_to user_characters_path(current_user) and return
     end
+  end
 
+  def require_permission
     unless @character.user == current_user
       flash[:error] = "That is not your character."
       redirect_to user_characters_path(current_user) and return

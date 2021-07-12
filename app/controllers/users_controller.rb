@@ -5,7 +5,7 @@ class UsersController < ApplicationController
   before_action :signup_prep, :only => :new
   before_action :login_required, :except => [:index, :show, :new, :create, :search]
   before_action :logout_required, only: [:new, :create]
-  before_action :require_own_user, only: [:edit, :update, :password]
+  before_action :require_permission, only: [:edit, :update, :password]
 
   def index
     @page_title = 'Users'
@@ -140,7 +140,7 @@ class UsersController < ApplicationController
 
   private
 
-  def require_own_user
+  def require_permission
     unless params[:id] == current_user.id.to_s
       flash[:error] = "You do not have permission to edit that user."
       redirect_to(continuities_path)

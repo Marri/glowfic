@@ -3,7 +3,9 @@ class GalleriesController < UploadingController
   include Taggable
 
   before_action :login_required, except: [:index, :show, :search]
-  before_action :find_model, only: [:destroy, :edit, :update] # assumes login_required
+  before_action :find_model, only: [:edit, :update, :destroy]
+  before_action :require_permission, only: [:edit, :update, :destroy]
+  before_action :require_own_gallery, only: [:add, :icon]
   before_action :setup_new_icons, only: [:add, :icon]
   before_action :set_s3_url, only: [:edit, :add, :icon]
   before_action :editor_setup, only: [:new, :edit]
@@ -219,10 +221,20 @@ class GalleriesController < UploadingController
       flash[:error] = "Gallery could not be found."
       redirect_to user_galleries_path(current_user) and return
     end
+  end
 
+  def require_permission
     unless @gallery.user_id == current_user.id
       flash[:error] = "That is not your gallery."
       redirect_to user_galleries_path(current_user) and return
+    end
+  end
+
+  def require_own_gallery
+    unless params[:id] == '0'
+      find_model
+      return if performed?
+      require_permission
     end
   end
 
@@ -234,7 +246,6 @@ class GalleriesController < UploadingController
       use_javascript('galleries/uploader')
     end
     @icons = []
-    find_model unless params[:id] == '0'
     @unassigned = current_user.galleryless_icons
     @page_title = "Add Icons"
     @page_title += ": " + @gallery.name unless @gallery.nil?
