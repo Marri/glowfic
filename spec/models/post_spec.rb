@@ -1121,6 +1121,142 @@ RSpec.describe Post do
     end
   end
 
+  describe "#as_json" do
+    context "with simple post" do
+      let(:post) { create(:post) }
+      let(:json) do
+        {
+          id: post.id,
+          subject: post.subject,
+          description: nil,
+          authors: post.joined_authors,
+          board: post.board,
+          section: nil,
+          section_order: 0,
+          created_at: post.created_at,
+          tagged_at: post.tagged_at,
+          status: :active,
+          num_replies: 0
+        }
+      end
+
+      it "works" do
+        expect(post.as_json).to match_hash(json)
+      end
+
+      it "works with min" do
+        expect(post.as_json(min: true)).to match_hash({id: post.id, subject: post.subject})
+      end
+
+      it "works with include content" do
+        json[:content] = post.content
+        expect(post.as_json(include: [:content])).to match_hash(json)
+      end
+
+      it "works with include character" do
+        json[:character] = nil
+        expect(post.as_json(include: [:character])).to match_hash(json)
+      end
+
+      it "works with include icon" do
+        json[:icon] = nil
+        expect(post.as_json(include: [:icon])).to match_hash(json)
+      end
+
+      it "works with all" do
+        json.merge!({ content: post.content, character: nil, icon: nil })
+        expect(post.as_json(include: [:content, :character, :icon])).to match_hash(json)
+      end
+    end
+
+    context "with complex post" do
+      let(:author) { create(:user) }
+      let(:coauthor) { create(:user) }
+      let(:unjoined) { create(:user) }
+      let(:board) { create(:board) }
+      let(:section) { create(:board_section, board: board) }
+      let(:character) { create(:character, user: author, screenname: 'testing_home') }
+
+      let(:post) do
+        create(:post,
+          user: author,
+          board: board,
+          section: section,
+          unjoined_authors: [coauthor, unjoined],
+          description: 'test description',
+          character: character,
+          with_icon: true,
+        )
+      end
+
+      let(:json) do
+        {
+          id: post.id,
+          subject: post.subject,
+          description: 'test description',
+          authors: [author, coauthor],
+          board: board,
+          section: section,
+          section_order: 0,
+          created_at: post.created_at,
+          tagged_at: post.tagged_at,
+          status: :active,
+          num_replies: 3
+        }
+      end
+
+      let(:char_json) do
+        {
+          id: character.id,
+          name: character.name,
+          screenname: character.screenname
+        }
+      end
+
+      let(:icon_json) do
+        {
+          id: post.icon_id,
+          url: post.icon.url,
+          keyword: post.icon.keyword
+        }
+      end
+
+      before(:each) do
+        create(:reply, post: post, user: coauthor)
+        create(:reply, post: post, user: author)
+        create(:reply, post: post, user: coauthor)
+      end
+
+      it "works" do
+        expect(post.as_json).to match_hash(json)
+      end
+
+      it "works with min" do
+        expect(post.as_json(min: true)).to match_hash({id: post.id, subject: post.subject})
+      end
+
+      it "works with include content" do
+        json[:content] = post.content
+        expect(post.as_json(include: [:content])).to match_hash(json)
+      end
+
+      it "works with include character" do
+        json[:character] = char_json
+        expect(post.as_json(include: [:character])).to match_hash(json)
+      end
+
+      it "works with include icon" do
+        json[:icon] = icon_json
+        expect(post.as_json(include: [:icon])).to match_hash(json)
+      end
+
+      it "works with all" do
+        json.merge!({ content: post.content, character: char_json, icon: icon_json })
+        expect(post.as_json(include: [:content, :character, :icon])).to match_hash(json)
+      end
+    end
+  end
+
   describe "adjacent posts" do
     let(:user) { create(:user) }
     let(:board) { create(:board, creator: user) }
