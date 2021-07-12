@@ -5,6 +5,7 @@ class GalleriesController < UploadingController
   before_action :login_required, except: [:index, :show, :search]
   before_action :find_model, only: [:edit, :update, :destroy]
   before_action :require_permission, only: [:edit, :update, :destroy]
+  before_action :require_own_gallery, only: [:add, :icon]
   before_action :setup_new_icons, only: [:add, :icon]
   before_action :set_s3_url, only: [:edit, :add, :icon]
   before_action :editor_setup, only: [:new, :edit]
@@ -59,11 +60,6 @@ class GalleriesController < UploadingController
     if params[:id] == '0' && params[:type] == 'existing'
       flash[:error] = 'Cannot add existing icons to galleryless. Please remove from existing galleries instead.'
       redirect_to user_gallery_path(id: 0, user_id: current_user.id)
-    end
-    unless params[:id] == '0'
-      find_model
-      require_permission
-      return if performed?
     end
   end
 
@@ -140,11 +136,6 @@ class GalleriesController < UploadingController
   end
 
   def icon
-    unless params[:id] == '0'
-      find_model
-      require_permission
-      return if performed?
-    end
     if params[:image_ids].present?
       unless @gallery # gallery required for adding icons from other galleries
         flash[:error] = "Gallery could not be found."
@@ -239,6 +230,14 @@ class GalleriesController < UploadingController
     end
   end
 
+  def require_own_gallery
+    unless params[:id] == '0'
+      find_model
+      return if performed?
+      require_permission
+    end
+  end
+
   def setup_new_icons
     if params[:type] == "existing"
       use_javascript('galleries/add_existing')
@@ -247,7 +246,6 @@ class GalleriesController < UploadingController
       use_javascript('galleries/uploader')
     end
     @icons = []
-    find_model unless params[:id] == '0'
     @unassigned = current_user.galleryless_icons
     @page_title = "Add Icons"
     @page_title += ": " + @gallery.name unless @gallery.nil?
