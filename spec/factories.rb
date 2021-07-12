@@ -10,15 +10,15 @@ FactoryBot.define do
     tos_version { User::CURRENT_TOS_VERSION }
 
     factory :admin_user do
-      role_id { 1 }
+      role { :admin }
     end
 
     factory :mod_user do
-      role_id { 2 }
+      role { :mod }
     end
 
     factory :importing_user do
-      role_id { 3 }
+      role { :importer }
     end
   end
 

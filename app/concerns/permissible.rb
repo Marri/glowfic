@@ -1,40 +1,39 @@
 module Permissible
-  ADMIN = 1
-  MOD = 2
-  IMPORTER = 3
-  SUSPENDED = 4
+  extend ActiveSupport::Concern
 
-  MOD_PERMS = [
+  PERMS = [
     :edit_posts,
     :edit_replies,
     :edit_characters,
     :import_posts,
-    # :edit_tags,
-    # :delete_tags,
-    # :edit_continuities
+    :create_news,
+    # admin-only permissions start here
+    :delete_replies,
+    :edit_tags,
+    :delete_tags,
+    :edit_continuities,
+    :edit_indexes,
+    :edit_news,
+    :delete_news
   ]
 
-  def has_permission?(permission)
-    return false unless role_id
-    return true if admin?
-    return true if importer? && permission == :import_posts
-    return false unless mod?
-    MOD_PERMS.include?(permission)
-  end
+  MOD_PERMS = PERMS[0..4]
 
-  def admin?
-    role_id == ADMIN
-  end
+  included do
+    enum role: {
+      admin: 1,
+      mod: 2,
+      importer: 3,
+      suspended: 4
+    }
 
-  def mod?
-    role_id == MOD
-  end
-
-  def importer?
-    role_id == IMPORTER
-  end
-
-  def suspended?
-    role_id == SUSPENDED
+    def has_permission?(permission)
+      return false unless role
+      return false unless PERMS.include?(permission)
+      return true if admin?
+      return true if importer? && permission == :import_posts
+      return false unless mod?
+      MOD_PERMS.include?(permission)
+    end
   end
 end

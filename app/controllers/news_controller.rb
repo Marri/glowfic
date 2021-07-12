@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 class NewsController < ApplicationController
   before_action :login_required, except: [:index, :show]
-  before_action :require_staff, except: [:index, :show]
   before_action :find_model, only: [:show, :edit, :update, :destroy]
-  before_action :require_permission, only: [:edit, :update]
+  before_action :require_create_permission, only: [:new, :create]
+  before_action :require_edit_permission, only: [:edit, :update]
 
   def index
     @page_title = 'Site News'
@@ -88,14 +88,14 @@ class NewsController < ApplicationController
     end
   end
 
-  def require_staff
-    unless current_user.admin? || current_user.mod?
+  def require_create_permission
+    unless current_user.has_permission?(:create_news)
       flash[:error] = "You do not have permission to manage news posts."
       redirect_to news_index_path and return
     end
   end
 
-  def require_permission
+  def require_edit_permission
     unless @news.editable_by?(current_user)
       flash[:error] = "You do not have permission to edit that news post."
       redirect_to news_index_path and return

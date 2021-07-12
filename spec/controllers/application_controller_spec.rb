@@ -416,6 +416,10 @@ RSpec.describe ApplicationController do
   end
 
   describe "#check_forced_logout" do
+    let(:user) { create(:user) }
+
+    before(:each) { login_as(user) }
+
     controller do
       def index
         render json: {logged_in: current_user.present?}
@@ -423,26 +427,18 @@ RSpec.describe ApplicationController do
     end
 
     it "does not log out unsuspended undeleted" do
-      user = create(:user)
-      login_as(user)
       get :index
       expect(response.json['logged_in']).to be(true)
     end
 
     it "logs out suspended" do
-      user = create(:user)
-      login_as(user)
-      user.role_id = Permissible::SUSPENDED
-      user.save!
+      user.update!(role: :suspended)
       get :index
       expect(response.json['logged_in']).to eq(false)
     end
 
     it "logs out deleted" do
-      user = create(:user)
-      login_as(user)
-      user.deleted = true
-      user.save!
+      user.update!(deleted: true)
       get :index
       expect(response.json['logged_in']).to eq(false)
     end
