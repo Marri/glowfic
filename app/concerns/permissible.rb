@@ -6,6 +6,7 @@ module Permissible
     :edit_replies,
     :edit_characters,
     :import_posts,
+    :create_news,
     # admin-only permissions start here
     :delete_replies,
     :edit_tags,
@@ -16,7 +17,7 @@ module Permissible
     :delete_news
   ]
 
-  MOD_PERMS = PERMS[0..3]
+  MOD_PERMS = PERMS[0..4]
 
   included do
     enum role_id: {
