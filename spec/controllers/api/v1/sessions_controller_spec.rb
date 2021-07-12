@@ -25,7 +25,7 @@ RSpec.describe Api::V1::SessionsController do
     end
 
     it "requires unsuspended user" do
-      user = create(:user, role_id: Permissible::SUSPENDED)
+      user = create(:user, role_id: :suspended)
       post :create, params: { username: user.username }
       expect(response).to have_http_status(401)
       expect(response.json['errors'][0]['message']).to eq("You could not be logged in.")

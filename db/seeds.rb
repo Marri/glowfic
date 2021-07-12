@@ -6,14 +6,14 @@ puts "Seeding database..."
 
 puts "Creating users..."
 marri = User.create!(username: 'Marri', password: 'nikari', email: "dummy1@example.com", default_editor: 'html', unread_opened: true,
-                    role_id: Permissible::ADMIN, default_view: 'list', layout: 'starrylight', moiety_name: 'Red', moiety: 'AA0000', hide_warnings: true,
+                    role_id: :admin, default_view: 'list', layout: 'starrylight', moiety_name: 'Red', moiety: 'AA0000', hide_warnings: true,
                     ignore_unread_daily_report: true, visible_unread: true, created_at: "2015-10-05 19:39:00")
 alicorn = User.create!(username: 'Alicorn', password: 'alicorn', email: "dummy2@example.com", created_at: "2015-10-05 19:39:00")
-kappa = User.create!(username: 'Kappa', password: 'pythbox', email: "dummy3@example.com", role_id: Permissible::IMPORTER,
+kappa = User.create!(username: 'Kappa', password: 'pythbox', email: "dummy3@example.com", role_id: :importer,
                     visible_unread: true, created_at: "2015-10-05 19:39:00")
 aestrix = User.create!(username: 'Aestrix', password: 'aestrix', email: "dummy4@example.com", created_at: "2015-11-26 7:59:00")
-throne = User.create!(username: 'Throne3d', password: 'throne3d', email: "dummy5@example.com", role_id: Permissible::MOD, created_at: "2016-02-22 14:48:00")
-teceler = User.create!(username: 'Teceler', password: 'teceler', email: "dummy6@example.com", role_id: Permissible::MOD, default_editor: 'html',
+throne = User.create!(username: 'Throne3d', password: 'throne3d', email: "dummy5@example.com", role_id: :mod, created_at: "2016-02-22 14:48:00")
+teceler = User.create!(username: 'Teceler', password: 'teceler', email: "dummy6@example.com", role_id: :mod, default_editor: 'html',
                     layout: 'starrydark', ignore_unread_daily_report: true, created_at: "2015-12-17 19:48:00")
 
 User.update_all(tos_version: 20181109)

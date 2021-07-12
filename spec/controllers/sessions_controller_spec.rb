@@ -61,7 +61,7 @@ RSpec.describe SessionsController do
     end
 
     it "requires unsuspended user" do
-      user = create(:user, role_id: Permissible::SUSPENDED)
+      user = create(:user, role_id: :suspended)
       post :create, params: { username: user.username }
       expect(flash[:error]).to eq("You could not be logged in.")
       expect(controller.send(:logged_in?)).not_to eq(true)
