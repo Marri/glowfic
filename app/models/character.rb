@@ -66,8 +66,10 @@ class Character < ApplicationRecord
     @recent ||= Post.where(id: (post_ids + reply_ids).uniq).ordered
   end
 
-  def selector_name
-    [name, nickname, screenname].compact.join(' | ')
+  def selector_name(include_settings: false)
+    parts = [name, nickname, screenname]
+    parts << settings.pluck(:name).join(' & ') if include_settings
+    parts.reject(&:blank?).join(' | ')
   end
 
   def reorder_galleries(_gallery=nil)
