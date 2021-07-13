@@ -1003,6 +1003,16 @@ RSpec.describe Post do
         post.opt_out_of_owed(coauthor)
         expect(post).to be_taggable_by(coauthor)
       end
+
+      it "should not not allow on abandoned post" do
+        post.update!(status: :abandoned)
+        expect(post).not_to be_taggable_by(poster)
+      end
+
+      it "should not allow on complete post" do
+        post.update!(status: :complete)
+        expect(post).not_to be_taggable_by(poster)
+      end
     end
 
     context "with open post" do
