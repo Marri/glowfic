@@ -500,6 +500,23 @@ RSpec.describe Post do
     end
   end
 
+  describe "#author_word_counts" do
+    it "works" do
+      creator = create(:user)
+      coauthor = create(:user)
+      deleted = create(:user, deleted: true)
+      post = create(:post, user: creator, authors: [coauthor, deleted])
+      coauthor_reply = create(:reply, post: post, user: coauthor)
+      deleted_reply = create(:reply, post: post, user: deleted)
+
+      expect(post.author_word_counts).to match_array([
+        [creator.username, post.word_count],
+        [coauthor.username, coauthor_reply.word_count],
+        ['(deleted user)', deleted_reply.word_count]
+      ])
+    end
+  end
+
   describe "#visible_to?" do
     context "public" do
       let(:post) { create(:post, privacy: :public) }
