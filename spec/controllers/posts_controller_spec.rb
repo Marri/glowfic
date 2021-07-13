@@ -1611,18 +1611,37 @@ RSpec.describe PostsController do
     end
 
     context "mark unread" do
-      # rubocop:disable RSpec/RepeatedExample
+      let(:post) { create(:post) }
+      let(:user) { create(:user) }
+
       it "requires valid at_id" do
-        skip "TODO does not notify"
+        login_as(user)
+        expect(Post::View.find_by(user: user, post: post)).to be_nil
+
+        expect {
+          put :update, params: { id: post.id, unread: true, at_id: -1 }
+        }.not_to change { Post::View.count }
+
+        expect(response).to redirect_to(unread_posts_url)
+        expect(flash[:error]).to eq("Reply could not be found.")
       end
 
       it "requires post's at_id" do
-        skip "TODO does not notify"
+        reply = create(:reply)
+        expect(Post::View.find_by(user: user, post: post)).to be_nil
+        expect(Post::View.find_by(user: user, post: reply.post)).to be_nil
+
+        login_as(user)
+
+        expect {
+          put :update, params: { id: post.id, unread: true, at_id: reply.id }
+        }.not_to change { Post::View.count }
+
+        expect(response).to redirect_to(unread_posts_url)
+        expect(flash[:error]).to eq("Reply does not belong to this post.")
       end
-      # rubocop:enable RSpec/RepeatedExample
 
       it "works with at_id" do
-        post = create(:post)
         unread_reply = build(:reply, post: post)
         Timecop.freeze(post.created_at + 1.minute) do
           unread_reply.save!
@@ -1643,8 +1662,6 @@ RSpec.describe PostsController do
       end
 
       it "works without at_id" do
-        post = create(:post)
-        user = create(:user)
         post.mark_read(user)
         expect(post.reload.send(:view_for, user)).not_to be_nil
         login_as(user)
@@ -1657,8 +1674,6 @@ RSpec.describe PostsController do
       end
 
       it "works when ignored with at_id" do
-        user = create(:user)
-        post = create(:post)
         unread_reply = build(:reply, post: post)
         Timecop.freeze(post.created_at + 1.minute) do
           unread_reply.save!
@@ -1681,8 +1696,6 @@ RSpec.describe PostsController do
       end
 
       it "works when ignored without at_id" do
-        post = create(:post)
-        user = create(:user)
         post.mark_read(user)
         post.ignore(user)
         expect(post.reload.first_unread_for(user)).to be_nil

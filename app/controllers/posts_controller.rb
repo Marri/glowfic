@@ -326,8 +326,12 @@ class PostsController < WritableController
 
   def mark_unread
     if params[:at_id].present?
-      reply = Reply.find(params[:at_id])
-      if reply && reply.post == @post
+      reply = Reply.find_by(id: params[:at_id])
+      if reply.nil?
+        flash[:error] = "Reply could not be found."
+      elsif reply.post != @post
+        flash[:error] = "Reply does not belong to this post."
+      else
         @post.mark_read(current_user, at_time: reply.created_at - 1.second, force: true)
         flash[:success] = "Post has been marked as read until reply ##{reply.id}."
       end
