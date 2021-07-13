@@ -204,4 +204,23 @@ RSpec.describe Reply do
       end
     end
   end
+
+  describe "#post_page" do
+    let(:post) { create(:post) }
+    let(:reply) { create(:reply, post: post) }
+
+    it "works with default per_page" do
+      create_list(:reply, 30, post: post)
+      expect(reply.post_page).to eq(2)
+    end
+
+    it "works with zero per_page" do
+      expect(reply.post_page(0)).to eq(1)
+    end
+
+    it "works with per_page greater than reply number" do
+      create_list(:reply, 5, post: post)
+      expect(reply.post_page(10)).to eq(1)
+    end
+  end
 end
