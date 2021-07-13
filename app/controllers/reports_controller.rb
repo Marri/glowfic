@@ -41,35 +41,6 @@ class ReportsController < ApplicationController
 
   private
 
-  def has_unread?(post)
-    return false unless @opened_posts.present?
-    view = @opened_posts.detect { |v| v.post_id == post.id }
-    return false unless view
-    return false if view.ignored?
-    return false if view.read_at.nil? # totally unread, not partially
-    view.read_at < post.tagged_at
-  end
-  helper_method :has_unread?
-
-  def never_read?(post)
-    return false unless logged_in?
-    return true unless @opened_posts.present?
-    view = @opened_posts.detect { |v| v.post_id == post.id }
-    return true unless view
-    return false if view.ignored?
-    view.read_at.nil?
-  end
-  helper_method :never_read?
-
-  def ignored?(post)
-    return false unless @opened_posts.present?
-    view = @opened_posts.detect { |v| v.post_id == post.id }
-    board_view = @board_views.detect { |v| v.board_id == post.board_id }
-    return false unless view || board_view
-    view.try(:ignored?) || board_view.try(:ignored?)
-  end
-  helper_method :ignored?
-
   def linked_for(post, reply)
     if post.created_at.to_date == @day.to_date || reply.nil?
       {id: post.id, klass: Post, created_at: post.created_at}
@@ -88,5 +59,4 @@ class ReportsController < ApplicationController
         {first_updated_at: :desc}
     end
   end
-  helper_method :sort
 end

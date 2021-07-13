@@ -323,6 +323,197 @@ RSpec.describe Character do
     end
   end
 
+  describe "#as_json" do
+    let(:user) { create(:user) }
+    let(:template) { create(:template, user: user) }
+    let(:settings) { create_list(:setting, 2) }
+    let(:gallery1) { create(:gallery, icon_count: 3, user: user) }
+    let(:gallery2) { create(:gallery, icon_count: 1, user: user) }
+    let(:icon) { create(:icon, user: user, galleries: [gallery2]) }
+    let(:character) do
+      create(:character,
+        user: user,
+        template: template,
+        settings: settings,
+        galleries: [gallery1, gallery2],
+        default_icon: icon,
+        nickname: 'test nickname',
+        screenname: 'test_screename',
+        pb: 'test facecast',
+      )
+    end
+    let(:post) { create(:post, user: user, character: character) }
+    let(:calias) { create(:alias, character: character) }
+    let(:json) { { id: character.id, name: character.name, screenname: character.screenname } }
+
+    before(:each) do
+      create_list(:alias, 2, character: character)
+    end
+
+    it "works with no parameters" do
+      expect(character.as_json).to match_hash(json)
+    end
+
+    context "with post_for_alias" do
+      context "with only post" do
+        it "works without alias" do
+          json[:alias_id_for_post] = nil
+          expect(character.as_json(post_for_alias: post)).to match_hash(json)
+        end
+
+        it "works with alias" do
+          post.update!(character_alias: calias)
+          json[:alias_id_for_post] = calias.id
+          expect(character.as_json(post_for_alias: post)).to match_hash(json)
+        end
+      end
+
+      context "with reply" do
+        let!(:reply) { create(:reply, post: post, character: character, user: user) }
+
+        it "works without alias" do
+          json[:alias_id_for_post] = nil
+          expect(character.as_json(post_for_alias: post)).to match_hash(json)
+        end
+
+        it "works with alias" do
+          reply.update!(character_alias: calias)
+          json[:alias_id_for_post] = calias.id
+          expect(character.as_json(post_for_alias: post)).to match_hash(json)
+        end
+      end
+    end
+
+    context "with includes" do
+      it "can include selector name" do
+        json[:selector_name] = character.selector_name
+        expect(character.as_json(include: [:selector_name])).to match_hash(json)
+      end
+
+      it "can include default icon" do
+        json[:default_icon] = { id: icon.id, url: icon.url, keyword: icon.keyword }
+        expect(character.as_json(include: [:default_icon])).to match_hash(json)
+      end
+
+      it "handles no default icon" do
+        character.update!(default_icon_id: nil)
+        json[:default_icon] = nil
+        expect(character.as_json(include: [:default_icon])).to match_hash(json)
+      end
+
+      it "can include aliases" do
+        json[:aliases] = character.aliases
+        expect(character.as_json(include: [:aliases])).to match_hash(json)
+      end
+
+      it "handles no aliases" do
+        CharacterAlias.delete_all
+        json[:aliases] = []
+        expect(character.as_json(include: [:aliases])).to match_hash(json)
+      end
+
+      it "can include a nickname" do
+        json[:nickname] = character.nickname
+        expect(character.as_json(include: [:nickname])).to match_hash(json)
+      end
+
+      context "with galleries" do
+        it "works with merged gallery" do
+          user.update!(icon_picker_grouping: false)
+          json[:galleries] = [{ icons: character.icons }]
+          expect(character.as_json(include: [:galleries])).to match_hash(json)
+        end
+
+        context "with no galleries" do
+          before(:each) do
+            icon.update!(galleries: [], has_gallery: false)
+            gallery1.icons.destroy_all
+            gallery1.destroy!
+            gallery2.icons.destroy_all
+            gallery2.destroy!
+            character.reload
+          end
+
+          it "works with only default icon" do
+            expect(character.default_icon).to eq(icon)
+            json[:galleries] = [{ icons: [character.default_icon] }]
+            expect(character.as_json(include: [:galleries])).to match_hash(json)
+          end
+
+          it "works with no icons" do
+            character.update!(default_icon: nil)
+            json[:galleries] = []
+            expect(character.as_json(include: [:galleries])).to match_hash(json)
+          end
+        end
+
+        it "works with multiple galleries" do
+          json[:galleries] = [
+            { name: gallery1.name, icons: gallery1.icons },
+            { name: gallery2.name, icons: gallery2.icons }
+          ]
+          expect(character.as_json(include: [:galleries])).to match_hash(json)
+        end
+      end
+    end
+
+    it "works with everything" do
+      post.update!(character_alias: calias)
+      json.merge!({
+        alias_id_for_post: calias.id,
+        selector_name: character.selector_name,
+        default_icon: { id: icon.id, url: icon.url, keyword: icon.keyword },
+        aliases: character.aliases,
+        nickname: character.nickname,
+        galleries: [
+          { name: gallery1.name, icons: gallery1.icons },
+          { name: gallery2.name, icons: gallery2.icons }
+        ],
+      })
+      options = { post_for_alias: post, include: [:selector_name, :default_icon, :aliases, :nickname, :galleries] }
+      expect(character.as_json(options)).to match_hash(json)
+    end
+  end
+
+  describe "#selector_name" do
+    let(:character) { create(:character) }
+    let(:screenname) { 'test_screename' }
+    let(:nickname) { 'test nickname' }
+
+    it "works with only name" do
+      expect(character.selector_name).to eq(character.name)
+    end
+
+    it "works with all names" do
+      character.update!(screenname: screenname, nickname: nickname)
+      expect(character.selector_name).to eq("#{character.name} | #{nickname} | #{screenname}")
+    end
+
+    context "with include_settings" do
+      let(:settings) { create_list(:setting, 2) }
+
+      it "works with no settings" do
+        expect(character.selector_name(include_settings: true)).to eq(character.name)
+      end
+
+      it "works with one setting" do
+        character.update!(settings: [settings[0]])
+        expect(character.selector_name(include_settings: true)).to eq("#{character.name} | #{settings[0].name}")
+      end
+
+      it "works with multiple settings" do
+        character.update!(settings: settings)
+        expect(character.selector_name(include_settings: true)).to eq("#{character.name} | #{settings[0].name} & #{settings[1].name}")
+      end
+
+      it "works with settings and names" do
+        character.update!(settings: settings, screenname: screenname, nickname: nickname)
+        string = "#{character.name} | #{nickname} | #{screenname} | #{settings[0].name} & #{settings[1].name}"
+        expect(character.selector_name(include_settings: true)).to eq(string)
+      end
+    end
+  end
+
   it "orders icons by default" do
     user = create(:user)
     char = create(:character, user: user)

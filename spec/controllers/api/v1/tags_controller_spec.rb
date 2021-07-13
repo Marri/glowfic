@@ -70,6 +70,15 @@ RSpec.describe Api::V1::TagsController do
           expect(response.json['results']).to contain_exactly(char_grouped_tag.as_json.stringify_keys)
         end
       end
+
+      it "should exclude given setting", show_in_doc: in_doc do
+        setting1 = create(:setting)
+        setting2 = create(:setting)
+        get :index, params: { t: 'Setting', tag_id: setting1.id }
+        expect(response).to have_http_status(200)
+        expect(response.json).to have_key('results')
+        expect(response.json['results']).to contain_exactly(setting2.as_json.stringify_keys)
+      end
     end
 
     context "when logged in" do

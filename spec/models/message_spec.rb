@@ -113,4 +113,22 @@ RSpec.describe Message do
     expect(message).not_to be_valid
     expect(message.recipient).to be_nil
   end
+
+  describe "#unempty_subject" do
+    let(:message) { create(:message) }
+
+    it "returns thread parent subject" do
+      reply = create(:message, thread_id: message.id)
+      expect(reply.unempty_subject).to eq(message.subject)
+    end
+
+    it "works with empty subject" do
+      message.update!(subject: '')
+      expect(message.unempty_subject).to eq('(no title)')
+    end
+
+    it "returns subject" do
+      expect(message.unempty_subject).to eq(message.subject)
+    end
+  end
 end

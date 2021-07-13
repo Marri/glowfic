@@ -500,6 +500,23 @@ RSpec.describe Post do
     end
   end
 
+  describe "#author_word_counts" do
+    it "works" do
+      creator = create(:user)
+      coauthor = create(:user)
+      deleted = create(:user, deleted: true)
+      post = create(:post, user: creator, authors: [coauthor, deleted])
+      coauthor_reply = create(:reply, post: post, user: coauthor)
+      deleted_reply = create(:reply, post: post, user: deleted)
+
+      expect(post.author_word_counts).to match_array([
+        [creator.username, post.word_count],
+        [coauthor.username, coauthor_reply.word_count],
+        ['(deleted user)', deleted_reply.word_count]
+      ])
+    end
+  end
+
   describe "#visible_to?" do
     context "public" do
       let(:post) { create(:post, privacy: :public) }
@@ -777,60 +794,68 @@ RSpec.describe Post do
   end
 
   describe "#build_new_reply_for" do
+    let(:post) { create(:post) }
+    let(:user) { create(:user) }
+    let(:icon) { create(:icon, user: user) }
+    let(:character) { create(:character, user: user) }
+
     it "uses a draft if one exists" do
-      post = create(:post)
-      draft = create(:reply_draft, post: post)
-      reply = post.build_new_reply_for(draft.user)
+      draft = create(:reply_draft, post: post, user: user)
+      reply = post.build_new_reply_for(user)
       expect(reply).to be_a_new_record
-      expect(reply.user).to eq(draft.user)
+      expect(reply.user).to eq(user)
       expect(reply.content).to eq(draft.content)
     end
 
-    it "copies most recent reply details if present" do
-      post = create(:post)
-      last_reply = create(:reply, post: post, with_character: true, with_icon: true)
-      last_reply.character.default_icon = create(:icon, user: last_reply.user)
-      last_reply.character.save!
-      last_reply.reload
-      reply = post.build_new_reply_for(last_reply.user)
+    it "uses reply_params if provided" do
+      params = {
+        content: 'test content',
+        character_id: character.id,
+        icon_id: icon.id
+      }
+
+      reply = post.build_new_reply_for(user, params)
       expect(reply).to be_a_new_record
-      expect(reply.user).to eq(last_reply.user)
-      expect(reply.icon_id).to eq(last_reply.character.default_icon_id)
-      expect(reply.character_id).to eq(last_reply.character_id)
+      expect(reply.user).to eq(user)
+      expect(reply.content).to eq(params[:content])
+      expect(reply.icon_id).to eq(icon.id)
+      expect(reply.character_id).to eq(character.id)
+    end
+
+    it "copies most recent reply details if present" do
+      last_reply = create(:reply, post: post, user: user, character: character, with_icon: true)
+      character.update!(default_icon: icon)
+      last_reply.reload
+      reply = post.build_new_reply_for(user)
+      expect(reply).to be_a_new_record
+      expect(reply.user).to eq(user)
+      expect(reply.icon_id).to eq(icon.id)
+      expect(reply.character_id).to eq(character.id)
     end
 
     it "copies post details if it belongs to the user" do
-      post = create(:post, with_character: true, with_icon: true)
-      reply = post.build_new_reply_for(post.user)
+      post.update!(user: user, character: character, icon: icon)
+      reply = post.build_new_reply_for(user)
       expect(reply).to be_a_new_record
-      expect(reply.user).to eq(post.user)
-      expect(reply.icon_id).to eq(post.character.default_icon_id)
-      expect(reply.character_id).to eq(post.character_id)
-    end
-
-    it "uses active character if available" do
-      post = create(:post)
-      character = create(:character, with_default_icon: true)
-      character.user.active_character = character
-      character.user.save!
-
-      reply = post.build_new_reply_for(character.user)
-
-      expect(reply).to be_a_new_record
-      expect(reply.user).to eq(character.user)
+      expect(reply.user).to eq(user)
       expect(reply.icon_id).to eq(character.default_icon_id)
       expect(reply.character_id).to eq(character.id)
     end
 
-    it "does not use avatar for active character without icons" do
-      post = create(:post)
-      icon = create(:icon)
-      character = create(:character, user: icon.user)
+    it "uses active character if available" do
+      character.update!(default_icon: icon)
+      user.update!(active_character: character)
 
-      user = icon.user
-      user.avatar = icon
-      user.active_character = character
-      user.save!
+      reply = post.build_new_reply_for(user)
+
+      expect(reply).to be_a_new_record
+      expect(reply.user).to eq(user)
+      expect(reply.icon_id).to eq(icon.id)
+      expect(reply.character_id).to eq(character.id)
+    end
+
+    it "does not use avatar for active character without icons" do
+      user.update!(avatar: icon, active_character: character)
 
       reply = post.build_new_reply_for(user)
 
@@ -841,23 +866,17 @@ RSpec.describe Post do
     end
 
     it "uses avatar if available" do
-      post = create(:post)
-      icon = create(:icon)
-      icon.user.avatar = icon
-      icon.user.save!
+      user.update!(avatar: icon)
 
-      reply = post.build_new_reply_for(icon.user)
+      reply = post.build_new_reply_for(user)
 
       expect(reply).to be_a_new_record
-      expect(reply.user).to eq(icon.user)
-      expect(reply.icon_id).to eq(icon.user.avatar_id)
+      expect(reply.user).to eq(user)
+      expect(reply.icon_id).to eq(icon.id)
       expect(reply.character_id).to be_nil
     end
 
     it "handles new user" do
-      post = create(:post)
-      user = create(:user)
-
       reply = post.build_new_reply_for(user)
 
       expect(reply).to be_a_new_record
@@ -930,19 +949,53 @@ RSpec.describe Post do
   end
 
   describe "#opt_out_of_owed" do
+    let(:user) { create(:user) }
+    let(:post) { create(:post) }
+
+    it "requires author" do
+      expect(post.author_for(user)).to be_nil
+      post.opt_out_of_owed(user)
+      expect(post.author_for(user)).to be_nil
+    end
+
     it "removes owedness if user previously could owe" do
-      post = create(:post)
-      expect(post.author_for(post.user).reload.can_owe).to eq(true)
+      author = post.author_for(post.user)
+      expect(author.reload.can_owe).to eq(true)
       post.opt_out_of_owed(post.user)
-      expect(post.author_for(post.user).reload.can_owe).to eq(false)
+      expect(author.reload.can_owe).to eq(false)
     end
 
     it "destroys if not joined" do
-      user = create(:user)
-      post = create(:post, unjoined_authors: [user])
+      post.update!(unjoined_authors: [user])
       expect(post.author_for(user).reload.can_owe).to eq(true)
       post.opt_out_of_owed(user)
       expect(post.author_for(user)).to be_nil
+    end
+  end
+
+  describe "#opt_in_to_owed" do
+    let(:user) { create(:user) }
+    let(:post) { create(:post) }
+
+    it "requires author" do
+      expect(post.author_for(user)).to be_nil
+      post.opt_in_to_owed(user)
+      expect(post.author_for(user)).to be_nil
+    end
+
+    it "requires author not to owe" do
+      author = post.author_for(post.user)
+      expect(author).not_to receive(:update)
+      expect(post.opt_in_to_owed(user)).to eq(nil)
+    end
+
+    it "updates author" do
+      create(:reply, post: post, user: user)
+      author = post.author_for(user)
+      author.update!(can_owe: false)
+      expect(author.reload.can_owe?).to eq(false)
+      post.opt_in_to_owed(user)
+      expect(author.reload.can_owe?).to eq(true)
     end
   end
 
@@ -968,6 +1021,16 @@ RSpec.describe Post do
         create(:reply, user: coauthor, post: post)
         post.opt_out_of_owed(coauthor)
         expect(post).to be_taggable_by(coauthor)
+      end
+
+      it "should not not allow on abandoned post" do
+        post.update!(status: :abandoned)
+        expect(post).not_to be_taggable_by(poster)
+      end
+
+      it "should not allow on complete post" do
+        post.update!(status: :complete)
+        expect(post).not_to be_taggable_by(poster)
       end
     end
 
@@ -1037,6 +1100,188 @@ RSpec.describe Post do
       it "does not show other private posts" do
         create_list(:post, 2, privacy: :private)
         expect(Post.visible_to(user)).to be_empty
+      end
+    end
+  end
+
+  describe "#mark_read" do
+    let(:post) { create(:post) }
+    let(:user) { create(:user) }
+    let(:now) { Time.zone.now }
+
+    context "with new view" do
+      let(:view) { Post::View.find_by(post: post, user: user) }
+
+      it "uses at_time if specified" do
+        time = now + 1.day
+        post.mark_read(user, at_time: time)
+        expect(view.read_at).to be_the_same_time_as(time)
+      end
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { post.mark_read(user) }
+        expect(view.read_at).to be_the_same_time_as(now)
+      end
+    end
+
+    context "with existing view" do
+      let!(:view) { create(:post_view, post: post, user: user, read_at: now - 2.days) }
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { post.mark_read(user) }
+        expect(view.reload.read_at).to be_the_same_time_as(now)
+      end
+
+      it "uses later at_time if given" do
+        time = now + 1.day
+        post.mark_read(user, at_time: time)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+
+      it "does not use earlier at_time unless forced" do
+        expect { post.mark_read(user, at_time: now - 5.days) }.not_to change { view.read_at }
+      end
+
+      it "uses earlier at_time if forced" do
+        time = now - 5.days
+        post.mark_read(user, at_time: time, force: true)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+    end
+  end
+
+  describe "#as_json" do
+    context "with simple post" do
+      let(:post) { create(:post) }
+      let(:json) do
+        {
+          id: post.id,
+          subject: post.subject,
+          description: nil,
+          authors: post.joined_authors,
+          board: post.board,
+          section: nil,
+          section_order: 0,
+          created_at: post.created_at,
+          tagged_at: post.tagged_at,
+          status: :active,
+          num_replies: 0
+        }
+      end
+
+      it "works" do
+        expect(post.as_json).to match_hash(json)
+      end
+
+      it "works with min" do
+        expect(post.as_json(min: true)).to match_hash({id: post.id, subject: post.subject})
+      end
+
+      it "works with include content" do
+        json[:content] = post.content
+        expect(post.as_json(include: [:content])).to match_hash(json)
+      end
+
+      it "works with include character" do
+        json[:character] = nil
+        expect(post.as_json(include: [:character])).to match_hash(json)
+      end
+
+      it "works with include icon" do
+        json[:icon] = nil
+        expect(post.as_json(include: [:icon])).to match_hash(json)
+      end
+
+      it "works with all" do
+        json.merge!({ content: post.content, character: nil, icon: nil })
+        expect(post.as_json(include: [:content, :character, :icon])).to match_hash(json)
+      end
+    end
+
+    context "with complex post" do
+      let(:author) { create(:user) }
+      let(:coauthor) { create(:user) }
+      let(:unjoined) { create(:user) }
+      let(:board) { create(:board) }
+      let(:section) { create(:board_section, board: board) }
+      let(:character) { create(:character, user: author, screenname: 'testing_home') }
+
+      let(:post) do
+        create(:post,
+          user: author,
+          board: board,
+          section: section,
+          unjoined_authors: [coauthor, unjoined],
+          description: 'test description',
+          character: character,
+          with_icon: true,
+        )
+      end
+
+      let(:json) do
+        {
+          id: post.id,
+          subject: post.subject,
+          description: 'test description',
+          authors: [author, coauthor],
+          board: board,
+          section: section,
+          section_order: 0,
+          created_at: post.created_at,
+          tagged_at: post.tagged_at,
+          status: :active,
+          num_replies: 3
+        }
+      end
+
+      let(:char_json) do
+        {
+          id: character.id,
+          name: character.name,
+          screenname: character.screenname
+        }
+      end
+
+      let(:icon_json) do
+        {
+          id: post.icon_id,
+          url: post.icon.url,
+          keyword: post.icon.keyword
+        }
+      end
+
+      before(:each) do
+        create(:reply, post: post, user: coauthor)
+        create(:reply, post: post, user: author)
+        create(:reply, post: post, user: coauthor)
+      end
+
+      it "works" do
+        expect(post.as_json).to match_hash(json)
+      end
+
+      it "works with min" do
+        expect(post.as_json(min: true)).to match_hash({id: post.id, subject: post.subject})
+      end
+
+      it "works with include content" do
+        json[:content] = post.content
+        expect(post.as_json(include: [:content])).to match_hash(json)
+      end
+
+      it "works with include character" do
+        json[:character] = char_json
+        expect(post.as_json(include: [:character])).to match_hash(json)
+      end
+
+      it "works with include icon" do
+        json[:icon] = icon_json
+        expect(post.as_json(include: [:icon])).to match_hash(json)
+      end
+
+      it "works with all" do
+        json.merge!({ content: post.content, character: char_json, icon: icon_json })
+        expect(post.as_json(include: [:content, :character, :icon])).to match_hash(json)
       end
     end
   end

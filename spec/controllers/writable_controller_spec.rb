@@ -8,7 +8,7 @@ RSpec.describe WritableController do
       login
       controller.send(:setup_layout_gon)
       expect(controller.gon.editor_class).to be_nil
-      expect(controller.gon.base_url).not_to be_nil
+      expect(controller.gon.base_url).to eq('/')
     end
 
     context "with dark theme" do
@@ -22,6 +22,13 @@ RSpec.describe WritableController do
           expect(controller.gon.tinymce_css_path).not_to be_nil
         end
       end
+    end
+
+    it "works with DOMAIN_NAME" do
+      login
+      allow(ENV).to receive(:[]).with('DOMAIN_NAME').and_return('domaintest.host')
+      controller.send(:setup_layout_gon)
+      expect(controller.gon.base_url).to eq('https://domaintest.host/')
     end
   end
 
@@ -131,6 +138,11 @@ RSpec.describe WritableController do
   end
 
   describe "#build_template_groups" do
+    it "requires login" do
+      controller.send(:build_template_groups)
+      expect(assigns(:templates)).to be_nil
+    end
+
     it "orders templates correctly" do
       user = create(:user)
       template2 = create(:template, user: user, name: "b")
@@ -234,6 +246,43 @@ RSpec.describe WritableController do
 
     it "has more tests" do
       skip
+    end
+  end
+
+  describe "#display_warnings?" do
+    let(:user) { create(:user) }
+
+    it "respects session ignore warnings" do
+      session[:ignore_warnings] = true
+      expect(controller.send(:display_warnings?)).to eq(false)
+    end
+
+    it "sets session ignore warnings for logged out user" do
+      without_partial_double_verification do
+        allow(controller).to receive(:params).and_return({ignore_warnings: true})
+      end
+      expect(controller.send(:display_warnings?)).to eq(false)
+      expect(session[:ignore_warnings]).to eq(true)
+    end
+
+    it "shows warnings for logged out users" do
+      expect(controller.send(:display_warnings?)).to eq(true)
+    end
+
+    it "does not set session ignore warnings for logged in user" do
+      login_as(user)
+      without_partial_double_verification do
+        allow(controller).to receive(:params).and_return({ignore_warnings: true})
+      end
+      expect { expect(controller.send(:display_warnings?)).to eq(false) }.not_to change { session[:ignore_warnings] }
+    end
+
+    it "checks show_warnings_for for logged in users" do
+      login_as(user)
+      post = create(:post)
+      expect(post).to receive(:show_warnings_for?).with(user).and_call_original
+      controller.instance_variable_set(:@post, post)
+      expect(controller.send(:display_warnings?)).to eq(true)
     end
   end
 end

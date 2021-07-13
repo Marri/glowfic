@@ -85,5 +85,17 @@ RSpec.describe CharacterTag do
       group.reload
       expect(other.reload.gallery_groups).to match_array([group])
     end
+
+    it "does nothing with setting" do
+      user = create(:user)
+      setting = create(:setting)
+      gallery = create(:gallery, user: user)
+      character = create(:character, settings: [setting], user: user, galleries: [gallery])
+      character.characters_galleries.find_by(gallery: gallery).update!(added_by_group: true)
+      character.reload
+      expect(character.galleries).to eq([gallery])
+      character.update!(settings: [])
+      expect(character.reload.galleries).to eq([gallery])
+    end
   end
 end

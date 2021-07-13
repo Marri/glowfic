@@ -1238,6 +1238,14 @@ RSpec.describe RepliesController do
         expect(assigns(:search_results)).to match_array([reply])
       end
 
+      it "ignores exact match with blank quote" do
+        reply1 = create(:reply, content: 'foo')
+        create(:reply, content: 'bar')
+        reply2 = create(:reply, content: 'foo bar')
+        get :search, params: { commit: true, subj_content: '" " "foo"' }
+        expect(assigns(:search_results)).to match_array([reply1, reply2])
+      end
+
       it "only shows from visible posts" do
         reply1 = create(:reply, content: 'contains forks')
         reply2 = create(:reply, content: 'visible contains forks')

@@ -86,4 +86,58 @@ RSpec.describe Tag do
       expect(fetched.map(&:character_count)).to eq([0, 1, 2])
     end
   end
+
+  describe "#editable_by?" do
+    let(:tag) { create(:label) }
+    let(:user) { create(:user) }
+
+    it "requires login" do
+      expect(tag.editable_by?(nil)).to eq(false)
+    end
+
+    it "returns true for creator" do
+      expect(tag.editable_by?(tag.user)).to eq(true)
+    end
+
+    it "returns true for admin" do
+      admin = create(:admin_user)
+      expect(tag.editable_by?(admin)).to eq(true)
+    end
+
+    it "returns false for other users for non-settings" do
+      expect(tag.editable_by?(user)).to eq(false)
+    end
+
+    it "returns true for unowned settings" do
+      tag = create(:setting, owned: false)
+      expect(tag.editable_by?(user)).to eq(true)
+    end
+
+    it "returns false for owned settings" do
+      tag = create(:setting, owned: true)
+      expect(tag.editable_by?(user)).to eq(false)
+    end
+  end
+
+  describe "#deletable_by?" do
+    let(:tag) { create(:label) }
+    let(:user) { create(:user) }
+
+    it "requires login" do
+      expect(tag.deletable_by?(nil)).to eq(false)
+    end
+
+    it "returns true for creator" do
+      expect(tag.deletable_by?(tag.user)).to eq(true)
+    end
+
+    it "returns true for admin" do
+      admin = create(:admin_user)
+      expect(tag.deletable_by?(admin)).to eq(true)
+    end
+
+    it "returns false for other user" do
+      expect(tag.deletable_by?(user)).to eq(false)
+    end
+  end
 end

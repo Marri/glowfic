@@ -230,7 +230,7 @@ RSpec.describe PostsController do
         skip "TODO not yet implemented"
       end
 
-      it "filters by authors" do
+      it "filters by author" do
         posts = Array.new(4) { create(:post) }
         filtered_post = posts.last
         first_post = posts.first
@@ -275,6 +275,15 @@ RSpec.describe PostsController do
         post = create(:post, status: :complete)
         get :search, params: { commit: true, completed: true }
         expect(assigns(:search_results)).to match_array(post)
+      end
+
+      it "handles authors with no shared posts" do
+        author1 = create(:user)
+        author2 = create(:user)
+        create_list(:post, 2, user: author1)
+        create_list(:post, 2, user: author2)
+        get :search, params: { commit: true, author_id: [author1.id, author2.id] }
+        expect(assigns(:search_results)).to be_empty
       end
 
       it "sorts posts by tagged_at" do
@@ -1354,6 +1363,8 @@ RSpec.describe PostsController do
   end
 
   describe "GET delete_history" do
+    let(:post) { create(:post) }
+
     before(:each) { Reply.auditing_enabled = true }
 
     after(:each) { Reply.auditing_enabled = false }
@@ -1373,24 +1384,37 @@ RSpec.describe PostsController do
 
     it "requires permission" do
       login
-      post = create(:post)
       get :delete_history, params: { id: post.id }
       expect(response).to redirect_to(post_url(post))
       expect(flash[:error]).to eq("You do not have permission to modify this post.")
     end
 
-    it "sets correct variables" do
-      post = create(:post)
+    it "sets correct variables for deleted first reply" do
       login_as(post.user)
       reply = create(:reply, post: post)
+      following = create_list(:reply, 2, post: post)
       reply.destroy!
       get :delete_history, params: { id: post.id }
       expect(response).to have_http_status(200)
       expect(assigns(:audit).auditable_id).to eq(reply.id)
+      expect(assigns(:preceding)).to eq([post])
+      expect(assigns(:following)).to eq(following)
+    end
+
+    it "sets correct variables for deleted later reply" do
+      login_as(post.user)
+      preceding = create_list(:reply, 2, post: post)
+      reply = create(:reply, post: post)
+      following = create_list(:reply, 2, post: post)
+      reply.destroy!
+      get :delete_history, params: { id: post.id }
+      expect(response).to have_http_status(200)
+      expect(assigns(:audit).auditable_id).to eq(reply.id)
+      expect(assigns(:preceding)).to eq(preceding)
+      expect(assigns(:following)).to eq(following)
     end
 
     it "ignores restored replies" do
-      post = create(:post)
       login_as(post.user)
       reply = create(:reply, post: post)
       reply.destroy!
@@ -1400,7 +1424,6 @@ RSpec.describe PostsController do
     end
 
     it "only selects more recent restore" do
-      post = create(:post)
       login_as(post.user)
       reply = create(:reply, post: post, content: 'old content')
       reply.destroy!
@@ -1597,18 +1620,37 @@ RSpec.describe PostsController do
     end
 
     context "mark unread" do
-      # rubocop:disable RSpec/RepeatedExample
+      let(:post) { create(:post) }
+      let(:user) { create(:user) }
+
       it "requires valid at_id" do
-        skip "TODO does not notify"
+        login_as(user)
+        expect(Post::View.find_by(user: user, post: post)).to be_nil
+
+        expect {
+          put :update, params: { id: post.id, unread: true, at_id: -1 }
+        }.not_to change { Post::View.count }
+
+        expect(response).to redirect_to(unread_posts_url)
+        expect(flash[:error]).to eq("Reply could not be found.")
       end
 
       it "requires post's at_id" do
-        skip "TODO does not notify"
+        reply = create(:reply)
+        expect(Post::View.find_by(user: user, post: post)).to be_nil
+        expect(Post::View.find_by(user: user, post: reply.post)).to be_nil
+
+        login_as(user)
+
+        expect {
+          put :update, params: { id: post.id, unread: true, at_id: reply.id }
+        }.not_to change { Post::View.count }
+
+        expect(response).to redirect_to(unread_posts_url)
+        expect(flash[:error]).to eq("Reply does not belong to this post.")
       end
-      # rubocop:enable RSpec/RepeatedExample
 
       it "works with at_id" do
-        post = create(:post)
         unread_reply = build(:reply, post: post)
         Timecop.freeze(post.created_at + 1.minute) do
           unread_reply.save!
@@ -1629,8 +1671,6 @@ RSpec.describe PostsController do
       end
 
       it "works without at_id" do
-        post = create(:post)
-        user = create(:user)
         post.mark_read(user)
         expect(post.reload.send(:view_for, user)).not_to be_nil
         login_as(user)
@@ -1643,8 +1683,6 @@ RSpec.describe PostsController do
       end
 
       it "works when ignored with at_id" do
-        user = create(:user)
-        post = create(:post)
         unread_reply = build(:reply, post: post)
         Timecop.freeze(post.created_at + 1.minute) do
           unread_reply.save!
@@ -1667,8 +1705,6 @@ RSpec.describe PostsController do
       end
 
       it "works when ignored without at_id" do
-        post = create(:post)
-        user = create(:user)
         post.mark_read(user)
         post.ignore(user)
         expect(post.reload.first_unread_for(user)).to be_nil
@@ -2860,11 +2896,10 @@ RSpec.describe PostsController do
 
     context "with posts" do
       let(:user) { create(:user) }
-      let(:other_user) { create(:user) }
+      let!(:other_user) { create(:user) }
       let(:post) { create(:post, user: user) }
 
       before(:each) do
-        other_user
         login_as(user)
       end
 
@@ -2922,15 +2957,24 @@ RSpec.describe PostsController do
         expect(assigns(:posts)).to match_array([post])
       end
 
-      it "optionally hides hiatused threads" do
-        create(:reply, post_id: post.id, user_id: other_user.id)
+      it "optionally hides hiatused posts" do
+        create(:reply, post: post, user: other_user)
         post.update!(status: :hiatus)
 
-        user.hide_hiatused_tags_owed = true
-        user.save!
+        user.update!(hide_hiatused_tags_owed: true)
         get :owed
         expect(response.status).to eq(200)
         expect(assigns(:posts)).to be_empty
+        expect(assigns(:hiatused_exist)).to be(true)
+      end
+
+      it "does not display hiatused tab without hiatused posts" do
+        post
+        user.update!(hide_hiatused_tags_owed: true)
+        get :owed
+        expect(response.status).to eq(200)
+        expect(assigns(:posts)).to eq([post])
+        expect(assigns(:hiatused_exist)).to be_nil
       end
 
       it "shows threads the user has been invited to" do

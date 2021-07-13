@@ -84,22 +84,32 @@ RSpec.describe Board do
     end
   end
 
-  it "should be fixable via admin method" do
-    board = create(:board)
-    post = create(:post, board: board)
-    create(:post, board: board) # post2
-    create(:post, board: board) # post3
-    create(:post, board: board) # post4
-    post.update_columns(section_order: 2) # rubocop:disable Rails/SkipsModelValidations
-    section = create(:board_section, board: board)
-    create(:board_section, board: board) # section2
-    create(:board_section, board: board) # section3
-    section.update_columns(section_order: 6) # rubocop:disable Rails/SkipsModelValidations
-    expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([1, 2, 2, 3])
-    expect(board.board_sections.ordered.pluck(:section_order)).to eq([1, 2, 6])
-    board.send(:fix_ordering)
-    expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([0, 1, 2, 3])
-    expect(board.board_sections.ordered.pluck(:section_order)).to eq([0, 1, 2])
+  describe "#fix_ordering" do
+    let(:board) { create(:board) }
+
+    it "should work" do
+      post = create(:post, board: board)
+      create_list(:post, 3, board: board)
+      post.update_columns(section_order: 2) # rubocop:disable Rails/SkipsModelValidations
+      section = create(:board_section, board: board)
+      create_list(:board_section, 2, board: board)
+      section.update_columns(section_order: 6) # rubocop:disable Rails/SkipsModelValidations
+      expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([1, 2, 2, 3])
+      expect(board.board_sections.ordered.pluck(:section_order)).to eq([1, 2, 6])
+      board.send(:fix_ordering)
+      expect(board.posts.ordered_in_section.pluck(:section_order)).to eq([0, 1, 2, 3])
+      expect(board.board_sections.ordered.pluck(:section_order)).to eq([0, 1, 2])
+    end
+
+    it "should do nothing if board is ordered" do
+      posts = create_list(:post, 4, board: board)
+      posts = Post.where(id: posts.map(&:id)).ordered_in_section
+      sections = create_list(:board_section, 3, board: board)
+      sections = BoardSection.where(id: sections.map(&:id)).ordered
+      expect {
+        board.send(:fix_ordering)
+      }.to not_change{posts.pluck(:section_order)}.and not_change { sections.pluck(:section_order) }
+    end
   end
 
   describe "#ordered?" do
@@ -133,5 +143,145 @@ RSpec.describe Board do
     expect(post.board_id).to eq(3)
     expect(post.section).to be_nil
     expect(BoardSection.find_by_id(section.id)).to be_nil
+  end
+
+  describe "#open_to?" do
+    let(:board) { create(:board, authors_locked: true) }
+    let(:user) { create(:user) }
+
+    it "requires a user" do
+      expect(board.open_to?(nil)).to eq(false)
+    end
+
+    it "returns true for open boards" do
+      board.update!(authors_locked: false)
+      expect(board.open_to?(user)).to eq(true)
+    end
+
+    it "returns true for creator" do
+      expect(board.open_to?(board.creator)).to eq(true)
+    end
+
+    it "returns true for board authors" do
+      board.writers << user
+      expect(board.open_to?(user)).to eq(true)
+    end
+
+    it "returns false for others" do
+      expect(board.open_to?(user)).to eq(false)
+    end
+  end
+
+  describe "#editable_by?" do
+    let(:board) { create(:board, authors_locked: false) }
+    let(:user) { create(:user) }
+
+    it "requires a user" do
+      expect(board.editable_by?(nil)).to eq(false)
+    end
+
+    it "returns true for creator" do
+      expect(board.editable_by?(board.creator)).to eq(true)
+    end
+
+    it "returns true for admins" do
+      expect(board.editable_by?(create(:admin_user))).to eq(true)
+    end
+
+    it "returns false if creator is deleted" do
+      board.creator.update!(deleted: true)
+      board.writers << user
+      expect(board.editable_by?(user)).to eq(false)
+    end
+
+    it "returns true for board coauthors" do
+      board.writers << user
+      expect(board.editable_by?(user)).to eq(true)
+    end
+
+    it "returns false for others" do
+      expect(board.editable_by?(user)).to eq(false)
+    end
+  end
+
+  describe "#mark_read" do
+    let(:board) { create(:board) }
+    let(:user) { create(:user) }
+    let(:now) { Time.zone.now }
+
+    context "with new view" do
+      let(:view) { BoardView.find_by(board: board, user: user) }
+
+      it "uses at_time if specified" do
+        time = now + 1.day
+        board.mark_read(user, at_time: time)
+        expect(view.read_at).to be_the_same_time_as(time)
+      end
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { board.mark_read(user) }
+        expect(view.read_at).to be_the_same_time_as(now)
+      end
+    end
+
+    context "with existing view" do
+      let!(:view) { create(:board_view, board: board, user: user, read_at: now - 2.days) }
+
+      it "uses current time without at_time" do
+        Timecop.freeze(now) { board.mark_read(user) }
+        expect(view.reload.read_at).to be_the_same_time_as(now)
+      end
+
+      it "uses later at_time if given" do
+        time = now + 1.day
+        board.mark_read(user, at_time: time)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+
+      it "does not use earlier at_time unless forced" do
+        expect { board.mark_read(user, at_time: now - 5.days) }.not_to change { view.read_at }
+      end
+
+      it "uses earlier at_time if forced" do
+        time = now - 5.days
+        board.mark_read(user, at_time: time, force: true)
+        expect(view.reload.read_at).to be_the_same_time_as(time)
+      end
+    end
+  end
+
+  describe "#as_json" do
+    let(:board) { create(:board) }
+
+    shared_examples 'sections' do
+      it "works with no sections" do
+        expect(board.as_json(options)).to match_hash(json)
+      end
+    end
+
+    context "with include sections" do
+      let(:options) { { include: [:board_sections] } }
+      let(:json) { { id: board.id, name: board.name, board_sections: board.board_sections.ordered } }
+
+      include_examples 'sections'
+
+      it "works with sections" do
+        sections = create_list(:board_section, 4, board: board)
+        json[:board_sections] = sections
+        expect(board.as_json(options)).to match_hash(json)
+      end
+    end
+
+    context "without include sections" do
+      let(:options) { {} }
+      let(:json) { { id: board.id, name: board.name } }
+
+      include_examples 'sections'
+
+      it "works with sections" do
+        create_list(:board_section, 4, board: board)
+        expect(board.as_json(options)).to match_hash(json)
+      end
+    end
   end
 end
