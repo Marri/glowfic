@@ -230,7 +230,7 @@ RSpec.describe PostsController do
         skip "TODO not yet implemented"
       end
 
-      it "filters by authors" do
+      it "filters by author" do
         posts = Array.new(4) { create(:post) }
         filtered_post = posts.last
         first_post = posts.first
@@ -275,6 +275,15 @@ RSpec.describe PostsController do
         post = create(:post, status: :complete)
         get :search, params: { commit: true, completed: true }
         expect(assigns(:search_results)).to match_array(post)
+      end
+
+      it "handles authors with no shared posts" do
+        author1 = create(:user)
+        author2 = create(:user)
+        create_list(:post, 2, user: author1)
+        create_list(:post, 2, user: author2)
+        get :search, params: { commit: true, author_id: [author1.id, author2.id] }
+        expect(assigns(:search_results)).to be_empty
       end
 
       it "sorts posts by tagged_at" do
