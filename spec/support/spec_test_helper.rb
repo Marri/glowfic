@@ -23,6 +23,7 @@ module SpecTestHelper
 
     def transform_element(ele)
       if ele.is_a?(ActiveRecord::Relation)
+        ele = ele.ordered if ele.respond_to?(:ordered)
         ele.to_a
       elsif ele.is_a?(Array)
         ele = ele.sort unless ele[0].is_a?(Hash)
