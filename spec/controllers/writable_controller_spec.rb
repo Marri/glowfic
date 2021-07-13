@@ -250,6 +250,8 @@ RSpec.describe WritableController do
   end
 
   describe "#display_warnings?" do
+    let(:user) { create(:user) }
+
     it "respects session ignore warnings" do
       session[:ignore_warnings] = true
       expect(controller.send(:display_warnings?)).to eq(false)
@@ -267,11 +269,16 @@ RSpec.describe WritableController do
       expect(controller.send(:display_warnings?)).to eq(true)
     end
 
-    it "checks show_warnings_for for logged in users" do
-      user = create(:user)
+    it "does not set session ignore warnings for logged in user" do
+      login_as(user)
       without_partial_double_verification do
-        allow(controller).to receive(:current_user).and_return(user)
+        allow(controller).to receive(:params).and_return({ignore_warnings: true})
       end
+      expect { expect(controller.send(:display_warnings?)).to eq(false) }.not_to change { session[:ignore_warnings] }
+    end
+
+    it "checks show_warnings_for for logged in users" do
+      login_as(user)
       post = create(:post)
       expect(post).to receive(:show_warnings_for?).with(user).and_call_original
       controller.instance_variable_set(:@post, post)
