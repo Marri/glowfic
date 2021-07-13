@@ -1,4 +1,34 @@
 RSpec.describe Reply do
+  describe "validations" do
+    describe "#author_can_write_in_post" do
+      let(:creator) { create(:user) }
+      let(:board) { create(:board, writers: [creator], authors_locked: true) }
+      let(:post) { create(:post, user: creator, board: board, authors_locked: true) }
+      let(:user) { create(:user) }
+
+      it "requires board access" do
+        post.update!(authors_locked: false)
+        expect(user.writes_in?(board)).to eq(false)
+        reply = build(:reply, post: post, user: user)
+        expect(reply).not_to be_valid
+      end
+
+      it "requires post access" do
+        board.update!(cameos: [user])
+        expect(post.author_for(user)).to be_nil
+        reply = build(:reply, post: post, user: user)
+        expect(reply).not_to be_valid
+      end
+
+      it "works" do
+        board.update!(cameos: [user])
+        post.update!(unjoined_authors: [user])
+        reply = build(:reply, post: post, user: user)
+        expect(reply).to be_valid
+      end
+    end
+  end
+
   describe "#has_icons?" do
     let(:user) { create(:user) }
 
