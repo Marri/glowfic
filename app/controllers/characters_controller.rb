@@ -196,13 +196,7 @@ class CharactersController < ApplicationController
     gon.gallery = icons.to_h
     gon.gallery[''] = {url: view_context.image_path('icons/no-icon.png'), keyword: 'No Character'}
 
-    @alt_dropdown = @alts.map do |alt|
-      name = alt.name
-      name += ' | ' + alt.screenname if alt.screenname
-      name += ' | ' + alt.nickname if alt.nickname
-      name += ' | ' + alt.settings.pluck(:name).join(' & ') if alt.settings.present?
-      [name, alt.id]
-    end
+    @alt_dropdown = @alts.map { |alt| [alt.selector_name(include_settings: true), alt.id] }
     @alt = @alts.first
 
     reply_post_ids = Reply.where(character_id: @character.id).select(:post_id).distinct.pluck(:post_id)

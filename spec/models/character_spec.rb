@@ -323,6 +323,45 @@ RSpec.describe Character do
     end
   end
 
+  describe "#selector_name" do
+    let(:character) { create(:character) }
+    let(:screenname) { 'test_screename' }
+    let(:nickname) { 'test nickname' }
+
+    it "works with only name" do
+      expect(character.selector_name).to eq(character.name)
+    end
+
+    it "works with all names" do
+      character.update!(screenname: screenname, nickname: nickname)
+      expect(character.selector_name).to eq("#{character.name} | #{nickname} | #{screenname}")
+    end
+
+    context "with include_settings" do
+      let(:settings) { create_list(:setting, 2) }
+
+      it "works with no settings" do
+        expect(character.selector_name(include_settings: true)).to eq(character.name)
+      end
+
+      it "works with one setting" do
+        character.update!(settings: [settings[0]])
+        expect(character.selector_name(include_settings: true)).to eq("#{character.name} | #{settings[0].name}")
+      end
+
+      it "works with multiple settings" do
+        character.update!(settings: settings)
+        expect(character.selector_name(include_settings: true)).to eq("#{character.name} | #{settings[0].name} & #{settings[1].name}")
+      end
+
+      it "works with settings and names" do
+        character.update!(settings: settings, screenname: screenname, nickname: nickname)
+        string = "#{character.name} | #{nickname} | #{screenname} | #{settings[0].name} & #{settings[1].name}"
+        expect(character.selector_name(include_settings: true)).to eq(string)
+      end
+    end
+  end
+
   it "orders icons by default" do
     user = create(:user)
     char = create(:character, user: user)
