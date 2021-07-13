@@ -1354,6 +1354,8 @@ RSpec.describe PostsController do
   end
 
   describe "GET delete_history" do
+    let(:post) { create(:post) }
+
     before(:each) { Reply.auditing_enabled = true }
 
     after(:each) { Reply.auditing_enabled = false }
@@ -1373,24 +1375,37 @@ RSpec.describe PostsController do
 
     it "requires permission" do
       login
-      post = create(:post)
       get :delete_history, params: { id: post.id }
       expect(response).to redirect_to(post_url(post))
       expect(flash[:error]).to eq("You do not have permission to modify this post.")
     end
 
-    it "sets correct variables" do
-      post = create(:post)
+    it "sets correct variables for deleted first reply" do
       login_as(post.user)
       reply = create(:reply, post: post)
+      following = create_list(:reply, 2, post: post)
       reply.destroy!
       get :delete_history, params: { id: post.id }
       expect(response).to have_http_status(200)
       expect(assigns(:audit).auditable_id).to eq(reply.id)
+      expect(assigns(:preceding)).to eq([post])
+      expect(assigns(:following)).to eq(following)
+    end
+
+    it "sets correct variables for deleted later reply" do
+      login_as(post.user)
+      preceding = create_list(:reply, 2, post: post)
+      reply = create(:reply, post: post)
+      following = create_list(:reply, 2, post: post)
+      reply.destroy!
+      get :delete_history, params: { id: post.id }
+      expect(response).to have_http_status(200)
+      expect(assigns(:audit).auditable_id).to eq(reply.id)
+      expect(assigns(:preceding)).to eq(preceding)
+      expect(assigns(:following)).to eq(following)
     end
 
     it "ignores restored replies" do
-      post = create(:post)
       login_as(post.user)
       reply = create(:reply, post: post)
       reply.destroy!
@@ -1400,7 +1415,6 @@ RSpec.describe PostsController do
     end
 
     it "only selects more recent restore" do
-      post = create(:post)
       login_as(post.user)
       reply = create(:reply, post: post, content: 'old content')
       reply.destroy!
