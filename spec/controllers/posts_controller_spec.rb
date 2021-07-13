@@ -2860,11 +2860,10 @@ RSpec.describe PostsController do
 
     context "with posts" do
       let(:user) { create(:user) }
-      let(:other_user) { create(:user) }
+      let!(:other_user) { create(:user) }
       let(:post) { create(:post, user: user) }
 
       before(:each) do
-        other_user
         login_as(user)
       end
 
@@ -2922,15 +2921,24 @@ RSpec.describe PostsController do
         expect(assigns(:posts)).to match_array([post])
       end
 
-      it "optionally hides hiatused threads" do
-        create(:reply, post_id: post.id, user_id: other_user.id)
+      it "optionally hides hiatused posts" do
+        create(:reply, post: post, user: other_user)
         post.update!(status: :hiatus)
 
-        user.hide_hiatused_tags_owed = true
-        user.save!
+        user.update!(hide_hiatused_tags_owed: true)
         get :owed
         expect(response.status).to eq(200)
         expect(assigns(:posts)).to be_empty
+        expect(assigns(:hiatused_exist)).to be(true)
+      end
+
+      it "does not display hiatused tab without hiatused posts" do
+        post
+        user.update!(hide_hiatused_tags_owed: true)
+        get :owed
+        expect(response.status).to eq(200)
+        expect(assigns(:posts)).to eq([post])
+        expect(assigns(:hiatused_exist)).to be_nil
       end
 
       it "shows threads the user has been invited to" do
