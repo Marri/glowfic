@@ -204,22 +204,4 @@ RSpec.describe Reply do
       end
     end
   end
-
-  describe "Writable" do
-    describe "#name" do
-      let(:user) { create(:user) }
-      let(:character) { create(:character, user: user) }
-      let(:reply) { create(:reply, character: character, user: user) }
-
-      it "works without alias" do
-        expect(reply.name).to eq(character.name)
-      end
-
-      it "works with alias" do
-        calias = create(:alias, character: character)
-        reply.update!(character_alias: calias)
-        expect(reply.name).to eq(calias.name)
-      end
-    end
-  end
 end
