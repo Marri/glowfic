@@ -366,4 +366,11 @@ RSpec.describe User do
       end
     end
   end
+
+  describe "#as_json" do
+    it "handles deleted users" do
+      user = create(:user, deleted: true)
+      expect(user.as_json).to match_hash({id: user.id, username: '(deleted user)'})
+    end
+  end
 end
