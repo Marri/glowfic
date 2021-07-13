@@ -1,7 +1,9 @@
 RSpec.describe News do
+  let(:news) { create(:news) }
+  let(:user) { create(:user) }
+
   describe "#mark_read" do
     it "works for never reads" do
-      news = create(:news)
       expect(NewsView.count).to eq(0)
       news.mark_read(news.user)
       expect(NewsView.count).to eq(1)
@@ -9,7 +11,6 @@ RSpec.describe News do
     end
 
     it "works for subsequent reads" do
-      news = create(:news)
       news.mark_read(news.user)
       view = NewsView.last
       new_news = create(:news)
@@ -18,7 +19,7 @@ RSpec.describe News do
     end
 
     it "does nothing for historical reads" do
-      news = create(:news)
+      news
       new_news = create(:news)
       new_news.mark_read(news.user)
       expect(NewsView.last.news).to eq(new_news)
@@ -28,8 +29,7 @@ RSpec.describe News do
   end
 
   describe "#num_unread_for" do
-    let(:user) { create(:user) }
-    let!(:news) { create(:news) }
+    before(:each) { news }
 
     it "handles no user" do
       expect(News.num_unread_for(nil)).to eq(0)
@@ -75,6 +75,44 @@ RSpec.describe News do
         create(:news)
         expect(Rails.cache.exist?(NewsView.cache_string_for(user.id))).to eq(false)
       end
+    end
+  end
+
+  describe "#editable_by?" do
+    it "requires login" do
+      expect(news.editable_by?(nil)).to eq(false)
+    end
+
+    it "returns true for creator" do
+      expect(news.editable_by?(news.user)).to eq(true)
+    end
+
+    it "returns true for admin" do
+      admin = create(:admin_user)
+      expect(news.editable_by?(admin)).to eq(true)
+    end
+
+    it "returns false for other user" do
+      expect(news.editable_by?(user)).to eq(false)
+    end
+  end
+
+  describe "#deletable_by?" do
+    it "requires login" do
+      expect(news.deletable_by?(nil)).to eq(false)
+    end
+
+    it "returns true for creator" do
+      expect(news.deletable_by?(news.user)).to eq(true)
+    end
+
+    it "returns true for admin" do
+      admin = create(:admin_user)
+      expect(news.deletable_by?(admin)).to eq(true)
+    end
+
+    it "returns false for other user" do
+      expect(news.deletable_by?(user)).to eq(false)
     end
   end
 end
